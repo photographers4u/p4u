@@ -1,0 +1,2 @@
+DROP TYPE "public"."portfolio_skill";--> statement-breakpoint
+CREATE TYPE "public"."portfolio_skill" AS ENUM('ui-design', 'ux-design', 'product-design', 'web-design', 'graphic-design', 'branding', 'illustration', 'motion', 'typography', 'photography', '3d', 'frontend-development', 'backend-development', 'fullstack-development', 'mobile-development', 'web-development', 'software-development', 'app-development', 'game-development', 'no-code', 'low-code', 'data', 'ai-ml', 'devops', 'cloud', 'security', 'product-management', 'content-creation', 'marketing', 'other');
