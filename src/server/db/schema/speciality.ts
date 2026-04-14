@@ -6,4 +6,5 @@ export const speciality = createTable("speciality", {
   ...primaryKeyColumns(),
   ...timestampColumns(),
   name: text("name").unique().notNull(),
+  slug: text("slug").unique().notNull()
 });

@@ -10,6 +10,7 @@
     "format": "biome format --write",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config drizzle.config.ts",
+    "db:seed:speciality": "tsx scripts/seed-speciality.ts",
     "db:studio": "drizzle-kit studio --config drizzle.config.ts",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down --volumes --remove-orphans",

@@ -2,6 +2,7 @@
 
 import {
   Bookmark,
+  Camera,
   Fan,
   HatGlasses,
   Layers3,
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/sidebar";
 import { siteConfig } from "@/config/site";
 import type { AuthClientUser } from "@/lib/auth-client";
+import type { Photographer } from "@/zod/schema/photographer";
 import { NavMain } from "./nav-main";
 
 const accountGroup = {
@@ -46,23 +48,25 @@ const accountGroup = {
   ],
 };
 
-const dashboardData = [
-  {
-    label: "Dashboard",
-    items: [
-      {
-        title: "Items",
-        url: "/dashboard/items" as Route,
-        icon: Layers3,
-      },
-      {
-        title: "Bookmarks",
-        url: "/dashboard/bookmarks" as Route,
-        icon: Bookmark,
-      },
-    ],
-  },
-];
+function getDashboardData() {
+  return [
+    {
+      label: "Dashboard",
+      items: [
+        {
+          title: "Items",
+          url: "/dashboard/items" as Route,
+          icon: Layers3,
+        },
+        {
+          title: "Bookmarks",
+          url: "/dashboard/bookmarks" as Route,
+          icon: Bookmark,
+        },
+      ],
+    },
+  ];
+}
 
 const adminData = [
   {
@@ -77,10 +81,23 @@ const adminData = [
   },
 ];
 
+const photographerGroup = {
+  label: "Photographer",
+  items: [
+    {
+      title: "Portfolio",
+      url: "/dashboard/portfolio" as Route,
+      icon: Camera,
+    },
+  ],
+};
+
 export function UserSidebar({
+  photographer: _photographer,
   user,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
+  photographer: Photographer | null;
   user: AuthClientUser;
 }) {
   const pathname = usePathname();
@@ -90,7 +107,8 @@ export function UserSidebar({
   const showDashboardGroups = isDashboardRoute || isAccountRoute;
   const showAdminGroups = isAdminRoute;
   const groups = [
-    ...(showDashboardGroups ? dashboardData : []),
+    ...(showDashboardGroups ? getDashboardData() : []),
+    ...(showDashboardGroups ? [photographerGroup] : []),
     ...(showAdminGroups ? adminData : []),
     ...(showDashboardGroups || showAdminGroups ? [accountGroup] : []),
   ];

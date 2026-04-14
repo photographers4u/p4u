@@ -2,14 +2,18 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { UserSidebar } from "@/components/sidebar/user-sidebar";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { getServerSession } from "@/lib/server-api";
+import { getServerPhotographer, getServerSession } from "@/lib/server-api";
 
 export default async function layout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(await headers());
+  const requestHeaders = await headers();
+  const [session, photographer] = await Promise.all([
+    getServerSession(requestHeaders),
+    getServerPhotographer(requestHeaders),
+  ]);
 
   if (!session || !session.user) {
     return redirect("/login");
@@ -24,7 +28,11 @@ export default async function layout({
         } as React.CSSProperties
       }
     >
-      <UserSidebar variant="sidebar" user={session.user} />
+      <UserSidebar
+        variant="sidebar"
+        user={session.user}
+        photographer={photographer}
+      />
       <SidebarInset>
         <header className="flex h-12 items-center gap-2 border-b px-4 md:hidden">
           <SidebarTrigger />

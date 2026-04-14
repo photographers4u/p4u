@@ -1,4 +1,4 @@
-import { pgEnum, text, unique, uuid } from "drizzle-orm/pg-core";
+import { boolean, integer, pgEnum, text, uuid } from "drizzle-orm/pg-core";
 import { createTable } from "../helpers/create-table";
 import { user } from "./auth-schema";
 import {
@@ -6,9 +6,11 @@ import {
   reviewColumns,
   timestampColumns,
 } from "../helpers/base-column";
-import { EXPERIENCE_YEARS } from "@/zod/helpers/enum";
+import { CITIES, EXPERIENCE_YEARS, type ONBOARDING_STEPS } from "@/zod/helpers/enum";
 
-const experienceYearsEnum = pgEnum("experience_years", EXPERIENCE_YEARS);
+export const experienceYearsEnum = pgEnum("experience_years", EXPERIENCE_YEARS);
+export const photographerCityEnum = pgEnum("photographer_city", CITIES);
+type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
 
 export const photographer = createTable("photographer", {
   ...primaryKeyColumns(),
@@ -17,11 +19,16 @@ export const photographer = createTable("photographer", {
     .notNull()
     .unique()
     .references(() => user.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
+  name: text("name"),
   avatar: text("avatar"),
-  bio: text("bio").notNull(),
-  locationCity: text("location_city").notNull(),
+  bio: text("bio"),
+  locationCity: photographerCityEnum("location_city"),
   locationCountry: text("country").default("india").notNull(),
   experienceYears: experienceYearsEnum("experience_years"),
+  onboardingStep: integer("onboarding_step")
+    .$type<OnboardingStep>()
+    .notNull()
+    .default(1),
+  isPublished: boolean("is_published").notNull().default(false),
   ...reviewColumns(),
 });

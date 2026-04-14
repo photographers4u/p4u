@@ -1,3 +1,5 @@
+"use client";
+
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Sheet,
@@ -160,9 +162,8 @@ function MobileMenu({ session }: { session: AuthClientSession | null }) {
   );
 }
 
-async function Navbar({ session }: { session: AuthClientSession | null }) {
+function Navbar({ session }: { session: AuthClientSession | null }) {
   const nav = getNav(session);
-
   return (
     <header
       className={`top-0 sticky z-50 backdrop-blur-md bg-white border-b border-zinc-200/60 ${poppins.className}`}

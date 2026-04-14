@@ -5,6 +5,14 @@ export const imageUploadKinds = {
     fileNamePrefix: "item-image",
     folder: "/photographers4u/items",
   },
+  photographerAvatar: {
+    fileNamePrefix: "photographer-avatar",
+    folder: "/photographers4u/photographers/avatar",
+  },
+  photographerPortfolio: {
+    fileNamePrefix: "photographer-portfolio",
+    folder: "/photographers4u/photographers/portfolio",
+  },
 } as const;
 
 export type ImageUploadKind = keyof typeof imageUploadKinds;

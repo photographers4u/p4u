@@ -27,6 +27,14 @@ export function timestamps() {
   };
 }
 
+export function entitySchema<TShape extends z.ZodRawShape>(shape: TShape) {
+  return z.object({
+    ...idSchema(),
+    ...timestamps(),
+    ...shape,
+  });
+}
+
 /* -------------------------------------------------- */
 /* TIMESTAMP HELPERS */
 /* -------------------------------------------------- */
@@ -93,6 +101,15 @@ export function reviewSchema() {
     reviewedBy: z.string().nullable(),
     reviewedAt: eventTimestamp(),
   };
+}
+
+export function reviewEntitySchema<TShape extends z.ZodRawShape>(
+  shape: TShape,
+) {
+  return entitySchema({
+    ...shape,
+    ...reviewSchema(),
+  });
 }
 
 export function reviewDecisionSchema(options?: {

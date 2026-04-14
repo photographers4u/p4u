@@ -1,0 +1,35 @@
+import type { CreateSpecialityInput } from "../../src/zod/schema/speciality";
+
+export const specialitySeedData = [
+  { slug: "architecture-photography", name: "Architecture Photography" },
+  { slug: "automotive", name: "Automotive" },
+  { slug: "baby-shoot", name: "Baby Shoot" },
+  { slug: "catalog-shoot", name: "Catalog Shoot" },
+  { slug: "commercial-advertising", name: "Commercial / Advertising" },
+  { slug: "content-creation", name: "Content Creation" },
+  { slug: "corporate-event", name: "Corporate Event" },
+  { slug: "corporate-shoot", name: "Corporate Shoot" },
+  { slug: "couple-shoot", name: "Couple Shoot" },
+  { slug: "destination-shoot", name: "Destination Shoot" },
+  { slug: "drone-aerial", name: "Drone / Aerial" },
+  { slug: "ecommerce-shoot", name: "E-commerce Shoot" },
+  { slug: "event", name: "Event" },
+  { slug: "family-shoot", name: "Family Shoot" },
+  { slug: "fashion-model", name: "Fashion / Model" },
+  { slug: "food-photography", name: "Food Photography" },
+  { slug: "headshots", name: "Headshots" },
+  { slug: "hotel-airbnb", name: "Hotel / Airbnb" },
+  { slug: "interior-photography", name: "Interior Photography" },
+  { slug: "maternity-shoot", name: "Maternity Shoot" },
+  { slug: "pet-photography", name: "Pet Photography" },
+  { slug: "personal-branding", name: "Personal Branding" },
+  { slug: "portrait", name: "Portrait" },
+  { slug: "product", name: "Product" },
+  { slug: "real-estate", name: "Real Estate" },
+  { slug: "street-photography", name: "Street Photography" },
+  { slug: "travel-photography", name: "Travel Photography" },
+  { slug: "wedding", name: "Wedding" },
+  { slug: "wildlife", name: "Wildlife" },
+] satisfies CreateSpecialityInput[];
+
+export const photographerSpecialties = specialitySeedData;

@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import type { AuthClientSession, AuthClientUser } from "@/lib/auth-client";
 import { env } from "@/lib/env";
+import type {
+  Photographer,
+  PhotographerOnboardingState,
+} from "@/zod/schema/photographer";
 
 type AccountApiResponse = {
   pendingEmail: string | null;
@@ -120,4 +124,35 @@ export async function getServerAccount(requestHeaders: Headers) {
   }
 
   return (await response.json()) as AccountApiResponse;
+}
+
+export async function getServerPhotographerOnboarding(requestHeaders: Headers) {
+  const response = await fetchServerAPI(
+    requestHeaders,
+    "/api/photographer/onboarding",
+  );
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error("Failed to load photographer onboarding data.");
+  }
+
+  return (await response.json()) as PhotographerOnboardingState;
+}
+
+export async function getServerPhotographer(requestHeaders: Headers) {
+  const response = await fetchServerAPI(requestHeaders, "/api/photographer");
+
+  if (response.status === 401 || response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error("Failed to load photographer profile.");
+  }
+
+  return (await response.json()) as Photographer;
 }

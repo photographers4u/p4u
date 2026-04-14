@@ -43,3 +43,11 @@ export const passwordSchema = z
     PASSWORD_MIN_LENGTH,
     `Password must be at least ${PASSWORD_MIN_LENGTH} characters`,
   );
+
+export function requiredTextSchema(fieldName = "Value") {
+  return z.string().trim().min(1, `${fieldName} is required`);
+}
+
+export function nullableTextSchema(fieldName = "Value") {
+  return z.string().trim().min(1, `${fieldName} cannot be empty`).nullable();
+}
