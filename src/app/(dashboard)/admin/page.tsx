@@ -11,7 +11,7 @@ export default async function AdminPage() {
     <div className="space-y-8">
       <PageHeader
         title="Admin"
-        subtitle="Manage items from dedicated create and edit screens."
+        subtitle="Manage items and jump into photographer review from the admin workspace."
       />
 
       <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
@@ -24,7 +24,10 @@ export default async function AdminPage() {
             content management.
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
+          <Button asChild variant="outline">
+            <Link href="/admin/photographers">Review photographers</Link>
+          </Button>
           <Button asChild variant="outline">
             <Link href="/items">View public items</Link>
           </Button>

@@ -67,12 +67,12 @@ export function eventTimestamptz(name: string) {
 /**
  * Moderation / review columns.
  *
- * Spread into any table that goes through a pending -> approved/rejected flow.
+ * Spread into any table that goes through a moderation flow.
  */
 export function reviewColumns() {
   return {
     status: text("status", {
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "approved", "rejected", "on_hold"],
     }).default("pending"),
     rejectionReason: text("rejection_reason"),
     reviewedBy: text("reviewed_by"),

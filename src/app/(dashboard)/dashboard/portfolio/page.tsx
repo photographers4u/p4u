@@ -10,12 +10,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getPhotographerPortfolioPageData } from "@/lib/photographer-panel";
 import {
   isApprovedPhotographer,
   isPhotographerPendingReview,
 } from "@/lib/photographer-status";
 import { getServerAccount } from "@/lib/server-api";
-import { getPhotographerPortfolioPageData } from "@/lib/photographer-panel";
 import { specialityDal } from "@/server/db/dal/speciality";
 import type { PhotographerOnboardingState } from "@/zod/schema/photographer";
 
@@ -52,10 +52,19 @@ function getStatusDetails(state: PhotographerOnboardingState) {
     };
   }
 
+  if (state.status === "on_hold") {
+    return {
+      description:
+        "Your photographer profile is currently on hold and shown here in read-only mode.",
+      label: "On hold",
+      variant: "destructive" as const,
+    };
+  }
+
   if (state.status === "rejected") {
     return {
       description:
-        "This photographer profile is currently locked and shown in read-only mode.",
+        "Your photographer profile was rejected and is currently shown in read-only mode.",
       label: "Rejected",
       variant: "destructive" as const,
     };
@@ -69,13 +78,7 @@ function getStatusDetails(state: PhotographerOnboardingState) {
   };
 }
 
-function ReadOnlyField({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function ReadOnlyField({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1.5">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
@@ -153,7 +156,9 @@ export default async function PortfolioPage() {
 
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <CardTitle>{onboarding.name ?? "Your photographer profile"}</CardTitle>
+                  <CardTitle>
+                    {onboarding.name ?? "Your photographer profile"}
+                  </CardTitle>
                   <Badge variant={status.variant}>{status.label}</Badge>
                 </div>
                 <CardDescription>{status.description}</CardDescription>
@@ -184,6 +189,25 @@ export default async function PortfolioPage() {
           />
         </CardContent>
       </Card>
+
+      {(onboarding.status === "rejected" || onboarding.status === "on_hold") &&
+      onboarding.rejectionReason ? (
+        <Card className="border border-destructive/20 bg-destructive/10 shadow-sm">
+          <CardHeader className="border-b border-destructive/20">
+            <CardTitle className="text-destructive">Review feedback</CardTitle>
+            <CardDescription className="text-destructive/80">
+              {onboarding.status === "on_hold"
+                ? "This reason was shared by the admin when the profile was put on hold."
+                : "This reason was shared by the admin when the profile was rejected."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <p className="text-sm leading-6 text-destructive">
+              {onboarding.rejectionReason}
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card className="border border-border/70 shadow-sm">
         <CardHeader className="border-b">
@@ -268,7 +292,7 @@ export default async function PortfolioPage() {
                 className="border border-border/70 shadow-sm"
               >
                 <CardContent className="p-0">
-                  <div className="aspect-[4/3] overflow-hidden">
+                  <div className="aspect-4/3 overflow-hidden">
                     {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
                     <img
                       src={upload.imageUrl}

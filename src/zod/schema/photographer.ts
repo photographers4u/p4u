@@ -8,7 +8,9 @@ import {
   nullableTextSchema,
   ONBOARDING_STEPS,
   requiredTextSchema,
+  reviewDecisionSchema,
   reviewEntitySchema,
+  reviewStatusSchema,
 } from "@/zod/helpers";
 
 const BIO_MAX_LENGTH = 1000;
@@ -21,14 +23,9 @@ const onboardingStepSchema = z.union([
 ]);
 
 const startingPriceSchema = z
-  .union([
-    z.number(),
-    z.string().trim().min(1, "Starting price is required"),
-  ])
+  .union([z.number(), z.string().trim().min(1, "Starting price is required")])
   .transform((value) => Number(value))
-  .pipe(
-    z.number().int().min(0, "Starting price must be 0 or greater"),
-  );
+  .pipe(z.number().int().min(0, "Starting price must be 0 or greater"));
 
 const photographerEntityShape = {
   userId: idValueSchema,
@@ -169,13 +166,21 @@ export const photographerOnboardingStateSchema = z.object({
   locationCountry: z.string(),
   name: z.string().nullable(),
   onboardingStep: onboardingStepSchema,
-  status: z.enum(["pending", "approved", "rejected"]),
+  rejectionReason: z.string().nullable(),
+  status: reviewStatusSchema,
   specialities: z.array(photographerOnboardingSpecialityInputSchema),
   uploads: z.array(photographerOnboardingUploadInputSchema),
 });
 
 export const photographerIdParamsSchema = z.object({
   id: idValueSchema,
+});
+
+export const reviewPhotographerSchema = reviewDecisionSchema({
+  rejectionRequiredMessage:
+    "A rejection reason is required when rejecting this photographer.",
+  onHoldRequiredMessage:
+    "A hold reason is required when putting this photographer on hold.",
 });
 
 export type Photographer = z.infer<typeof photographerSchema>;
@@ -205,3 +210,4 @@ export type PhotographerOnboardingState = z.infer<
 export type UpdatePhotographerProfileInput = z.infer<
   typeof updatePhotographerProfileSchema
 >;
+export type ReviewPhotographerInput = z.infer<typeof reviewPhotographerSchema>;

@@ -3,6 +3,7 @@ export const reviewFilters = [
   "pending",
   "approved",
   "rejected",
+  "on_hold",
 ] as const;
 
 export const reviewFilterLabels = {
@@ -10,6 +11,7 @@ export const reviewFilterLabels = {
   pending: "Pending",
   approved: "Approved",
   rejected: "Rejected",
+  on_hold: "On hold",
 } as const;
 
 export const reviewSortByOptions = ["createdAt", "reviewedAt"] as const;

@@ -4,10 +4,13 @@ import {
   type ApiAuthEnv,
   requireAuth,
 } from "@/server/api/lib/require-auth-middleware";
+import { getAdminUserOrResponse } from "@/server/api/lib/review-workflow";
 import { mapError } from "@/server/api/lib/route-helpers";
 import { photographerController } from "@/server/db/controller/photographer";
 import {
   createPhotographerProfileSchema,
+  photographerIdParamsSchema,
+  reviewPhotographerSchema,
   savePhotographerAvatarStepSchema,
   savePhotographerOnboardingStepSchema,
   updatePhotographerProfileSchema,
@@ -140,6 +143,32 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
             user.id,
             c.req.valid("json"),
           );
+
+        return c.json(photographer, 200);
+      } catch (error) {
+        const [status, message] = mapError(error);
+        return c.json({ message }, status);
+      }
+    },
+  )
+  .patch(
+    "/:id/review",
+    requireAuth,
+    zValidator("param", photographerIdParamsSchema),
+    zValidator("json", reviewPhotographerSchema),
+    async (c) => {
+      const adminUserResult = getAdminUserOrResponse(c);
+
+      if (!adminUserResult.ok) {
+        return adminUserResult.response;
+      }
+
+      try {
+        const photographer = await photographerController.reviewPhotographer(
+          c.req.valid("param").id,
+          adminUserResult.user.id,
+          c.req.valid("json"),
+        );
 
         return c.json(photographer, 200);
       } catch (error) {

@@ -1,5 +1,5 @@
-import db, { type DBExecutor, type DBTransaction } from "@/server/db";
 import { isApprovedPhotographer } from "@/lib/photographer-status";
+import db, { type DBExecutor, type DBTransaction } from "@/server/db";
 import {
   type PhotographerRecord,
   photographerDal,
@@ -20,6 +20,7 @@ import type {
   PhotographerOnboardingContactInput,
   PhotographerOnboardingSpecialityInput,
   PhotographerOnboardingState,
+  ReviewPhotographerInput,
   SavePhotographerAvatarStepInput,
   SavePhotographerOnboardingStepInput,
   UpdatePhotographerProfileInput,
@@ -32,6 +33,40 @@ const AVATAR_COMPLETED_STEP = ONBOARDING_STEPS[1];
 const PROFILE_COMPLETED_STEP = ONBOARDING_STEPS[2];
 const SPECIALITIES_COMPLETED_STEP = ONBOARDING_STEPS[3];
 const FINAL_ONBOARDING_STEP = ONBOARDING_STEPS[3];
+
+export type AdminPhotographerReviewEntry = {
+  id: string;
+  userId: string;
+  name: string | null;
+  avatar: string | null;
+  bio: string | null;
+  locationCity: PhotographerRecord["locationCity"];
+  locationCountry: string;
+  experienceYears: PhotographerRecord["experienceYears"];
+  onboardingStep: PhotographerOnboardingState["onboardingStep"];
+  isPublished: boolean;
+  status: PhotographerOnboardingState["status"];
+  rejectionReason: string | null;
+  reviewedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  contact: {
+    email: string;
+    emailVerified: boolean;
+    phone: string;
+    isPublic: boolean;
+  } | null;
+  specialities: Array<{
+    id: string;
+    name: string;
+    startingPrice: number;
+  }>;
+  uploads: Array<{
+    imageUrl: string;
+  }>;
+  uploadsCount: number;
+  portfolioPreview: string | null;
+};
 
 function toPublicPhotographer(photographer: PhotographerRecord) {
   return {
@@ -72,6 +107,7 @@ function buildEmptyOnboardingState(): PhotographerOnboardingState {
     locationCountry: DEFAULT_LOCATION_COUNTRY,
     name: null,
     onboardingStep: ONBOARDING_STEPS[0],
+    rejectionReason: null,
     status: "pending",
     specialities: [],
     uploads: [],
@@ -371,6 +407,7 @@ async function buildOnboardingState(
     locationCountry: photographer.locationCountry,
     name: photographer.name,
     onboardingStep: normalizeOnboardingStep(photographer.onboardingStep),
+    rejectionReason: photographer.rejectionReason,
     status: photographer.status ?? "pending",
     specialities: specialities.map((speciality) => ({
       specialityId: speciality.specialityId,
@@ -379,6 +416,73 @@ async function buildOnboardingState(
     uploads: uploads.map((upload) => ({
       imageUrl: upload.imageUrl,
     })),
+  };
+}
+
+function getAdminReviewPriority(entry: AdminPhotographerReviewEntry) {
+  if (entry.status === "pending" && entry.contact) {
+    return 0;
+  }
+
+  if (entry.status === "pending") {
+    return 1;
+  }
+
+  if (entry.status === "on_hold") {
+    return 2;
+  }
+
+  if (entry.status === "rejected") {
+    return 3;
+  }
+
+  return 4;
+}
+
+async function buildAdminPhotographerReviewEntry(
+  photographer: PhotographerRecord,
+  executor: DBClient = db,
+): Promise<AdminPhotographerReviewEntry> {
+  const [contact, specialities, uploads] = await Promise.all([
+    photographerContactDal.getByPhotographerId(photographer.id, executor),
+    photographerSpecialityDal.getByPhotographerId(photographer.id, executor),
+    photographerUploadDal.getByPhotographerId(photographer.id, executor),
+  ]);
+
+  return {
+    id: photographer.id,
+    userId: photographer.userId,
+    name: photographer.name,
+    avatar: photographer.avatar,
+    bio: photographer.bio,
+    locationCity: photographer.locationCity,
+    locationCountry: photographer.locationCountry,
+    experienceYears: photographer.experienceYears,
+    onboardingStep: normalizeOnboardingStep(photographer.onboardingStep),
+    isPublished: photographer.isPublished,
+    status: photographer.status ?? "pending",
+    rejectionReason: photographer.rejectionReason,
+    reviewedAt: photographer.reviewedAt,
+    createdAt: photographer.createdAt,
+    updatedAt: photographer.updatedAt,
+    contact: contact
+      ? {
+          email: contact.email,
+          emailVerified: contact.emailVerified,
+          phone: contact.phone,
+          isPublic: contact.isPublic,
+        }
+      : null,
+    specialities: specialities.map((speciality) => ({
+      id: speciality.specialityId,
+      name: speciality.name,
+      startingPrice: speciality.startingPrice,
+    })),
+    uploads: uploads.map((upload) => ({
+      imageUrl: upload.imageUrl,
+    })),
+    uploadsCount: uploads.length,
+    portfolioPreview: uploads[0]?.imageUrl ?? null,
   };
 }
 
@@ -539,6 +643,82 @@ export const photographerController = {
     return photographers
       .filter((photographer) => photographer.isPublished)
       .map(toPublicPhotographer);
+  },
+
+  async getAdminPhotographerEntries(): Promise<AdminPhotographerReviewEntry[]> {
+    const photographers = await photographerDal.getAll();
+    const entries = await Promise.all(
+      photographers.map((photographer) =>
+        buildAdminPhotographerReviewEntry(photographer),
+      ),
+    );
+
+    return entries.sort((left, right) => {
+      const priorityDifference =
+        getAdminReviewPriority(left) - getAdminReviewPriority(right);
+
+      if (priorityDifference !== 0) {
+        return priorityDifference;
+      }
+
+      return right.updatedAt.getTime() - left.updatedAt.getTime();
+    });
+  },
+
+  async getAdminPhotographerEntryById(
+    id: string,
+  ): Promise<AdminPhotographerReviewEntry> {
+    const photographer = await photographerDal.getById(id);
+
+    if (!photographer) {
+      throw new NotFoundError("Photographer not found");
+    }
+
+    return buildAdminPhotographerReviewEntry(photographer);
+  },
+
+  async reviewPhotographer(
+    id: string,
+    reviewerId: string,
+    input: ReviewPhotographerInput,
+  ): Promise<AdminPhotographerReviewEntry> {
+    return db.transaction(async (tx) => {
+      const photographer = await photographerDal.getById(id, tx);
+
+      if (!photographer) {
+        throw new NotFoundError("Photographer not found");
+      }
+
+      if (input.status === "approved") {
+        await assertReadyForPublication(photographer, tx);
+      }
+
+      const reviewedPhotographer = await photographerDal.updateById(
+        id,
+        input.status === "approved"
+          ? {
+              isPublished: true,
+              rejectionReason: null,
+              reviewedAt: new Date(),
+              reviewedBy: reviewerId,
+              status: "approved",
+            }
+          : {
+              isPublished: false,
+              rejectionReason: input.rejectionReason,
+              reviewedAt: new Date(),
+              reviewedBy: reviewerId,
+              status: input.status,
+            },
+        tx,
+      );
+
+      if (!reviewedPhotographer) {
+        throw new InternalError("Failed to review photographer");
+      }
+
+      return buildAdminPhotographerReviewEntry(reviewedPhotographer, tx);
+    });
   },
 
   async updatePhotographerProfile(

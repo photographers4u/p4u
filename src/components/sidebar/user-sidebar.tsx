@@ -6,7 +6,6 @@ import {
   Fan,
   HatGlasses,
   Layers3,
-  LayoutDashboard,
   User as UserIcon,
 } from "lucide-react";
 import type { Route } from "next";
@@ -75,7 +74,12 @@ const adminData = [
       {
         title: "Items",
         url: "/admin" as Route,
-        icon: LayoutDashboard,
+        icon: Layers3,
+      },
+      {
+        title: "Photographers",
+        url: "/admin/photographers" as Route,
+        icon: Camera,
       },
     ],
   },

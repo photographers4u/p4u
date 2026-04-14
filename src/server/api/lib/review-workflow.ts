@@ -1,8 +1,8 @@
 import type { Context } from "hono";
 import { z } from "zod";
+import { reviewStatusSchema } from "@/zod/helpers";
 import type { ApiAuthEnv } from "./require-auth-middleware";
 
-export const reviewStatusSchema = z.enum(["pending", "approved", "rejected"]);
 export const reviewSortBySchema = z.enum(["createdAt", "reviewedAt"]);
 export const reviewSortOrderSchema = z.enum(["asc", "desc"]);
 

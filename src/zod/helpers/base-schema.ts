@@ -2,6 +2,13 @@ import z from "zod";
 
 export const idValueSchema = z.uuid();
 export const isoTimestampSchema = z.string().datetime();
+export const reviewStatusValues = [
+  "pending",
+  "approved",
+  "rejected",
+  "on_hold",
+] as const;
+export const reviewStatusSchema = z.enum(reviewStatusValues);
 
 /**
  * Standard UUID primary key.
@@ -92,11 +99,11 @@ export function eventTimestamp() {
  * Moderation / review fields.
  *
  * Mirrors `reviewColumns()` in packages/db.
- * Spread into any schema that goes through a pending -> approved/rejected flow.
+ * Spread into any schema that goes through a moderation flow.
  */
 export function reviewSchema() {
   return {
-    status: z.enum(["pending", "approved", "rejected"]).default("pending"),
+    status: reviewStatusSchema.default("pending"),
     rejectionReason: z.string().nullable(),
     reviewedBy: z.string().nullable(),
     reviewedAt: eventTimestamp(),
@@ -114,6 +121,7 @@ export function reviewEntitySchema<TShape extends z.ZodRawShape>(
 
 export function reviewDecisionSchema(options?: {
   rejectionRequiredMessage?: string;
+  onHoldRequiredMessage?: string;
 }) {
   return z.discriminatedUnion("status", [
     z.object({
@@ -129,6 +137,17 @@ export function reviewDecisionSchema(options?: {
           1,
           options?.rejectionRequiredMessage ??
             "A rejection reason is required when rejecting",
+        ),
+    }),
+    z.object({
+      status: z.literal("on_hold"),
+      rejectionReason: z
+        .string()
+        .trim()
+        .min(
+          1,
+          options?.onHoldRequiredMessage ??
+            "A reason is required when putting this submission on hold",
         ),
     }),
   ]);
