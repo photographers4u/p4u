@@ -1,23 +1,27 @@
-import { isApprovedPhotographer } from "@/lib/photographer-status";
+import {
+  canReviewPhotographerWithStatus,
+  isApprovedPhotographer,
+  isPhotographerPendingReview,
+} from "@/lib/photographer-status";
 import db, { type DBExecutor, type DBTransaction } from "@/server/db";
 import {
   type PhotographerRecord,
   photographerDal,
 } from "@/server/db/dal/photographer";
-import { photographerContactDal } from "@/server/db/dal/photographer-contact";
 import { photographerSpecialityDal } from "@/server/db/dal/photographer-speciality";
 import { photographerUploadDal } from "@/server/db/dal/photographer-upload";
+import { photographerContactController } from "@/server/db/controller/photographer-contact";
 import { specialityDal } from "@/server/db/dal/speciality";
 import {
   BadRequestError,
   ConflictError,
+  ForbiddenError,
   InternalError,
   NotFoundError,
 } from "@/server/db/helpers/errors";
 import { ONBOARDING_STEPS } from "@/zod/helpers";
 import type {
   CreatePhotographerProfileInput,
-  PhotographerOnboardingContactInput,
   PhotographerOnboardingSpecialityInput,
   PhotographerOnboardingState,
   ReviewPhotographerInput,
@@ -67,6 +71,11 @@ export type AdminPhotographerReviewEntry = {
   uploadsCount: number;
   portfolioPreview: string | null;
 };
+
+type PhotographerModerationState = Pick<
+  PhotographerOnboardingState,
+  "contact" | "isPublished" | "onboardingStep" | "status"
+>;
 
 function toPublicPhotographer(photographer: PhotographerRecord) {
   return {
@@ -262,75 +271,11 @@ async function syncPhotographerSpecialities(
   );
 }
 
-async function upsertPhotographerContact(
-  photographerId: string,
-  input: PhotographerOnboardingContactInput,
-  executor: DBClient = db,
-) {
-  const existingContact = await photographerContactDal.getByPhotographerId(
-    photographerId,
-    executor,
-  );
-  const conflictingContact = await photographerContactDal.getByEmail(
-    input.email,
-    executor,
-  );
-
-  if (
-    conflictingContact &&
-    conflictingContact.photographerId !== photographerId
-  ) {
-    throw new ConflictError(
-      "That email address is already being used by another photographer contact",
-    );
-  }
-
-  if (!existingContact) {
-    const contact = await photographerContactDal.create(
-      {
-        photographerId,
-        phone: input.phone,
-        email: input.email,
-        emailVerified: false,
-        isPublic: input.isPublic,
-      },
-      executor,
-    );
-
-    if (!contact) {
-      throw new InternalError("Failed to create photographer contact");
-    }
-
-    return contact;
-  }
-
-  const nextEmailVerified =
-    existingContact.email === input.email
-      ? existingContact.emailVerified
-      : false;
-  const contact = await photographerContactDal.updateById(
-    existingContact.id,
-    {
-      phone: input.phone,
-      email: input.email,
-      emailVerified: nextEmailVerified,
-      isPublic: input.isPublic,
-    },
-    executor,
-  );
-
-  if (!contact) {
-    throw new InternalError("Failed to update photographer contact");
-  }
-
-  return contact;
-}
-
 async function assertReadyForPublication(
   photographer: PhotographerRecord,
   executor: DBClient = db,
 ) {
-  const contact = await photographerContactDal.getByPhotographerId(
+  const contact = await photographerContactController.getPhotographerContactByPhotographerId(
     photographer.id,
     executor,
   );
@@ -377,7 +322,7 @@ async function buildOnboardingState(
     return buildEmptyOnboardingState();
   }
 
-  const contact = await photographerContactDal.getByPhotographerId(
+  const contact = await photographerContactController.getPhotographerContactByPhotographerId(
     photographer.id,
     executor,
   );
@@ -420,7 +365,7 @@ async function buildOnboardingState(
 }
 
 function getAdminReviewPriority(entry: AdminPhotographerReviewEntry) {
-  if (entry.status === "pending" && entry.contact) {
+  if (isPhotographerPendingReview(entry)) {
     return 0;
   }
 
@@ -439,12 +384,134 @@ function getAdminReviewPriority(entry: AdminPhotographerReviewEntry) {
   return 4;
 }
 
+async function getPhotographerModerationState(
+  photographer: PhotographerRecord,
+  executor: DBClient = db,
+): Promise<PhotographerModerationState> {
+  const contact =
+    await photographerContactController.getPhotographerContactByPhotographerId(
+      photographer.id,
+      executor,
+    );
+
+  return {
+    contact,
+    isPublished: photographer.isPublished,
+    onboardingStep: normalizeOnboardingStep(photographer.onboardingStep),
+    status: photographer.status ?? "pending",
+  };
+}
+
+function assertApprovedPhotographerEditPermission(
+  photographer: PhotographerRecord,
+  surface: "contact" | "offerings" | "profile",
+) {
+  if (isApprovedPhotographer(photographer)) {
+    return;
+  }
+
+  throw new ForbiddenError(
+    `${
+      surface.charAt(0).toUpperCase() + surface.slice(1)
+    } updates are only available on approved photographer profiles.`,
+  );
+}
+
+function getLockedResubmissionMessage(status: PhotographerOnboardingState["status"]) {
+  if (status === "rejected") {
+    return "Rejected photographer profiles are locked until a resubmission flow is implemented.";
+  }
+
+  if (status === "on_hold") {
+    return "On-hold photographer profiles are locked until a resubmission flow is implemented.";
+  }
+
+  return "Submitted photographer profiles can't be edited while review is pending.";
+}
+
+async function assertPhotographerCanSaveOnboardingStep(
+  photographer: PhotographerRecord,
+  step: SavePhotographerOnboardingStepInput["step"],
+  executor: DBClient = db,
+) {
+  if (isApprovedPhotographer(photographer)) {
+    if (step === ONBOARDING_STEPS[2]) {
+      return;
+    }
+
+    throw new ForbiddenError(
+      step === ONBOARDING_STEPS[3]
+        ? "Contact updates for approved photographer profiles must be made from the portfolio contact form."
+        : "Approved photographer profiles can't use onboarding for profile edits.",
+    );
+  }
+
+  const moderationState = await getPhotographerModerationState(
+    photographer,
+    executor,
+  );
+
+  if (
+    moderationState.status === "rejected" ||
+    moderationState.status === "on_hold" ||
+    isPhotographerPendingReview(moderationState)
+  ) {
+    throw new ForbiddenError(
+      getLockedResubmissionMessage(moderationState.status),
+    );
+  }
+}
+
+function getInvalidReviewTransitionMessage(
+  state: PhotographerModerationState,
+) {
+  if (state.status === "pending" && !isPhotographerPendingReview(state)) {
+    return "Only photographer profiles that have been submitted for review can be moderated.";
+  }
+
+  if (isApprovedPhotographer(state)) {
+    return "Approved photographer profiles can only be put on hold.";
+  }
+
+  if (state.status === "on_hold") {
+    return "On-hold photographer profiles can only be released back to approved or kept on hold.";
+  }
+
+  if (state.status === "rejected") {
+    return "Rejected photographer profiles can only be re-approved or kept rejected.";
+  }
+
+  return "This moderation action isn't allowed for the current photographer state.";
+}
+
+async function assertAllowedPhotographerReviewTransition(
+  photographer: PhotographerRecord,
+  nextStatus: ReviewPhotographerInput["status"],
+  executor: DBClient = db,
+) {
+  const moderationState = await getPhotographerModerationState(
+    photographer,
+    executor,
+  );
+
+  if (canReviewPhotographerWithStatus(moderationState, nextStatus)) {
+    return moderationState;
+  }
+
+  throw new ForbiddenError(
+    getInvalidReviewTransitionMessage(moderationState),
+  );
+}
+
 async function buildAdminPhotographerReviewEntry(
   photographer: PhotographerRecord,
   executor: DBClient = db,
 ): Promise<AdminPhotographerReviewEntry> {
   const [contact, specialities, uploads] = await Promise.all([
-    photographerContactDal.getByPhotographerId(photographer.id, executor),
+    photographerContactController.getPhotographerContactByPhotographerId(
+      photographer.id,
+      executor,
+    ),
     photographerSpecialityDal.getByPhotographerId(photographer.id, executor),
     photographerUploadDal.getByPhotographerId(photographer.id, executor),
   ]);
@@ -511,6 +578,7 @@ export const photographerController = {
   ) {
     return db.transaction(async (tx) => {
       const existing = await ensurePhotographerByUserId(userId, tx);
+      await assertPhotographerCanSaveOnboardingStep(existing, input.step, tx);
 
       switch (input.step) {
         case ONBOARDING_STEPS[0]: {
@@ -571,7 +639,11 @@ export const photographerController = {
         }
 
         case ONBOARDING_STEPS[3]: {
-          await upsertPhotographerContact(existing.id, input.contact, tx);
+          await photographerContactController.savePhotographerContactByPhotographerId(
+            existing.id,
+            input.contact,
+            tx,
+          );
           const shouldKeepApprovedState = isApprovedPhotographer(existing);
 
           const photographer = await updatePhotographerRecord(
@@ -689,6 +761,12 @@ export const photographerController = {
         throw new NotFoundError("Photographer not found");
       }
 
+      await assertAllowedPhotographerReviewTransition(
+        photographer,
+        input.status,
+        tx,
+      );
+
       if (input.status === "approved") {
         await assertReadyForPublication(photographer, tx);
       }
@@ -726,6 +804,7 @@ export const photographerController = {
     input: UpdatePhotographerProfileInput,
   ) {
     const existing = await getPhotographerByUserIdOrThrow(userId);
+    assertApprovedPhotographerEditPermission(existing, "profile");
     const onboardingStep = getProgressedOnboardingStep(
       existing.onboardingStep,
       PROFILE_COMPLETED_STEP,

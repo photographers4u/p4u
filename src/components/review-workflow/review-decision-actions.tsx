@@ -3,10 +3,12 @@
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import type { PhotographerReviewDecisionStatus } from "@/lib/photographer-status";
 import { Button } from "@/components/ui/button";
 import { FieldDescription, FieldError } from "@/components/ui/field";
 
 export function ReviewDecisionActions({
+  allowedTransitions,
   id,
   entityLabel,
   approveLabel,
@@ -17,6 +19,7 @@ export function ReviewDecisionActions({
   currentStatus,
   submitReview,
 }: {
+  allowedTransitions: PhotographerReviewDecisionStatus[];
   id: string;
   entityLabel: string;
   approveLabel: string;
@@ -50,11 +53,15 @@ export function ReviewDecisionActions({
   const [showRejectReason, setShowRejectReason] = useState(false);
 
   const reviewStatus = currentStatus ?? "pending";
+  const canApprove = allowedTransitions.includes("approved");
   const isAlreadyApproved = reviewStatus === "approved";
   const isCurrentlyRejected = reviewStatus === "rejected";
   const isCurrentlyOnHold = reviewStatus === "on_hold";
-  const nextReasonStatus =
-    isAlreadyApproved || isCurrentlyOnHold ? "on_hold" : "rejected";
+  const nextReasonStatus = allowedTransitions.includes("on_hold")
+    ? "on_hold"
+    : allowedTransitions.includes("rejected")
+      ? "rejected"
+      : null;
   const isHoldFlow = nextReasonStatus === "on_hold";
   const isBusy = isApproving || isRejecting;
   const normalizedEntityLabel = entityLabel.toLowerCase();
@@ -108,6 +115,10 @@ export function ReviewDecisionActions({
         };
 
   async function handleApprove() {
+    if (!canApprove) {
+      return;
+    }
+
     setError(null);
     setShowRejectReason(false);
     setIsApproving(true);
@@ -130,6 +141,10 @@ export function ReviewDecisionActions({
   }
 
   async function handleReject() {
+    if (!nextReasonStatus) {
+      return;
+    }
+
     const trimmedReason = rejectionReason.trim();
 
     if (!trimmedReason) {
@@ -161,6 +176,10 @@ export function ReviewDecisionActions({
   }
 
   function openRejectReason() {
+    if (!nextReasonStatus) {
+      return;
+    }
+
     setError(null);
     setShowRejectReason(true);
   }
@@ -174,6 +193,12 @@ export function ReviewDecisionActions({
   return (
     <div className="space-y-4">
       {error ? <FieldError errors={[{ message: error }]} /> : null}
+      {!canApprove && !nextReasonStatus ? (
+        <FieldDescription>
+          No moderation actions are available for this {normalizedEntityLabel}{" "}
+          right now.
+        </FieldDescription>
+      ) : null}
 
       {showRejectReason ? (
         <div className="space-y-2">
@@ -198,7 +223,7 @@ export function ReviewDecisionActions({
       ) : null}
 
       <div className="flex flex-wrap gap-3">
-        {!isAlreadyApproved && !showRejectReason && (
+        {canApprove && !isAlreadyApproved && !showRejectReason && (
           <Button
             type="button"
             onClick={() => void handleApprove()}
@@ -234,7 +259,7 @@ export function ReviewDecisionActions({
                   : rejectActionCopy.idle}
             </Button>
           </>
-        ) : (
+        ) : nextReasonStatus ? (
           <Button
             type="button"
             variant="destructive"
@@ -243,7 +268,7 @@ export function ReviewDecisionActions({
           >
             {rejectActionCopy.idle}
           </Button>
-        )}
+        ) : null}
       </div>
     </div>
   );

@@ -2,7 +2,6 @@ import z from "zod";
 import {
   CITIES,
   EXPERIENCE_YEARS,
-  emailSchema,
   idValueSchema,
   NAME_MAX_LENGTH,
   nullableTextSchema,
@@ -12,6 +11,10 @@ import {
   reviewEntitySchema,
   reviewStatusSchema,
 } from "@/zod/helpers";
+import {
+  savePhotographerContactSchema,
+  type SavePhotographerContactInput,
+} from "./photographer-contact";
 
 const BIO_MAX_LENGTH = 1000;
 
@@ -99,12 +102,6 @@ export const photographerOnboardingSpecialityInputSchema = z.object({
   startingPrice: startingPriceSchema,
 });
 
-export const photographerOnboardingContactInputSchema = z.object({
-  phone: requiredTextSchema("Phone"),
-  email: emailSchema,
-  isPublic: z.boolean().default(false),
-});
-
 export const photographerOnboardingUploadInputSchema = z.object({
   imageUrl: requiredTextSchema("Image"),
 });
@@ -133,7 +130,7 @@ const savePhotographerSpecialitiesStepSchema = z.object({
 
 const savePhotographerContactStepSchema = z.object({
   step: z.literal(ONBOARDING_STEPS[3]),
-  contact: photographerOnboardingContactInputSchema,
+  contact: savePhotographerContactSchema,
 });
 
 export const savePhotographerOnboardingStepSchema = z.discriminatedUnion(
@@ -195,9 +192,7 @@ export type SavePhotographerAvatarStepInput = z.infer<
 export type PhotographerOnboardingSpecialityInput = z.infer<
   typeof photographerOnboardingSpecialityInputSchema
 >;
-export type PhotographerOnboardingContactInput = z.infer<
-  typeof photographerOnboardingContactInputSchema
->;
+export type PhotographerOnboardingContactInput = SavePhotographerContactInput;
 export type PhotographerOnboardingUploadInput = z.infer<
   typeof photographerOnboardingUploadInputSchema
 >;

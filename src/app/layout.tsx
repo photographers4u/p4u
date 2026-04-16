@@ -6,6 +6,7 @@ import { BookmarkProvider } from "@/lib/bookmarks-context";
 import { inter } from "@/lib/fonts";
 import { siteConfig } from "@/config/site";
 import "./globals.css";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = siteConfig.metadata;
 
@@ -17,7 +18,7 @@ export default async function RootLayout({
   const session = await getAuthSession({ headers: await headers() });
 
   return (
-    <html lang="en" className={`${inter.className} h-full antialiased`}>
+    <html lang="en" className={cn("h-full", "antialiased", inter.className, "font-sans", inter.variable)}>
       <body className="min-h-full flex flex-col">
         <BookmarkProvider session={session}>{children}</BookmarkProvider>
         <Toaster position="top-center" />

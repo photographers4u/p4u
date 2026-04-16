@@ -2,6 +2,7 @@ import Link from "next/link";
 import PageHeader from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { isPhotographerPendingReview } from "@/lib/photographer-status";
 import { photographerController } from "@/server/db/controller/photographer";
 
 function getProfileInitials(name: string | null) {
@@ -20,6 +21,7 @@ function getProfileInitials(name: string | null) {
 function getStatusDetails(entry: {
   status: "pending" | "approved" | "rejected" | "on_hold";
   isPublished: boolean;
+  onboardingStep: 1 | 2 | 3 | 4;
   contact: { email: string } | null;
 }) {
   if (entry.status === "approved" || entry.isPublished) {
@@ -43,7 +45,7 @@ function getStatusDetails(entry: {
     };
   }
 
-  if (entry.contact) {
+  if (isPhotographerPendingReview(entry)) {
     return {
       label: "Pending review",
       variant: "secondary" as const,

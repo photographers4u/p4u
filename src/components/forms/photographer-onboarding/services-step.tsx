@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import type { AvailableSpecialityOption, OnboardingFormValues } from "./types";
 
 export function PhotographerOnboardingServicesStep({
+  canSubmit,
   availableSpecialities,
   errors,
   form,
@@ -23,6 +24,7 @@ export function PhotographerOnboardingServicesStep({
   errors: FieldErrors<OnboardingFormValues>;
   form: UseFormReturn<OnboardingFormValues>;
   isSaving: boolean;
+  canSubmit: boolean;
 }) {
   const specialitiesError = errors.specialities as
     | { message?: string }
@@ -72,35 +74,39 @@ export function PhotographerOnboardingServicesStep({
 
   return (
     <div className="space-y-7">
-        <div className="flex flex-wrap gap-2">
-          {availableSpecialities.map((speciality) => {
-            const isSelected = selectedSpecialityIdSet.has(speciality.id);
+      {canSubmit && (
+        <>
+          <div className="flex flex-wrap gap-2">
+            {availableSpecialities.map((speciality) => {
+              const isSelected = selectedSpecialityIdSet.has(speciality.id);
 
-            return (
-              <button
-                key={speciality.id}
-                type="button"
-                onClick={() => toggleSpeciality(speciality.id)}
-                disabled={isSaving}
-                aria-pressed={isSelected}
-                className={cn(
-                  "inline-flex h-8 cursor-pointer items-center rounded-full border px-3 text-[13px] font-medium transition-all outline-none focus-visible:ring-3 focus-visible:ring-ring/30 disabled:pointer-events-none disabled:opacity-50",
-                  isSelected
-                    ? "border-primary/25 bg-primary/10 text-primary shadow-sm"
-                    : "border-slate-200 bg-slate-50/70 text-slate-700 hover:border-slate-300 hover:bg-white",
-                )}
-              >
-                {speciality.name}
-              </button>
-            );
-          })}
-        </div>
+              return (
+                <button
+                  key={speciality.id}
+                  type="button"
+                  onClick={() => toggleSpeciality(speciality.id)}
+                  disabled={isSaving}
+                  aria-pressed={isSelected}
+                  className={cn(
+                    "inline-flex h-8 cursor-pointer items-center rounded-full border px-3 text-[13px] font-medium transition-all outline-none focus-visible:ring-3 focus-visible:ring-ring/30 disabled:pointer-events-none disabled:opacity-50",
+                    isSelected
+                      ? "border-primary/25 bg-primary/10 text-primary shadow-sm"
+                      : "border-slate-200 bg-slate-50/70 text-slate-700 hover:border-slate-300 hover:bg-white",
+                  )}
+                >
+                  {speciality.name}
+                </button>
+              );
+            })}
+          </div>
 
-        <p className="text-[13px] text-muted-foreground my-6 mx-1">
-          {selectedSpecialityIds.length === 0
-            ? "Select at least one speciality to unlock the pricing table."
-            : `${selectedSpecialityIds.length} selected. Add a starting price for each one below.`}
-        </p>
+          <p className="text-[13px] text-muted-foreground my-6 mx-1">
+            {selectedSpecialityIds.length === 0
+              ? "Select at least one speciality to unlock the pricing table."
+              : `${selectedSpecialityIds.length} selected. Add a starting price for each one below.`}
+          </p>
+        </>
+      )}
 
       {selectedSpecialities.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 p-4 text-sm text-muted-foreground">
@@ -108,7 +114,9 @@ export function PhotographerOnboardingServicesStep({
           table here.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white/70 backdrop-blur-sm mt-12">
+        <div
+          className={`overflow-hidden rounded-xl border border-slate-200/80 bg-white/70 backdrop-blur-sm ${canSubmit ? "mt-12" : "mt-0"}`}
+        >
           <div className="hidden gap-3 border-b border-slate-200/80 px-4 py-3 text-[13px] font-medium text-neutral-600 sm:grid sm:grid-cols-[minmax(0,1fr)_170px]">
             <div>Selected speciality</div>
             <div className="ml-1">Starting price</div>
@@ -126,7 +134,7 @@ export function PhotographerOnboardingServicesStep({
                 */}
                 <Field>
                   <FieldContent className="text-sm font-medium text-neutral-700 pl-1">
-                      {speciality.name}
+                    {speciality.name}
                   </FieldContent>
                 </Field>
 
@@ -162,18 +170,21 @@ export function PhotographerOnboardingServicesStep({
                           !!errors.specialities?.[formIndex]?.startingPrice
                         }
                         disabled={isSaving}
-                        {...form.register(`specialities.${formIndex}.startingPrice`, {
-                          onChange: (event) => {
-                            if (
-                              typeof event.target.value === "string" &&
-                              event.target.value.trim() !== ""
-                            ) {
-                              form.clearErrors(
-                                `specialities.${formIndex}.startingPrice`,
-                              );
-                            }
+                        {...form.register(
+                          `specialities.${formIndex}.startingPrice`,
+                          {
+                            onChange: (event) => {
+                              if (
+                                typeof event.target.value === "string" &&
+                                event.target.value.trim() !== ""
+                              ) {
+                                form.clearErrors(
+                                  `specialities.${formIndex}.startingPrice`,
+                                );
+                              }
+                            },
                           },
-                        })}
+                        )}
                       />
                     </div>
                   </FieldContent>

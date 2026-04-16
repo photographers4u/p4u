@@ -5,6 +5,7 @@ import type {
   Photographer,
   PhotographerOnboardingState,
 } from "@/zod/schema/photographer";
+import { PhotographerContact } from "@/zod/schema";
 
 type AccountApiResponse = {
   pendingEmail: string | null;
@@ -155,4 +156,21 @@ export async function getServerPhotographer(requestHeaders: Headers) {
   }
 
   return (await response.json()) as Photographer;
+}
+
+export async function getServerPhotographerContact(requestHeaders: Headers) {
+  const response = await fetchServerAPI(
+    requestHeaders,
+    "/api/photographer/contact",
+  );
+
+  if (response.status === 401 || response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error("Failed to load photographer contact.");
+  }
+
+  return (await response.json()) as PhotographerContact | null;
 }

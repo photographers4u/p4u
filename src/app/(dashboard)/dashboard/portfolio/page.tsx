@@ -1,311 +1,219 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { PhotographerOnboardingUnderReview } from "@/components/forms/photographer-onboarding/under-review";
+import { PhotographerContactUpdateForm } from "@/components/forms/photographer/contact";
+import { PhotographerOfferingsForm } from "@/components/forms/photographer/offerings";
+import { PhotographerProfileUpdateForm } from "@/components/forms/photographer/profile";
 import PageHeader from "@/components/page-header";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { getPhotographerPortfolioPageData } from "@/lib/photographer-panel";
 import {
   isApprovedPhotographer,
   isPhotographerPendingReview,
 } from "@/lib/photographer-status";
-import { getServerAccount } from "@/lib/server-api";
+import {
+  getServerPhotographer,
+  getServerPhotographerContact,
+  getServerPhotographerOnboarding,
+} from "@/lib/server-api";
+import { cn } from "@/lib/utils";
+import { auth } from "@/server/auth";
 import { specialityDal } from "@/server/db/dal/speciality";
-import type { PhotographerOnboardingState } from "@/zod/schema/photographer";
+import type { Photographer } from "@/zod/schema";
 
-function getProfileInitials(name: string | null) {
-  if (!name?.trim()) {
-    return "P";
-  }
+type PortfolioBanner = {
+  description: string;
+  message: string;
+  tone: "danger" | "info" | "warning";
+};
 
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
-}
-
-function getExperienceLabel(experienceYears: string | null) {
-  if (!experienceYears) {
-    return "Not added yet";
-  }
-
-  return experienceYears === "1"
-    ? "1 year experience"
-    : `${experienceYears} years experience`;
-}
-
-function getStatusDetails(state: PhotographerOnboardingState) {
-  if (isApprovedPhotographer(state)) {
+function getPortfolioBanner(
+  photographer: Photographer,
+): PortfolioBanner | null {
+  if (photographer.status === "pending") {
     return {
+      tone: "info",
+      message: "Your profile has been submitted for review.",
       description:
-        "Your approved photographer profile is locked here in read-only mode.",
-      label: "Approved",
-      variant: "default" as const,
+        "It is hidden from visitors right now and will go live after approval.",
     };
   }
 
-  if (state.status === "on_hold") {
+  if (photographer.status === "rejected") {
     return {
+      tone: "danger",
+      message: "Your profile has been rejected.",
       description:
-        "Your photographer profile is currently on hold and shown here in read-only mode.",
-      label: "On hold",
-      variant: "destructive" as const,
+        photographer.rejectionReason?.trim() ||
+        "It is not visible to visitors right now.",
     };
   }
 
-  if (state.status === "rejected") {
+  if (photographer.status === "on_hold") {
     return {
+      tone: "warning",
+      message: "Your profile is on hold.",
       description:
-        "Your photographer profile was rejected and is currently shown in read-only mode.",
-      label: "Rejected",
-      variant: "destructive" as const,
+        photographer.rejectionReason?.trim() ||
+        "It is currently hidden from visitors on the public page.",
     };
   }
 
-  return {
-    description:
-      "Your photographer profile is currently locked and shown in read-only mode.",
-    label: "Draft",
-    variant: "outline" as const,
-  };
+  return null;
 }
 
-function ReadOnlyField({ label, value }: { label: string; value: string }) {
+function PortfolioStatusBanner({ banner }: { banner: PortfolioBanner }) {
   return (
-    <div className="space-y-1.5">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-        {label}
-      </p>
-      <p className="text-sm leading-6 text-foreground">{value}</p>
+    <div
+      className={cn(
+        "absolute w-full inset-0 h-fit border-b px-4 py-3 text-sm",
+        banner.tone === "info" && "border-sky-300 bg-sky-50 text-sky-950",
+        banner.tone === "warning" &&
+          "border-orange-300 bg-orange-50 text-orange-950",
+        banner.tone === "danger" && "border-red-300 bg-red-50 text-red-950",
+      )}
+    >
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
+        <p className="font-semibold">{banner.message}</p>
+        <p className="mt-1 opacity-90">{banner.description}</p>
+      </div>
     </div>
+  );
+}
+
+function ContactSection({
+  canSubmit,
+  contact,
+}: {
+  canSubmit: boolean;
+  contact: Awaited<ReturnType<typeof getServerPhotographerContact>>;
+}) {
+  if (!contact) {
+    return null;
+  }
+
+  return (
+    <section className="space-y-6">
+      <div className="space-y-1">
+        <h2 className="text-xl font-bold">Contact Information</h2>
+        <p className="text-sm text-muted-foreground">
+          Update the details clients will use to reach you.
+        </p>
+      </div>
+
+      <PhotographerContactUpdateForm canSubmit={canSubmit} contact={contact} />
+    </section>
+  );
+}
+
+function OfferingsSection({
+  availableSpecialities,
+  canSubmit,
+  onboarding,
+}: {
+  availableSpecialities: Array<{
+    id: string;
+    name: string;
+  }>;
+  canSubmit: boolean;
+  onboarding: Awaited<ReturnType<typeof getServerPhotographerOnboarding>>;
+}) {
+  if (!onboarding) {
+    return null;
+  }
+
+  return (
+    <section className="space-y-6">
+      <div className="space-y-1">
+        <h2 className="text-xl font-bold">Offerings</h2>
+        <p className="text-sm text-muted-foreground">
+          Manage the specialities and starting prices shown on your photographer
+          profile.
+        </p>
+      </div>
+
+      <PhotographerOfferingsForm
+        availableSpecialities={availableSpecialities}
+        canSubmit={canSubmit}
+        onboarding={onboarding}
+      />
+    </section>
   );
 }
 
 export default async function PortfolioPage() {
   const requestHeaders = await headers();
-  const [{ onboarding }, account] = await Promise.all([
-    getPhotographerPortfolioPageData(requestHeaders),
-    getServerAccount(requestHeaders),
-  ]);
+  const session = await auth.api.getSession({ headers: requestHeaders });
 
-  if (!account?.user) {
+  if (!session) {
     redirect("/login");
   }
 
-  if (isPhotographerPendingReview(onboarding)) {
-    return <PhotographerOnboardingUnderReview />;
+  const photographer = await getServerPhotographer(requestHeaders);
+
+  if (!photographer) {
+    redirect("/onboarding");
   }
 
-  const availableSpecialities = await specialityDal.getAll();
-  const pageTitle = "Portfolio";
-  const pageSubtitle =
-    "All photographer details are shown together here in read-only mode.";
-  const status = getStatusDetails(onboarding);
-  const specialityNameById = new Map(
-    availableSpecialities.map((speciality) => [speciality.id, speciality.name]),
-  );
-  const specialityItems = onboarding.specialities.map((speciality) => ({
-    id: speciality.specialityId,
-    name:
-      specialityNameById.get(speciality.specialityId) ?? "Unknown speciality",
-    startingPrice: speciality.startingPrice,
-  }));
-  const contactDetails = onboarding.contact
-    ? {
-        email: onboarding.contact.email,
-        emailVerification: onboarding.contact.emailVerified
-          ? "Verified"
-          : "Not verified",
-        phone: onboarding.contact.phone,
-        visibility: onboarding.contact.isPublic
-          ? "Shown on the public profile"
-          : "Hidden from the public profile",
-      }
-    : null;
+  const [onboarding, contact] = await Promise.all([
+    getServerPhotographerOnboarding(requestHeaders),
+    getServerPhotographerContact(requestHeaders),
+  ]);
+
+  const isApproved = isApprovedPhotographer(photographer);
+  const isSubmittedForReview = isPhotographerPendingReview({
+    contact,
+    onboardingStep: photographer.onboardingStep,
+    status: photographer.status,
+  });
+  const shouldShowReviewForms =
+    photographer.status === "on_hold" ||
+    photographer.status === "rejected" ||
+    isSubmittedForReview;
+
+  if (photographer.status === "pending" && !isSubmittedForReview) {
+    redirect("/onboarding");
+  }
+
+  if ((isApproved || shouldShowReviewForms) && !onboarding) {
+    redirect("/onboarding");
+  }
+
+  const availableSpecialities = shouldShowReviewForms
+    ? await specialityDal.getAll()
+    : [];
+  const banner = getPortfolioBanner(photographer);
+  const canEditProfile = isApproved;
+  const shouldShowForms = isApproved || shouldShowReviewForms;
 
   return (
     <div className="space-y-8">
-      <PageHeader title={pageTitle} subtitle={pageSubtitle} />
+      {banner ? <PortfolioStatusBanner banner={banner} /> : null}
 
-      <Card className="border border-border/70 shadow-sm">
-        <CardHeader className="border-b">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex items-start gap-4">
-              <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-muted text-xl font-semibold text-foreground/80">
-                {onboarding.avatar ? (
-                  <>
-                    {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
-                    <img
-                      src={onboarding.avatar}
-                      alt={onboarding.name ?? "Photographer avatar"}
-                      className="h-full w-full object-cover"
-                    />
-                  </>
-                ) : (
-                  getProfileInitials(onboarding.name)
-                )}
-              </div>
+      <PageHeader
+        className={photographer.status === "approved" ? "" : "mt-10"}
+        title="Photographer Profile"
+        subtitle="Control how you appear to visitors."
+      />
 
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <CardTitle>
-                    {onboarding.name ?? "Your photographer profile"}
-                  </CardTitle>
-                  <Badge variant={status.variant}>{status.label}</Badge>
-                </div>
-                <CardDescription>{status.description}</CardDescription>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="grid gap-6 pt-6 md:grid-cols-2">
-          <ReadOnlyField
-            label="Bio"
-            value={
-              onboarding.bio?.trim()
-                ? onboarding.bio
-                : "No bio has been added yet."
-            }
+      {shouldShowForms ? (
+        <div className="max-w-3xl space-y-12">
+          <PhotographerProfileUpdateForm
+            canSubmit={canEditProfile}
+            profile={photographer}
           />
-          <ReadOnlyField
-            label="City"
-            value={onboarding.locationCity ?? "Not added yet"}
-          />
-          <ReadOnlyField
-            label="Country"
-            value={onboarding.locationCountry || "india"}
-          />
-          <ReadOnlyField
-            label="Experience"
-            value={getExperienceLabel(onboarding.experienceYears)}
-          />
-        </CardContent>
-      </Card>
-
-      {(onboarding.status === "rejected" || onboarding.status === "on_hold") &&
-      onboarding.rejectionReason ? (
-        <Card className="border border-destructive/20 bg-destructive/10 shadow-sm">
-          <CardHeader className="border-b border-destructive/20">
-            <CardTitle className="text-destructive">Review feedback</CardTitle>
-            <CardDescription className="text-destructive/80">
-              {onboarding.status === "on_hold"
-                ? "This reason was shared by the admin when the profile was put on hold."
-                : "This reason was shared by the admin when the profile was rejected."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <p className="text-sm leading-6 text-destructive">
-              {onboarding.rejectionReason}
-            </p>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <Card className="border border-border/70 shadow-sm">
-        <CardHeader className="border-b">
-          <CardTitle>Contact details</CardTitle>
-          <CardDescription>
-            Photographer contact information currently saved on the profile.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-6 pt-6 md:grid-cols-2">
-          {contactDetails ? (
-            <>
-              <ReadOnlyField label="Phone" value={contactDetails.phone} />
-              <ReadOnlyField label="Email" value={contactDetails.email} />
-              <ReadOnlyField
-                label="Email status"
-                value={contactDetails.emailVerification}
-              />
-              <ReadOnlyField
-                label="Visibility"
-                value={contactDetails.visibility}
-              />
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No contact details have been added yet.
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="border border-border/70 shadow-sm">
-        <CardHeader className="border-b">
-          <CardTitle>Specialities</CardTitle>
-          <CardDescription>
-            Services and starting prices currently attached to this portfolio.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6">
-          {specialityItems.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No specialities have been added yet.
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-2.5">
-              {specialityItems.map((speciality) => (
-                <div
-                  key={speciality.id}
-                  className="rounded-full border border-border/70 bg-muted/40 px-4 py-2"
-                >
-                  <p className="text-sm font-medium text-foreground">
-                    {speciality.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    From Rs. {speciality.startingPrice}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="space-y-4">
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold tracking-tight">
-            Portfolio images
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Every portfolio image currently linked to this photographer profile.
-          </p>
+          <ContactSection canSubmit={canEditProfile} contact={contact} />
+          {shouldShowReviewForms ? (
+            <OfferingsSection
+              availableSpecialities={availableSpecialities.map(
+                (speciality) => ({
+                  id: speciality.id,
+                  name: speciality.name,
+                }),
+              )}
+              canSubmit={canEditProfile}
+              onboarding={onboarding}
+            />
+          ) : null}
         </div>
-
-        {onboarding.uploads.length === 0 ? (
-          <div className="rounded-4xl border border-dashed border-border/70 bg-muted/20 px-6 py-8 text-sm text-muted-foreground">
-            No portfolio images have been added yet.
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {onboarding.uploads.map((upload, index) => (
-              <Card
-                key={`${upload.imageUrl}-${index}`}
-                className="border border-border/70 shadow-sm"
-              >
-                <CardContent className="p-0">
-                  <div className="aspect-4/3 overflow-hidden">
-                    {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
-                    <img
-                      src={upload.imageUrl}
-                      alt={`Portfolio upload ${index + 1}`}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+      ) : null}
     </div>
   );
 }

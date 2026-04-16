@@ -6,13 +6,21 @@ import {
   requiredTextSchema,
 } from "@/zod/helpers";
 
-const photographerContactBaseShape = {
-  photographerId: idValueSchema,
+const photographerContactInputShape = {
   phone: requiredTextSchema("Phone"),
   email: emailSchema,
-  emailVerified: z.boolean().default(false),
   isPublic: z.boolean().default(false),
 };
+
+const photographerContactBaseShape = {
+  photographerId: idValueSchema,
+  ...photographerContactInputShape,
+  emailVerified: z.boolean().default(false),
+};
+
+export const savePhotographerContactSchema = z.object(
+  photographerContactInputShape,
+);
 
 export const photographerContactBaseSchema = z.object(
   photographerContactBaseShape,
@@ -30,6 +38,9 @@ export const updatePhotographerContactSchema =
 export type PhotographerContact = z.infer<typeof photographerContactSchema>;
 export type CreatePhotographerContactInput = z.infer<
   typeof createPhotographerContactSchema
+>;
+export type SavePhotographerContactInput = z.infer<
+  typeof savePhotographerContactSchema
 >;
 export type UpdatePhotographerContactInput = z.infer<
   typeof updatePhotographerContactSchema

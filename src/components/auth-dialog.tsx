@@ -22,9 +22,9 @@ export function AuthDialog({
   callbackUrl?: string;
 }) {
   return (
-    <AlertDialog>
+      <AlertDialog>
       <AlertDialogTrigger asChild>{button}</AlertDialogTrigger>
-      <AlertDialogContent className="p-8" size="lg">
+      <AlertDialogContent className="p-8">
         <AlertDialogCancel
           variant="secondary"
           size="icon-sm"

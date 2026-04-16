@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/sidebar";
 import { siteConfig } from "@/config/site";
 import type { AuthClientUser } from "@/lib/auth-client";
+import { isApprovedPhotographer } from "@/lib/photographer-status";
 import type { Photographer } from "@/zod/schema/photographer";
 import { NavMain } from "./nav-main";
 
@@ -85,19 +86,44 @@ const adminData = [
   },
 ];
 
-const photographerGroup = {
-  label: "Photographer",
-  items: [
+function getPhotographerGroup(photographer: Photographer | null) {
+  if (!photographer) {
+    return {
+      label: "Photographer",
+      items: [
+        {
+          title: "Become Photographer",
+          url: "/onboarding" as Route,
+          icon: Camera,
+        },
+      ],
+    };
+  }
+
+  const items = [
     {
       title: "Portfolio",
       url: "/dashboard/portfolio" as Route,
       icon: Camera,
     },
-  ],
-};
+  ];
+
+  if (isApprovedPhotographer(photographer)) {
+    items.push({
+      title: "Offerings",
+      url: "/dashboard/offerings" as Route,
+      icon: Layers3,
+    });
+  }
+
+  return {
+    label: "Photographer",
+    items,
+  };
+}
 
 export function UserSidebar({
-  photographer: _photographer,
+  photographer,
   user,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
@@ -112,7 +138,7 @@ export function UserSidebar({
   const showAdminGroups = isAdminRoute;
   const groups = [
     ...(showDashboardGroups ? getDashboardData() : []),
-    ...(showDashboardGroups ? [photographerGroup] : []),
+    ...(showDashboardGroups ? [getPhotographerGroup(photographer)] : []),
     ...(showAdminGroups ? adminData : []),
     ...(showDashboardGroups || showAdminGroups ? [accountGroup] : []),
   ];

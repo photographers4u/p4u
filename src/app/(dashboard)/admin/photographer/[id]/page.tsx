@@ -12,6 +12,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  getAllowedPhotographerReviewStatuses,
+  isPhotographerPendingReview,
+} from "@/lib/photographer-status";
+import {
   type AdminPhotographerReviewEntry,
   photographerController,
 } from "@/server/db/controller/photographer";
@@ -81,7 +85,7 @@ function getStatusDetails(entry: AdminPhotographerReviewEntry) {
     };
   }
 
-  if (entry.contact) {
+  if (isPhotographerPendingReview(entry)) {
     return {
       description:
         "This photographer profile has been submitted and is waiting for review.",
@@ -122,6 +126,8 @@ export default async function AdminPhotographerDetailPage({
   try {
     const entry =
       await photographerController.getAdminPhotographerEntryById(id);
+    const allowedTransitions = getAllowedPhotographerReviewStatuses(entry);
+    const hasReviewActions = allowedTransitions.length > 0;
     const status = getStatusDetails(entry);
     const location = entry.locationCity
       ? `${entry.locationCity}, ${formatCountry(entry.locationCountry)}`
@@ -144,16 +150,23 @@ export default async function AdminPhotographerDetailPage({
           <CardHeader className="border-b">
             <CardTitle>Admin review</CardTitle>
             <CardDescription>
-              Approve pending or rejected profiles, put approved profiles on
-              hold with a reason, and release on-hold profiles when they can go
-              live again.
+              Only moderation actions that are valid for the photographer's
+              current state are shown here.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
-            <AdminPhotographerReviewActions
-              photographerId={entry.id}
-              currentStatus={entry.status}
-            />
+            {hasReviewActions ? (
+              <AdminPhotographerReviewActions
+                allowedTransitions={allowedTransitions}
+                photographerId={entry.id}
+                currentStatus={entry.status}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                This photographer is still a draft and can't be reviewed until
+                they submit the profile for moderation.
+              </p>
+            )}
           </CardContent>
         </Card>
 
