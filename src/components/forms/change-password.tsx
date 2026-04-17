@@ -8,6 +8,7 @@ import { z } from "zod";
 import { PasswordField } from "@/components/auth-ui";
 import { Button } from "@/components/ui/button";
 import { apiClient } from "@/lib/api-client";
+import { readApiResponse } from "@/lib/api-response";
 import { authClient } from "@/lib/auth-client";
 
 const changeSchema = z
@@ -107,17 +108,10 @@ export function ChangePasswordForm() {
     const response = await apiClient.account["set-password"].$post({
       json: { newPassword: values.newPassword },
     });
-    const payload = await response.json().catch(() => null);
+    const { errorMessage } = await readApiResponse(response);
 
     if (!response.ok) {
-      toast.error(
-        (payload &&
-        typeof payload === "object" &&
-        "message" in payload &&
-        typeof payload.message === "string"
-          ? payload.message
-          : null) ?? "Failed to set password. Try again.",
-      );
+      toast.error(errorMessage ?? "Failed to set password. Try again.");
       return;
     }
 

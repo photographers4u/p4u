@@ -2,6 +2,7 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import {
   type ApiAuthEnv,
+  getRequiredUser,
   requireAuth,
 } from "@/server/api/lib/require-auth-middleware";
 import { mapError } from "@/server/api/lib/route-helpers";
@@ -17,12 +18,7 @@ export const bookmarkRouter = new Hono<ApiAuthEnv>()
     requireAuth,
     zValidator("param", bookmarkIdentifierParamsSchema),
     async (c) => {
-      const user = c.get("user");
-
-      if (!user) {
-        return c.body(null, 401);
-      }
-
+      const user = getRequiredUser(c);
       const { identifier } = c.req.valid("param");
       const values = await bookmarkController.getValuesByIdentifier(
         user.id,
@@ -37,13 +33,8 @@ export const bookmarkRouter = new Hono<ApiAuthEnv>()
     requireAuth,
     zValidator("json", bookmarkToggleSchema),
     async (c) => {
-      const user = c.get("user");
-
-      if (!user) {
-        return c.body(null, 401);
-      }
-
       try {
+        const user = getRequiredUser(c);
         const result = await bookmarkController.toggleBookmark(
           user.id,
           c.req.valid("json"),

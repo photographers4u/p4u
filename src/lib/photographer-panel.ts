@@ -29,21 +29,3 @@ export async function getApprovedPhotographerPanelData(
     photographer,
   };
 }
-
-export async function getPhotographerPortfolioPageData(
-  requestHeaders: Headers,
-) {
-  const [photographer, onboarding] = await Promise.all([
-    getServerPhotographer(requestHeaders),
-    getServerPhotographerOnboarding(requestHeaders),
-  ]);
-
-  if (!onboarding) {
-    redirect("/login");
-  }
-
-  return {
-    onboarding,
-    photographer,
-  };
-}

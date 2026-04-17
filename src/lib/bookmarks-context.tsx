@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { getApiErrorMessage } from "@/lib/api-error";
 import { apiClient } from "@/lib/api-client";
+import { readApiResponse } from "@/lib/api-response";
 import type { AuthClientSession } from "@/lib/auth-client";
 import { bookmarkIdentifierValues } from "@/zod/helpers";
 import type { BookmarkIdentifier } from "@/zod/schema/bookmark";
@@ -69,20 +69,15 @@ export function BookmarkProvider({
           const response = await apiClient.bookmark[":identifier"].$get({
             param: { identifier },
           });
-          const payload = await response.json().catch(() => null);
+          const { errorMessage, payload } = await readApiResponse<{
+            values?: string[];
+          }>(response);
 
           if (!response.ok) {
-            throw new Error(
-              getApiErrorMessage(payload) ?? "Couldn't load bookmarks.",
-            );
+            throw new Error(errorMessage ?? "Couldn't load bookmarks.");
           }
 
-          if (
-            payload &&
-            typeof payload === "object" &&
-            "values" in payload &&
-            Array.isArray(payload.values)
-          ) {
+          if (Array.isArray(payload?.values)) {
             nextBookmarks[identifier] = payload.values.filter(
               (value): value is string => typeof value === "string",
             );
@@ -144,12 +139,12 @@ export function BookmarkProvider({
           value: normalizedValue,
         },
       });
-      const payload = await response.json().catch(() => null);
+      const { errorMessage, payload } = await readApiResponse<{
+        isBookmarked?: boolean;
+      }>(response);
 
       if (!response.ok) {
-        toast.error(
-          getApiErrorMessage(payload) ?? "Couldn't update the bookmark.",
-        );
+        toast.error(errorMessage ?? "Couldn't update the bookmark.");
         return null;
       }
 

@@ -20,7 +20,6 @@ import { photographerUploadDal } from "@/server/db/dal/photographer-upload";
 import { specialityDal } from "@/server/db/dal/speciality";
 import {
   BadRequestError,
-  ConflictError,
   ForbiddenError,
   InternalError,
   NotFoundError,
@@ -28,7 +27,6 @@ import {
 import { email } from "@/server/email";
 import { ONBOARDING_STEPS } from "@/zod/helpers";
 import type {
-  CreatePhotographerProfileInput,
   PhotographerOnboardingSpecialityInput,
   PhotographerOnboardingState,
   ReviewPhotographerInput,
@@ -140,21 +138,6 @@ function toPublicPhotographer(photographer: PhotographerRecord) {
     experienceYears: photographer.experienceYears,
     createdAt: photographer.createdAt,
     updatedAt: photographer.updatedAt,
-  };
-}
-
-function buildCreatePhotographerData(
-  userId: string,
-  input: CreatePhotographerProfileInput,
-) {
-  return {
-    userId,
-    ...input,
-    bio: input.bio?.trim() ? input.bio : null,
-    locationCountry: input.locationCountry ?? DEFAULT_LOCATION_COUNTRY,
-    onboardingStep: PROFILE_ONBOARDING_STEP,
-    isPublished: false,
-    status: "draft" as const,
   };
 }
 
@@ -643,12 +626,10 @@ export const photographerController = {
     userId: string,
     input: SavePhotographerAvatarStepInput,
   ) {
-    const onboarding = await this.savePhotographerOnboardingStep(userId, {
+    return this.savePhotographerOnboardingStep(userId, {
       step: AVATAR_ONBOARDING_STEP,
       avatar: input.avatar,
     });
-
-    return onboarding;
   },
 
   async savePhotographerOnboardingStep(
@@ -757,27 +738,6 @@ export const photographerController = {
           throw new BadRequestError("Invalid onboarding step");
       }
     });
-  },
-
-  async createPhotographer(
-    userId: string,
-    input: CreatePhotographerProfileInput,
-  ) {
-    const existing = await photographerDal.getByUserId(userId);
-
-    if (existing) {
-      throw new ConflictError("Photographer already exists for this user");
-    }
-
-    const photographer = await photographerDal.create(
-      buildCreatePhotographerData(userId, input),
-    );
-
-    if (!photographer) {
-      throw new InternalError("Failed to create photographer");
-    }
-
-    return photographer;
   },
 
   async getPhotographerByUserId(userId: string) {

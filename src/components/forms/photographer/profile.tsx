@@ -23,8 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { getApiErrorMessage } from "@/lib/api-error";
 import { apiClient } from "@/lib/api-client";
+import { readApiResponse } from "@/lib/api-response";
 import { CITIES, EXPERIENCE_YEARS } from "@/zod/helpers";
 import { type Photographer, updatePhotographerSchema } from "@/zod/schema";
 import { AvatarUploadField } from "../avatar-upload-field";
@@ -95,11 +95,13 @@ export function PhotographerProfileUpdateForm({
     const response = await apiClient.photographer.$patch({
       json: values,
     });
-    const payload = await response.json().catch(() => null);
+    const { errorMessage, payload } = await readApiResponse<Photographer>(
+      response,
+    );
 
     if (!response.ok) {
       toast.error(
-        getApiErrorMessage(payload) ?? "Couldn't update photographer profile.",
+        errorMessage ?? "Couldn't update photographer profile.",
       );
       return;
     }

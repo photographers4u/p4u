@@ -13,11 +13,14 @@ import {
 } from "@/components/ui/card";
 import {
   getAllowedPhotographerReviewStatuses,
-  isApprovedPhotographer,
-  isPhotographerSubmittedForReview,
 } from "@/lib/photographer-status";
 import {
-  type AdminPhotographerReviewEntry,
+  formatPhotographerCountry,
+  formatPhotographerExperience,
+  getPhotographerStatusViewModel,
+  getProfileInitials,
+} from "@/lib/photographer-presentation";
+import {
   photographerController,
 } from "@/server/db/controller/photographer";
 import { NotFoundError } from "@/server/db/helpers/errors";
@@ -25,82 +28,6 @@ import { NotFoundError } from "@/server/db/helpers/errors";
 const adminDateFormatter = new Intl.DateTimeFormat("en", {
   dateStyle: "medium",
 });
-
-function getProfileInitials(name: string | null) {
-  if (!name?.trim()) {
-    return "P";
-  }
-
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
-}
-
-function getExperienceLabel(experienceYears: string | null) {
-  if (!experienceYears) {
-    return "Not added yet";
-  }
-
-  return experienceYears === "1"
-    ? "1 year experience"
-    : `${experienceYears} years experience`;
-}
-
-function formatCountry(country: string) {
-  if (!country.trim()) {
-    return "Not added yet";
-  }
-
-  return `${country.charAt(0).toUpperCase()}${country.slice(1)}`;
-}
-
-function getStatusDetails(entry: AdminPhotographerReviewEntry) {
-  if (isApprovedPhotographer(entry)) {
-    return {
-      description: entry.isPublished
-        ? "Approved and currently visible in the public photographer directory."
-        : "Approved, but not currently visible in the public directory.",
-      label: "Approved",
-      variant: "default" as const,
-    };
-  }
-
-  if (entry.status === "on_hold") {
-    return {
-      description:
-        "This photographer profile was previously live and is currently on hold.",
-      label: "On hold",
-      variant: "destructive" as const,
-    };
-  }
-
-  if (entry.status === "rejected") {
-    return {
-      description:
-        "This photographer profile was rejected before it could go live.",
-      label: "Rejected",
-      variant: "destructive" as const,
-    };
-  }
-
-  if (isPhotographerSubmittedForReview(entry)) {
-    return {
-      description:
-        "This photographer profile has been submitted and is waiting for review.",
-      label: "Submitted",
-      variant: "secondary" as const,
-    };
-  }
-
-  return {
-    description: "This photographer profile is still in draft mode.",
-    label: "Draft",
-    variant: "outline" as const,
-  };
-}
 
 function ReadOnlyField({ label, value }: { label: string; value: string }) {
   return (
@@ -150,10 +77,10 @@ export default async function AdminPhotographerDetailPage({
       await photographerController.getAdminPhotographerEntryById(id);
     const allowedTransitions = getAllowedPhotographerReviewStatuses(entry);
     const hasReviewActions = allowedTransitions.length > 0;
-    const status = getStatusDetails(entry);
+    const status = getPhotographerStatusViewModel(entry);
     const location = entry.locationCity
-      ? `${entry.locationCity}, ${formatCountry(entry.locationCountry)}`
-      : formatCountry(entry.locationCountry);
+      ? `${entry.locationCity}, ${formatPhotographerCountry(entry.locationCountry)}`
+      : formatPhotographerCountry(entry.locationCountry);
 
     return (
       <div className="space-y-8">
@@ -217,14 +144,14 @@ export default async function AdminPhotographerDetailPage({
                     <CardTitle>
                       {entry.name ?? "Untitled photographer profile"}
                     </CardTitle>
-                    <Badge variant={status.variant}>{status.label}</Badge>
+                    <Badge variant={status.badgeVariant}>{status.label}</Badge>
                     <Badge
                       variant={entry.isPublished ? "secondary" : "outline"}
                     >
                       {entry.isPublished ? "Live" : "Hidden"}
                     </Badge>
                   </div>
-                  <CardDescription>{status.description}</CardDescription>
+                  <CardDescription>{status.adminDescription}</CardDescription>
                 </div>
               </div>
             </div>
@@ -242,11 +169,11 @@ export default async function AdminPhotographerDetailPage({
             />
             <ReadOnlyField
               label="Country"
-              value={formatCountry(entry.locationCountry)}
+              value={formatPhotographerCountry(entry.locationCountry)}
             />
             <ReadOnlyField
               label="Experience"
-              value={getExperienceLabel(entry.experienceYears)}
+              value={formatPhotographerExperience(entry.experienceYears)}
             />
           </CardContent>
         </Card>

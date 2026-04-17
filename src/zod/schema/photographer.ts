@@ -98,14 +98,6 @@ export const createPhotographerSchema = z
     experienceYears: photographerProfileInputShape.experienceYears.optional(),
   });
 
-export const createPhotographerProfileSchema = z
-  .object(photographerProfileInputShape)
-  .extend({
-    avatar: photographerProfileInputShape.avatar.optional(),
-    bio: photographerProfileInputShape.bio.optional(),
-    experienceYears: photographerProfileInputShape.experienceYears.optional(),
-  });
-
 export const updatePhotographerSchema = createPhotographerSchema.partial();
 
 export const updatePhotographerProfileSchema = updatePhotographerSchema.omit({
@@ -241,9 +233,6 @@ export const reviewPhotographerSchema = reviewDecisionSchema({
 export type Photographer = z.infer<typeof photographerSchema>;
 export type CreatePhotographerInput = z.infer<typeof createPhotographerSchema>;
 export type UpdatePhotographerInput = z.infer<typeof updatePhotographerSchema>;
-export type CreatePhotographerProfileInput = z.infer<
-  typeof createPhotographerProfileSchema
->;
 export type SavePhotographerAvatarStepInput = z.infer<
   typeof savePhotographerAvatarStepSchema
 >;

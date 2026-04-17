@@ -15,8 +15,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { getApiErrorMessage } from "@/lib/api-error";
 import { apiClient } from "@/lib/api-client";
+import { readApiResponse } from "@/lib/api-response";
 
 export function DeleteItemButton({
   itemId,
@@ -37,10 +37,10 @@ export function DeleteItemButton({
           id: itemId,
         },
       });
-      const payload = await response.json().catch(() => null);
+      const { errorMessage } = await readApiResponse(response);
 
       if (!response.ok) {
-        toast.error(getApiErrorMessage(payload) ?? "Couldn't delete the item.");
+        toast.error(errorMessage ?? "Couldn't delete the item.");
         setIsDeleting(false);
         return;
       }

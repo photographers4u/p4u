@@ -2,7 +2,7 @@
 
 import type { Route } from "next";
 import { apiClient } from "@/lib/api-client";
-import { getApiErrorMessage } from "@/lib/api-error";
+import { readApiResponse } from "@/lib/api-response";
 import type { PhotographerReviewDecisionStatus } from "@/lib/photographer-status";
 import type { ReviewPhotographerInput } from "@/zod/schema/photographer";
 import { ReviewDecisionActions } from "./review-decision-actions";
@@ -40,15 +40,13 @@ export function AdminPhotographerReviewActions({
           param: { id },
           json: data as ReviewPhotographerInput,
         });
-        const payload = await response.json().catch(() => null);
+        const { errorMessage } = await readApiResponse(response);
 
         if (!response.ok) {
           return {
             ok: false as const,
             status: response.status,
-            error:
-              getApiErrorMessage(payload) ??
-              "We couldn't save the review decision.",
+            error: errorMessage ?? "We couldn't save the review decision.",
           };
         }
 

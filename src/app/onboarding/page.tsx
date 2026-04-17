@@ -2,37 +2,28 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { CreatePhotographerForm } from "@/components/forms/create-photographer-form";
 import PageHeader from "@/components/page-header";
-import {
-  isApprovedPhotographer,
-  isPhotographerSubmittedForReview,
-} from "@/lib/photographer-status";
+import { getPhotographerStatusViewModel } from "@/lib/photographer-presentation";
 import {
   getServerAccount,
-  getServerPhotographer,
   getServerPhotographerOnboarding,
 } from "@/lib/server-api";
 import { specialityDal } from "@/server/db/dal/speciality";
 
 export default async function OnboardingPage() {
   const requestHeaders = await headers();
-  const [account, photographer, onboarding, availableSpecialities] =
-    await Promise.all([
-      getServerAccount(requestHeaders),
-      getServerPhotographer(requestHeaders),
-      getServerPhotographerOnboarding(requestHeaders),
-      specialityDal.getAll(),
-    ]);
+  const [account, onboarding, availableSpecialities] = await Promise.all([
+    getServerAccount(requestHeaders),
+    getServerPhotographerOnboarding(requestHeaders),
+    specialityDal.getAll(),
+  ]);
 
   if (!account?.user || !onboarding) {
     redirect("/login");
   }
 
-  if (
-    (photographer && isApprovedPhotographer(photographer)) ||
-    photographer?.status === "rejected" ||
-    photographer?.status === "on_hold" ||
-    isPhotographerSubmittedForReview(onboarding)
-  ) {
+  const photographerStatus = getPhotographerStatusViewModel(onboarding);
+
+  if (photographerStatus.shouldRedirectOnboardingToPortfolio) {
     redirect("/dashboard/portfolio");
   }
 

@@ -5,9 +5,9 @@ import { PhotographerOfferingsForm } from "@/components/forms/photographer/offer
 import { PhotographerProfileUpdateForm } from "@/components/forms/photographer/profile";
 import PageHeader from "@/components/page-header";
 import {
-  isApprovedPhotographer,
-  isPhotographerSubmittedForReview,
-} from "@/lib/photographer-status";
+  getPhotographerStatusViewModel,
+  type PhotographerPortfolioBanner,
+} from "@/lib/photographer-presentation";
 import {
   getServerPhotographer,
   getServerPhotographerContact,
@@ -16,50 +16,12 @@ import {
 import { cn } from "@/lib/utils";
 import { auth } from "@/server/auth";
 import { specialityDal } from "@/server/db/dal/speciality";
-import type { Photographer } from "@/zod/schema";
 
-type PortfolioBanner = {
-  description: string;
-  message: string;
-  tone: "danger" | "info" | "warning";
-};
-
-function getPortfolioBanner(
-  photographer: Photographer,
-): PortfolioBanner | null {
-  if (photographer.status === "submitted") {
-    return {
-      tone: "info",
-      message: "Your profile has been submitted for review.",
-      description:
-        "It is hidden from visitors right now and will go live after approval.",
-    };
-  }
-
-  if (photographer.status === "rejected") {
-    return {
-      tone: "danger",
-      message: "Your profile has been rejected.",
-      description:
-        photographer.rejectionReason?.trim() ||
-        "It is not visible to visitors right now.",
-    };
-  }
-
-  if (photographer.status === "on_hold") {
-    return {
-      tone: "warning",
-      message: "Your profile is on hold.",
-      description:
-        photographer.rejectionReason?.trim() ||
-        "It is currently hidden from visitors on the public page.",
-    };
-  }
-
-  return null;
-}
-
-function PortfolioStatusBanner({ banner }: { banner: PortfolioBanner }) {
+function PortfolioStatusBanner({
+  banner,
+}: {
+  banner: PhotographerPortfolioBanner;
+}) {
   return (
     <div
       className={cn(
@@ -156,35 +118,30 @@ export default async function PortfolioPage() {
     getServerPhotographerOnboarding(requestHeaders),
     getServerPhotographerContact(requestHeaders),
   ]);
+  const photographerStatus = getPhotographerStatusViewModel(photographer);
 
-  const isApproved = isApprovedPhotographer(photographer);
-  const isSubmittedForReview = isPhotographerSubmittedForReview(photographer);
-  const shouldShowReviewForms =
-    photographer.status === "on_hold" ||
-    photographer.status === "rejected" ||
-    isSubmittedForReview;
-
-  if (photographer.status === "draft") {
+  if (photographerStatus.shouldRedirectPortfolioToOnboarding) {
     redirect("/onboarding");
   }
 
-  if ((isApproved || shouldShowReviewForms) && !onboarding) {
+  if (photographerStatus.shouldShowPortfolioForms && !onboarding) {
     redirect("/onboarding");
   }
 
-  const availableSpecialities = shouldShowReviewForms
+  const availableSpecialities = !photographerStatus.canEditApprovedProfile
     ? await specialityDal.getAll()
     : [];
-  const banner = getPortfolioBanner(photographer);
-  const canEditProfile = isApproved;
-  const shouldShowForms = isApproved || shouldShowReviewForms;
+  const canEditProfile = photographerStatus.canEditApprovedProfile;
+  const shouldShowForms = photographerStatus.shouldShowPortfolioForms;
 
   return (
     <div className="space-y-8">
-      {banner ? <PortfolioStatusBanner banner={banner} /> : null}
+      {photographerStatus.portfolioBanner ? (
+        <PortfolioStatusBanner banner={photographerStatus.portfolioBanner} />
+      ) : null}
 
       <PageHeader
-        className={isApproved ? "" : "mt-10"}
+        className={photographerStatus.isApproved ? "" : "mt-10"}
         title="Photographer Profile"
         subtitle="Control how you appear to visitors."
       />
@@ -196,7 +153,7 @@ export default async function PortfolioPage() {
             profile={photographer}
           />
           <ContactSection canSubmit={canEditProfile} contact={contact} />
-          {shouldShowReviewForms ? (
+          {!photographerStatus.canEditApprovedProfile ? (
             <OfferingsSection
               availableSpecialities={availableSpecialities.map(
                 (speciality) => ({

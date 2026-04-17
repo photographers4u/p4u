@@ -2,6 +2,7 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono, type Context } from "hono";
 import {
   type ApiAuthEnv,
+  getRequiredUser,
   requireAuth,
 } from "@/server/api/lib/require-auth-middleware";
 import { mapError } from "@/server/api/lib/route-helpers";
@@ -9,9 +10,9 @@ import { itemController } from "@/server/db/controller/item";
 import { createItemSchema, updateItemSchema } from "@/zod/schema/item";
 
 function ensureAdmin(c: Context<ApiAuthEnv>) {
-  const user = c.get("user");
+  const user = getRequiredUser(c);
 
-  if (!user || user.role !== "admin") {
+  if (user.role !== "admin") {
     return c.json({ message: "Only admins can manage items." }, 403);
   }
 

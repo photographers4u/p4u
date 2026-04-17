@@ -2,9 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { type Path, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import type { ZodError } from "zod";
+import {
+  applyValidationErrors,
+  buildSpecialitiesStepPayload,
+} from "@/components/forms/photographer-onboarding/form-helpers";
 import { PhotographerOnboardingServicesStep } from "@/components/forms/photographer-onboarding/services-step";
 import {
   type AvailableSpecialityOption,
@@ -14,43 +17,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { apiClient } from "@/lib/api-client";
 import { getApiErrorMessage } from "@/lib/api-error";
-import { ONBOARDING_STEPS } from "@/zod/helpers";
+import { readApiResponse } from "@/lib/api-response";
 import {
   type PhotographerOnboardingState,
   savePhotographerOnboardingStepSchema,
 } from "@/zod/schema/photographer";
-
-function buildSpecialitiesStepPayload(values: OnboardingFormValues) {
-  const selectedSpecialityIds = new Set(values.selectedSpecialityIds);
-
-  return {
-    step: ONBOARDING_STEPS[2],
-    specialities: values.specialities
-      .filter((speciality) =>
-        selectedSpecialityIds.has(speciality.specialityId),
-      )
-      .map((speciality) => ({
-        specialityId: speciality.specialityId,
-        startingPrice: speciality.startingPrice,
-      })),
-  };
-}
-
-function applyValidationErrors(
-  errors: ZodError,
-  form: ReturnType<typeof useForm<OnboardingFormValues>>,
-) {
-  for (const issue of errors.issues) {
-    if (issue.path.length === 0) {
-      continue;
-    }
-
-    form.setError(issue.path.join(".") as Path<OnboardingFormValues>, {
-      message: issue.message,
-      type: "manual",
-    });
-  }
-}
 
 export function PhotographerOfferingsForm({
   availableSpecialities,
@@ -98,7 +69,8 @@ export function PhotographerOfferingsForm({
     const response = await apiClient.photographer.onboarding.$patch({
       json: parsedPayload.data,
     });
-    const responsePayload = await response.json().catch(() => null);
+    const { payload: responsePayload } =
+      await readApiResponse<PhotographerOnboardingState>(response);
 
     if (!response.ok || !responsePayload) {
       toast.error(

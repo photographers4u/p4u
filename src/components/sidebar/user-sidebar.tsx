@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/sidebar";
 import { siteConfig } from "@/config/site";
 import type { AuthClientUser } from "@/lib/auth-client";
-import { isApprovedPhotographer } from "@/lib/photographer-status";
+import { getPhotographerStatusViewModel } from "@/lib/photographer-presentation";
 import type { Photographer } from "@/zod/schema/photographer";
 import { NavMain } from "./nav-main";
 
@@ -107,8 +107,9 @@ function getPhotographerGroup(photographer: Photographer | null) {
       icon: Camera,
     },
   ];
+  const photographerStatus = getPhotographerStatusViewModel(photographer);
 
-  if (isApprovedPhotographer(photographer)) {
+  if (photographerStatus.canManageOfferings) {
     items.push({
       title: "Offerings",
       url: "/dashboard/offerings" as Route,

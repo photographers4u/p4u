@@ -15,8 +15,8 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { getApiErrorMessage } from "@/lib/api-error";
 import { apiClient } from "@/lib/api-client";
+import { readApiResponse } from "@/lib/api-response";
 import { cn } from "@/lib/utils";
 import type { PhotographerContact } from "@/zod/schema";
 import { savePhotographerContactSchema } from "@/zod/schema";
@@ -78,12 +78,11 @@ export function PhotographerContactUpdateForm({
     const response = await apiClient.photographer.contact.$patch({
       json: values,
     });
-    const payload = await response.json().catch(() => null);
+    const { errorMessage, payload } =
+      await readApiResponse<PhotographerContact>(response);
 
     if (!response.ok) {
-      toast.error(
-        getApiErrorMessage(payload) ?? "Couldn't update photographer contact.",
-      );
+      toast.error(errorMessage ?? "Couldn't update photographer contact.");
       return;
     }
 
@@ -182,7 +181,8 @@ export function PhotographerContactUpdateForm({
 
       {!canSubmit ? (
         <p className="text-sm text-muted-foreground">
-          Contact updates are available only after your photographer profile is approved.
+          Contact updates are available only after your photographer profile is
+          approved.
         </p>
       ) : !isDirty ? (
         <p className="text-sm text-muted-foreground">

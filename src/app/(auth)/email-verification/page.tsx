@@ -12,6 +12,7 @@ import {
   DEFAULT_AUTH_CALLBACK_URL,
   getSafeAuthCallbackUrl,
 } from "@/lib/auth-redirect";
+import { readApiResponse } from "@/lib/api-response";
 
 type VerificationState = {
   description: string;
@@ -153,14 +154,11 @@ function EmailVerificationContent() {
           callbackURL: callbackUrl,
         }),
       });
-
-      const payload = (await response.json().catch(() => null)) as
-        | { message?: string }
-        | null;
+      const { errorMessage } = await readApiResponse(response);
 
       if (!response.ok) {
         const message =
-          payload?.message ?? "We couldn't resend the verification email.";
+          errorMessage ?? "We couldn't resend the verification email.";
         setResendNotice(message);
         toast.error(message);
         return;
@@ -191,7 +189,9 @@ function EmailVerificationContent() {
 
         {canResend ? (
           <Button onClick={onResend} disabled={isResending} className="w-full">
-            {isResending ? "Sending verification email..." : "Resend verification email"}
+            {isResending
+              ? "Sending verification email..."
+              : "Resend verification email"}
           </Button>
         ) : null}
 

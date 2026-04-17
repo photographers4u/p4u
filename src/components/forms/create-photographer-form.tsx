@@ -2,16 +2,20 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { type Path, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import type { ZodError } from "zod";
 import { PhotographerOnboardingAvatarStep } from "@/components/forms/photographer-onboarding/avatar-step";
 import { PhotographerOnboardingContactStep } from "@/components/forms/photographer-onboarding/contact-step";
+import {
+  applyValidationErrors,
+  buildSpecialitiesStepPayload,
+} from "@/components/forms/photographer-onboarding/form-helpers";
 import { PhotographerOnboardingProfileStep } from "@/components/forms/photographer-onboarding/profile-step";
 import { PhotographerOnboardingServicesStep } from "@/components/forms/photographer-onboarding/services-step";
 import { Button } from "@/components/ui/button";
 import { apiClient } from "@/lib/api-client";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { readApiResponse } from "@/lib/api-response";
 import {
   isApprovedPhotographer,
   isPhotographerSubmittedForReview,
@@ -67,22 +71,6 @@ function buildProfileStepPayload(values: OnboardingFormValues) {
   };
 }
 
-function buildSpecialitiesStepPayload(values: OnboardingFormValues) {
-  const selectedSpecialityIds = new Set(values.selectedSpecialityIds);
-
-  return {
-    step: ONBOARDING_STEPS[2],
-    specialities: values.specialities
-      .filter((speciality) =>
-        selectedSpecialityIds.has(speciality.specialityId),
-      )
-      .map((speciality) => ({
-        specialityId: speciality.specialityId,
-        startingPrice: speciality.startingPrice,
-      })),
-  };
-}
-
 function buildStepPayload(
   step: StepNumber,
   values: OnboardingFormValues,
@@ -108,22 +96,6 @@ function buildStepPayload(
       };
     default:
       return buildProfileStepPayload(values);
-  }
-}
-
-function applyValidationErrors(
-  errors: ZodError,
-  form: ReturnType<typeof useForm<OnboardingFormValues>>,
-) {
-  for (const issue of errors.issues) {
-    if (issue.path.length === 0) {
-      continue;
-    }
-
-    form.setError(issue.path.join(".") as Path<OnboardingFormValues>, {
-      message: issue.message,
-      type: "manual",
-    });
   }
 }
 
@@ -300,7 +272,8 @@ export function CreatePhotographerForm({
       const response = await apiClient.photographer.onboarding.$patch({
         json: parsedPayload.data,
       });
-      const responsePayload = await response.json().catch(() => null);
+      const { payload: responsePayload } =
+        await readApiResponse<PhotographerOnboardingState>(response);
 
       if (!response.ok || !responsePayload) {
         toast.error(

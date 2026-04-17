@@ -15,8 +15,8 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { getApiErrorMessage } from "@/lib/api-error";
 import { apiClient } from "@/lib/api-client";
+import { readApiResponse } from "@/lib/api-response";
 import {
   createItemSchema,
   type Item,
@@ -63,12 +63,13 @@ export function ItemForm({
             },
             json: values,
           });
-
-    const payload = await response.json().catch(() => null);
+    const { errorMessage, payload } = await readApiResponse<{ id: string }>(
+      response,
+    );
 
     if (!response.ok) {
       toast.error(
-        getApiErrorMessage(payload) ??
+        errorMessage ??
           (mode === "create"
             ? "Couldn't create the item."
             : "Couldn't update the item."),
@@ -87,12 +88,16 @@ export function ItemForm({
     }
 
     toast.success(
-      mode === "create" ? "Item created successfully." : "Item updated successfully.",
+      mode === "create"
+        ? "Item created successfully."
+        : "Item updated successfully.",
     );
 
     setIsRedirecting(true);
     router.push(
-      mode === "create" ? `/admin/items/${payload.id}/edit` : `/items/${payload.id}`,
+      mode === "create"
+        ? `/admin/items/${payload.id}/edit`
+        : `/items/${payload.id}`,
     );
     router.refresh();
   }
@@ -100,7 +105,11 @@ export function ItemForm({
   const isBusy = isSubmitting || isRedirecting;
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" noValidate>
+    <form
+      onSubmit={form.handleSubmit(onSubmit)}
+      className="space-y-6"
+      noValidate
+    >
       <Field data-invalid={!!errors.title}>
         <FieldLabel htmlFor={titleId}>Title</FieldLabel>
         <FieldContent>
@@ -116,7 +125,8 @@ export function ItemForm({
         </FieldContent>
         {!errors.title ? (
           <FieldDescription>
-            Keep it short and recognizable. This title is currently the main item field.
+            Keep it short and recognizable. This title is currently the main
+            item field.
           </FieldDescription>
         ) : null}
         <FieldErrorComponent errors={errors.title ? [errors.title] : []} />

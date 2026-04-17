@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
-  isApprovedPhotographer,
-  isPhotographerSubmittedForReview,
-} from "@/lib/photographer-status";
+  getPhotographerStatusViewModel,
+  getProfileInitials,
+} from "@/lib/photographer-presentation";
 import {
   ADMIN_PHOTOGRAPHER_LIST_SORTS,
   ADMIN_PHOTOGRAPHER_LIST_STATUS_FILTERS,
@@ -78,57 +78,6 @@ function getAdminPhotographerListFilters(
     status: isAdminPhotographerListStatusFilter(status)
       ? status
       : DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS,
-  };
-}
-
-function getProfileInitials(name: string | null) {
-  if (!name?.trim()) {
-    return "P";
-  }
-
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
-}
-
-function getStatusDetails(entry: {
-  status: "draft" | "submitted" | "approved" | "rejected" | "on_hold";
-  isPublished: boolean;
-}) {
-  if (isApprovedPhotographer(entry)) {
-    return {
-      label: "Approved",
-      variant: "default" as const,
-    };
-  }
-
-  if (entry.status === "on_hold") {
-    return {
-      label: "On hold",
-      variant: "destructive" as const,
-    };
-  }
-
-  if (entry.status === "rejected") {
-    return {
-      label: "Rejected",
-      variant: "destructive" as const,
-    };
-  }
-
-  if (isPhotographerSubmittedForReview(entry)) {
-    return {
-      label: "Submitted",
-      variant: "secondary" as const,
-    };
-  }
-
-  return {
-    label: "Draft",
-    variant: "outline" as const,
   };
 }
 
@@ -387,7 +336,7 @@ export default async function AdminPhotographersPage({
                       returnTo,
                     });
                     const href = `/admin/photographer/${entry.id}?${detailParams.toString()}`;
-                    const status = getStatusDetails(entry);
+                    const status = getPhotographerStatusViewModel(entry);
 
                     return (
                       <tr
@@ -446,7 +395,7 @@ export default async function AdminPhotographersPage({
                             className="block rounded-2xl px-1 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
                             <div className="flex flex-col gap-1">
-                              <Badge variant={status.variant}>
+                              <Badge variant={status.badgeVariant}>
                                 {status.label}
                               </Badge>
                               <span className="text-xs text-muted-foreground">

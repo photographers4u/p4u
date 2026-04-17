@@ -102,28 +102,28 @@
 
 ## 12. DRY Refactors
 
-- [ ] Create one shared photographer status/view-model helper for admin pages, onboarding, portfolio, and sidebar.
-- [ ] Extract the duplicated `buildSpecialitiesStepPayload` helper shared by onboarding and offerings forms.
-- [ ] Extract the duplicated `applyValidationErrors` helper shared by onboarding and offerings forms.
-- [ ] Extract duplicated photographer display helpers such as `getProfileInitials`.
-- [ ] Extract duplicated formatting helpers such as country/experience/status presenters where they are still repeated.
-- [ ] Centralize common route auth handling so route files stop rechecking `if (!user) return 401` after `requireAuth`.
-- [ ] Add a shared client-side API response helper for `response.json().catch(() => null)` + message extraction.
-- [ ] Standardize form submit handling across `item`, `profile`, `contact`, `offerings`, and onboarding forms.
+- [x] Create one shared photographer status/view-model helper for admin pages, onboarding, portfolio, and sidebar.
+- [x] Extract the duplicated `buildSpecialitiesStepPayload` helper shared by onboarding and offerings forms.
+- [x] Extract the duplicated `applyValidationErrors` helper shared by onboarding and offerings forms.
+- [x] Extract duplicated photographer display helpers such as `getProfileInitials`.
+- [x] Extract duplicated formatting helpers such as country/experience/status presenters where they are still repeated.
+- [x] Centralize common route auth handling so route files stop rechecking `if (!user) return 401` after `requireAuth`.
+- [x] Add a shared client-side API response helper for `response.json().catch(() => null)` + message extraction.
+- [x] Standardize form submit handling across `item`, `profile`, `contact`, `offerings`, and onboarding forms.
 
 ## 13. Dead / Redundant Code Removal
 
-- [ ] Delete unused `getPhotographerPortfolioPageData` from `src/lib/photographer-panel.ts`.
-- [ ] Delete the unused cache module in `src/server/cache/index.ts` or wire it into real read paths.
-- [ ] Delete unused review workflow utility/components if they are not part of the future admin UI.
-- [ ] Delete unused `loadAdminReviewItem` if it is not going to be used.
-- [ ] Delete unused `AdminReviewCollectionScreen` if it is not going to be used.
-- [ ] Delete unused `ReviewCollectionBrowser` if it is not going to be used.
+- [x] Delete unused `getPhotographerPortfolioPageData` from `src/lib/photographer-panel.ts`.
+- [x] Delete the unused cache module in `src/server/cache/index.ts` or wire it into real read paths.
+- [x] Delete unused review workflow utility/components if they are not part of the future admin UI.
+- [x] Delete unused `loadAdminReviewItem` if it is not going to be used.
+- [x] Delete unused `AdminReviewCollectionScreen` if it is not going to be used.
+- [x] Delete unused `ReviewCollectionBrowser` if it is not going to be used.
 - [ ] Delete the orphaned `/dashboard/images` page if the image-management feature is not being completed now.
-- [ ] Delete unused photographer routes such as POST `/api/photographer` if creation always happens through onboarding draft creation.
+- [x] Delete unused photographer routes such as POST `/api/photographer` if creation always happens through onboarding draft creation.
 - [ ] Delete unused POST `/api/photographer/avatar` if avatar saving is already handled through the onboarding patch route.
 - [ ] Delete unused upload kind definitions that are not wired to any real feature.
-- [ ] Delete stale schemas/types that are only exported but never consumed.
+- [x] Delete stale schemas/types that are only exported but never consumed.
 
 ## 14. Proxy / Middleware Cleanup
 
@@ -156,5 +156,5 @@
 - [x] Phase 3: wire notifications and fix signup/email consistency.
 - [x] Phase 4: clean performance issues in photographer/admin queries.
 - [ ] Phase 5: finish or remove the uploads/images feature.
-- [ ] Phase 6: attack DRY refactors and dead code removal.
+- [x] Phase 6: attack DRY refactors and dead code removal, excluding uploads/images cleanup deferred with Phase 5.
 - [ ] Phase 7: do naming/docs cleanup and broader architecture simplification.

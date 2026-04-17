@@ -2,13 +2,13 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import {
   type ApiAuthEnv,
+  getRequiredUser,
   requireAuth,
 } from "@/server/api/lib/require-auth-middleware";
 import { getAdminUserOrResponse } from "@/server/api/lib/review-workflow";
 import { mapError } from "@/server/api/lib/route-helpers";
 import { photographerController } from "@/server/db/controller/photographer";
 import {
-  createPhotographerProfileSchema,
   photographerIdParamsSchema,
   reviewPhotographerSchema,
   savePhotographerAvatarStepSchema,
@@ -18,13 +18,8 @@ import {
 
 export const photographerRouter = new Hono<ApiAuthEnv>()
   .get("/onboarding", requireAuth, async (c) => {
-    const user = c.get("user");
-
-    if (!user) {
-      return c.body(null, 401);
-    }
-
     try {
+      const user = getRequiredUser(c);
       const photographer =
         await photographerController.getPhotographerOnboardingByUserId(user.id);
 
@@ -35,13 +30,8 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
     }
   })
   .get("/", requireAuth, async (c) => {
-    const user = c.get("user");
-
-    if (!user) {
-      return c.body(null, 401);
-    }
-
     try {
+      const user = getRequiredUser(c);
       const photographer = await photographerController.getPhotographerByUserId(
         user.id,
       );
@@ -57,44 +47,14 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
     requireAuth,
     zValidator("json", savePhotographerAvatarStepSchema),
     async (c) => {
-      const user = c.get("user");
-
-      if (!user) {
-        return c.body(null, 401);
-      }
-
       try {
-        const photographer =
-          await photographerController.savePhotographerAvatarStep(
-            user.id,
-            c.req.valid("json"),
-          );
-
-        return c.json(photographer, 200);
-      } catch (error) {
-        const [status, message] = mapError(error);
-        return c.json({ message }, status);
-      }
-    },
-  )
-  .post(
-    "/",
-    requireAuth,
-    zValidator("json", createPhotographerProfileSchema),
-    async (c) => {
-      const user = c.get("user");
-
-      if (!user) {
-        return c.body(null, 401);
-      }
-
-      try {
-        const photographer = await photographerController.createPhotographer(
+        const user = getRequiredUser(c);
+        const photographer = await photographerController.savePhotographerAvatarStep(
           user.id,
           c.req.valid("json"),
         );
 
-        return c.json(photographer, 201);
+        return c.json(photographer, 200);
       } catch (error) {
         const [status, message] = mapError(error);
         return c.json({ message }, status);
@@ -106,13 +66,8 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
     requireAuth,
     zValidator("json", updatePhotographerProfileSchema),
     async (c) => {
-      const user = c.get("user");
-
-      if (!user) {
-        return c.body(null, 401);
-      }
-
       try {
+        const user = getRequiredUser(c);
         const photographer =
           await photographerController.updatePhotographerProfile(
             user.id,
@@ -131,13 +86,8 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
     requireAuth,
     zValidator("json", savePhotographerOnboardingStepRequestSchema),
     async (c) => {
-      const user = c.get("user");
-
-      if (!user) {
-        return c.body(null, 401);
-      }
-
       try {
+        const user = getRequiredUser(c);
         const photographer =
           await photographerController.savePhotographerOnboardingStep(
             user.id,
@@ -178,13 +128,8 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
     },
   )
   .delete("/", requireAuth, async (c) => {
-    const user = c.get("user");
-
-    if (!user) {
-      return c.body(null, 401);
-    }
-
     try {
+      const user = getRequiredUser(c);
       const photographer = await photographerController.deletePhotographer(
         user.id,
       );

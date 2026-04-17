@@ -2,6 +2,7 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import {
   type ApiAuthEnv,
+  getRequiredUser,
   requireAuth,
 } from "@/server/api/lib/require-auth-middleware";
 import { mapError } from "@/server/api/lib/route-helpers";
@@ -10,13 +11,8 @@ import { savePhotographerContactSchema } from "@/zod/schema";
 
 export const photographerContactRouter = new Hono<ApiAuthEnv>()
   .get("/", requireAuth, async (c) => {
-    const user = c.get("user");
-
-    if (!user) {
-      return c.body(null, 401);
-    }
-
     try {
+      const user = getRequiredUser(c);
       const contact =
         await photographerContactController.getPhotographerContactByUserId(
           user.id,
@@ -33,13 +29,8 @@ export const photographerContactRouter = new Hono<ApiAuthEnv>()
     requireAuth,
     zValidator("json", savePhotographerContactSchema),
     async (c) => {
-      const user = c.get("user");
-
-      if (!user) {
-        return c.body(null, 401);
-      }
-
       try {
+        const user = getRequiredUser(c);
         const contact =
           await photographerContactController.savePhotographerContactByUserId(
             user.id,
