@@ -117,12 +117,33 @@ type AdminPhotographerDetailPageProps = {
   params: Promise<{
     id: string;
   }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
+
+function getFirstValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function getAdminPhotographersReturnToPath(
+  value: string | string[] | undefined,
+) {
+  const returnTo = getFirstValue(value);
+
+  if (returnTo?.startsWith("/admin/photographers")) {
+    return returnTo;
+  }
+
+  return "/admin/photographers";
+}
 
 export default async function AdminPhotographerDetailPage({
   params,
+  searchParams,
 }: AdminPhotographerDetailPageProps) {
   const { id } = await params;
+  const returnTo = getAdminPhotographersReturnToPath(
+    (await searchParams).returnTo,
+  );
 
   try {
     const entry =
@@ -143,7 +164,7 @@ export default async function AdminPhotographerDetailPage({
 
         <div className="flex flex-wrap gap-3">
           <Button asChild variant="outline" size="sm">
-            <Link href="/admin/photographers">Back to photographers</Link>
+            <Link href={returnTo}>Back to photographers</Link>
           </Button>
         </div>
 
@@ -161,6 +182,7 @@ export default async function AdminPhotographerDetailPage({
                 allowedTransitions={allowedTransitions}
                 photographerId={entry.id}
                 currentStatus={entry.status}
+                returnTo={returnTo}
               />
             ) : (
               <p className="text-sm text-muted-foreground">

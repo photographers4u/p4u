@@ -11,11 +11,19 @@ export function AdminPhotographerReviewActions({
   allowedTransitions,
   photographerId,
   currentStatus,
+  returnTo,
 }: {
   allowedTransitions: PhotographerReviewDecisionStatus[];
   photographerId: string;
   currentStatus: "draft" | "submitted" | "approved" | "rejected" | "on_hold";
+  returnTo?: string;
 }) {
+  const successHref = returnTo
+    ? (`/admin/photographer/${photographerId}?${new URLSearchParams({
+        returnTo,
+      }).toString()}` as Route)
+    : (`/admin/photographer/${photographerId}` as Route);
+
   return (
     <ReviewDecisionActions
       allowedTransitions={allowedTransitions}
@@ -26,7 +34,7 @@ export function AdminPhotographerReviewActions({
       approvingLabel="Approving..."
       rejectingLabel="Rejecting..."
       currentStatus={currentStatus}
-      successHref={`/admin/photographer/${photographerId}` as Route}
+      successHref={successHref}
       submitReview={async ({ id, data }) => {
         const response = await apiClient.photographer[":id"].review.$patch({
           param: { id },

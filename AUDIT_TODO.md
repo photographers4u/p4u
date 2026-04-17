@@ -58,12 +58,12 @@
 
 ## 7. Performance / Scalability
 
-- [ ] Add a DB-level `getPublished` style query instead of loading all photographers and filtering `isPublished` in memory.
-- [ ] Add a dedicated admin list query instead of `getAll()` plus per-row enrichment for every photographer.
-- [ ] Remove the current N+1 pattern for admin photographer review entries in `src/server/db/controller/photographer.ts`.
-- [ ] Batch or join photographer contact, specialities, and uploads when building admin list rows.
-- [ ] Add pagination for the admin photographer listing.
-- [ ] Add sorting/filtering in SQL instead of in-memory where practical.
+- [x] Add a DB-level `getPublished` style query instead of loading all photographers and filtering `isPublished` in memory.
+- [x] Add a dedicated admin list query instead of `getAll()` plus per-row enrichment for every photographer.
+- [x] Remove the current N+1 pattern for admin photographer review entries in `src/server/db/controller/photographer.ts`.
+- [x] Batch or join photographer contact, specialities, and uploads when building admin list rows.
+- [x] Add pagination for the admin photographer listing.
+- [x] Add sorting/filtering in SQL instead of in-memory where practical.
 
 ## 8. Server-Side Data Access Architecture
 
@@ -154,7 +154,7 @@
 - [x] Phase 1: lock down backend permissions and moderation transition rules.
 - [x] Phase 2: replace implicit workflow heuristics with explicit photographer state.
 - [x] Phase 3: wire notifications and fix signup/email consistency.
-- [ ] Phase 4: clean performance issues in photographer/admin queries.
+- [x] Phase 4: clean performance issues in photographer/admin queries.
 - [ ] Phase 5: finish or remove the uploads/images feature.
 - [ ] Phase 6: attack DRY refactors and dead code removal.
 - [ ] Phase 7: do naming/docs cleanup and broader architecture simplification.

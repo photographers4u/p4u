@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, inArray } from "drizzle-orm";
 import db, { type DBExecutor, type DBTransaction } from "@/server/db";
 import { photographerUpload } from "@/server/db/schema";
 
@@ -41,5 +41,23 @@ export const photographerUploadDal = {
       .from(photographerUpload)
       .where(eq(photographerUpload.photographerId, photographerId))
       .orderBy(asc(photographerUpload.createdAt));
+  },
+
+  async getByPhotographerIds(
+    photographerIds: string[],
+    executor: DBClient = db,
+  ): Promise<PhotographerUploadRecord[]> {
+    if (photographerIds.length === 0) {
+      return [];
+    }
+
+    return executor
+      .select()
+      .from(photographerUpload)
+      .where(inArray(photographerUpload.photographerId, photographerIds))
+      .orderBy(
+        asc(photographerUpload.photographerId),
+        asc(photographerUpload.createdAt),
+      );
   },
 };

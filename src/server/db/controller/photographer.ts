@@ -1,12 +1,17 @@
+import { env } from "@/lib/env";
 import {
   canReviewPhotographerWithStatus,
   isApprovedPhotographer,
   isPhotographerSubmittedForReview,
 } from "@/lib/photographer-status";
-import { env } from "@/lib/env";
 import db, { type DBExecutor, type DBTransaction } from "@/server/db";
 import { photographerContactController } from "@/server/db/controller/photographer-contact";
 import {
+  ADMIN_PHOTOGRAPHER_LIST_SORTS,
+  ADMIN_PHOTOGRAPHER_LIST_STATUS_FILTERS,
+  type AdminPhotographerListRow,
+  type AdminPhotographerListSort,
+  type AdminPhotographerListStatusFilter,
   type PhotographerRecord,
   photographerDal,
 } from "@/server/db/dal/photographer";
@@ -40,6 +45,16 @@ const AVATAR_ONBOARDING_STEP = ONBOARDING_STEPS[1];
 const SPECIALITIES_ONBOARDING_STEP = ONBOARDING_STEPS[2];
 const CONTACT_ONBOARDING_STEP = ONBOARDING_STEPS[3];
 const FINAL_ONBOARDING_STEP = CONTACT_ONBOARDING_STEP;
+export const ADMIN_PHOTOGRAPHER_LIST_PAGE_SIZE = 20;
+export const DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS: AdminPhotographerListStatusFilter =
+  "all";
+export const DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT: AdminPhotographerListSort =
+  "review_queue";
+export {
+  ADMIN_PHOTOGRAPHER_LIST_SORTS,
+  ADMIN_PHOTOGRAPHER_LIST_STATUS_FILTERS,
+};
+export type { AdminPhotographerListSort, AdminPhotographerListStatusFilter };
 
 export type AdminPhotographerReviewEntry = {
   id: string;
@@ -73,6 +88,35 @@ export type AdminPhotographerReviewEntry = {
   }>;
   uploadsCount: number;
   portfolioPreview: string | null;
+};
+export type AdminPhotographerListEntry = {
+  id: string;
+  userId: string;
+  name: string | null;
+  avatar: string | null;
+  onboardingStep: PhotographerOnboardingState["onboardingStep"];
+  isPublished: boolean;
+  status: PhotographerOnboardingState["status"];
+  rejectionReason: string | null;
+  reviewedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  contact: {
+    email: string;
+    emailVerified: boolean;
+    phone: string;
+    isPublic: boolean;
+  } | null;
+  specialitiesCount: number;
+  uploadsCount: number;
+  portfolioPreview: string | null;
+};
+export type AdminPhotographerEntriesPage = {
+  entries: AdminPhotographerListEntry[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
 };
 
 type PhotographerModerationState = Pick<PhotographerOnboardingState, "status">;
@@ -376,31 +420,60 @@ async function buildOnboardingState(
   };
 }
 
-function getAdminReviewPriority(entry: AdminPhotographerReviewEntry) {
-  if (isPhotographerSubmittedForReview(entry)) {
-    return 0;
-  }
-
-  if (entry.status === "draft") {
-    return 1;
-  }
-
-  if (entry.status === "on_hold") {
-    return 2;
-  }
-
-  if (entry.status === "rejected") {
-    return 3;
-  }
-
-  return 4;
-}
-
 function getPhotographerModerationState(
   photographer: PhotographerRecord,
 ): PhotographerModerationState {
   return {
     status: photographer.status ?? "draft",
+  };
+}
+
+function groupRecordsByPhotographerId<
+  TRecord extends { photographerId: string },
+>(records: TRecord[]) {
+  const recordsByPhotographerId = new Map<string, TRecord[]>();
+
+  for (const record of records) {
+    const existingRecords =
+      recordsByPhotographerId.get(record.photographerId) ?? [];
+
+    existingRecords.push(record);
+    recordsByPhotographerId.set(record.photographerId, existingRecords);
+  }
+
+  return recordsByPhotographerId;
+}
+
+function buildAdminPhotographerListEntry(
+  row: AdminPhotographerListRow,
+  specialitiesCount: number,
+  uploads: Array<{
+    imageUrl: string;
+  }>,
+): AdminPhotographerListEntry {
+  return {
+    id: row.id,
+    userId: row.userId,
+    name: row.name,
+    avatar: row.avatar,
+    onboardingStep: normalizeOnboardingStep(row.onboardingStep),
+    isPublished: row.isPublished,
+    status: row.status ?? "draft",
+    rejectionReason: row.rejectionReason,
+    reviewedAt: row.reviewedAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    contact: row.contactEmail
+      ? {
+          email: row.contactEmail,
+          emailVerified: row.contactEmailVerified ?? false,
+          phone: row.contactPhone ?? "",
+          isPublic: row.contactIsPublic ?? false,
+        }
+      : null,
+    specialitiesCount,
+    uploadsCount: uploads.length,
+    portfolioPreview: uploads[0]?.imageUrl ?? null,
   };
 }
 
@@ -722,31 +795,63 @@ export const photographerController = {
   },
 
   async getPublicPhotographers() {
-    const photographers = await photographerDal.getAll();
+    const photographers = await photographerDal.getPublished();
 
-    return photographers
-      .filter((photographer) => photographer.isPublished)
-      .map(toPublicPhotographer);
+    return photographers.map(toPublicPhotographer);
   },
 
-  async getAdminPhotographerEntries(): Promise<AdminPhotographerReviewEntry[]> {
-    const photographers = await photographerDal.getAll();
-    const entries = await Promise.all(
-      photographers.map((photographer) =>
-        buildAdminPhotographerReviewEntry(photographer),
-      ),
-    );
-
-    return entries.sort((left, right) => {
-      const priorityDifference =
-        getAdminReviewPriority(left) - getAdminReviewPriority(right);
-
-      if (priorityDifference !== 0) {
-        return priorityDifference;
-      }
-
-      return right.updatedAt.getTime() - left.updatedAt.getTime();
+  async getAdminPhotographerEntriesPage({
+    page = 1,
+    query,
+    sort = DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT,
+    status = DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS,
+  }: {
+    page?: number;
+    query?: string;
+    sort?: AdminPhotographerListSort;
+    status?: AdminPhotographerListStatusFilter;
+  } = {}): Promise<AdminPhotographerEntriesPage> {
+    const normalizedPage = Math.max(1, Math.trunc(page));
+    const totalCount = await photographerDal.countAdminList({
+      query,
+      status,
     });
+    const totalPages = Math.max(
+      1,
+      Math.ceil(totalCount / ADMIN_PHOTOGRAPHER_LIST_PAGE_SIZE),
+    );
+    const currentPage = Math.min(normalizedPage, totalPages);
+    const rows = await photographerDal.getAdminListPage({
+      limit: ADMIN_PHOTOGRAPHER_LIST_PAGE_SIZE,
+      offset: (currentPage - 1) * ADMIN_PHOTOGRAPHER_LIST_PAGE_SIZE,
+      query,
+      sort,
+      status,
+    });
+    const photographerIds = rows.map((row) => row.id);
+    const [specialities, uploads] = await Promise.all([
+      photographerSpecialityDal.getByPhotographerIds(photographerIds),
+      photographerUploadDal.getByPhotographerIds(photographerIds),
+    ]);
+    const specialitiesByPhotographerId =
+      groupRecordsByPhotographerId(specialities);
+    const uploadsByPhotographerId = groupRecordsByPhotographerId(uploads);
+
+    return {
+      entries: rows.map((row) =>
+        buildAdminPhotographerListEntry(
+          row,
+          specialitiesByPhotographerId.get(row.id)?.length ?? 0,
+          (uploadsByPhotographerId.get(row.id) ?? []).map((upload) => ({
+            imageUrl: upload.imageUrl,
+          })),
+        ),
+      ),
+      page: currentPage,
+      pageSize: ADMIN_PHOTOGRAPHER_LIST_PAGE_SIZE,
+      totalCount,
+      totalPages,
+    };
   },
 
   async getAdminPhotographerEntryById(
@@ -804,7 +909,10 @@ export const photographerController = {
       }
 
       return {
-        entry: await buildAdminPhotographerReviewEntry(reviewedPhotographer, tx),
+        entry: await buildAdminPhotographerReviewEntry(
+          reviewedPhotographer,
+          tx,
+        ),
         notification: {
           rejectionReason: input.rejectionReason ?? undefined,
           reviewUrl: `${env.NEXT_PUBLIC_BASE_URL}/dashboard/portfolio`,

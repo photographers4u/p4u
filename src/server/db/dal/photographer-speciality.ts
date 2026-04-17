@@ -62,6 +62,34 @@ export const photographerSpecialityDal = {
       .orderBy(asc(speciality.name));
   },
 
+  async getByPhotographerIds(
+    photographerIds: string[],
+    executor: DBClient = db,
+  ): Promise<PhotographerSpecialityDetailsRecord[]> {
+    if (photographerIds.length === 0) {
+      return [];
+    }
+
+    return executor
+      .select({
+        id: photographerSpeciality.id,
+        name: speciality.name,
+        photographerId: photographerSpeciality.photographerId,
+        specialityId: photographerSpeciality.specialityId,
+        startingPrice: photographerSpeciality.startingPrice,
+      })
+      .from(photographerSpeciality)
+      .innerJoin(
+        speciality,
+        eq(photographerSpeciality.specialityId, speciality.id),
+      )
+      .where(inArray(photographerSpeciality.photographerId, photographerIds))
+      .orderBy(
+        asc(photographerSpeciality.photographerId),
+        asc(speciality.name),
+      );
+  },
+
   async getByPhotographerIdAndSpecialityIds(
     photographerId: string,
     specialityIds: string[],
