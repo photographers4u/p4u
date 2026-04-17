@@ -3,43 +3,43 @@ import type * as React from "react";
 import { siteConfig } from "@/config/site";
 import { EmailLayout } from "../../components/email-layout";
 
-interface SubmissionRejectedProps {
+interface SubmissionOnHoldProps {
+  holdReason: string;
   name: string;
   reviewUrl: string;
   submissionName: string;
   submissionType: string;
-  rejectionReason: string;
 }
 
-export default function SubmissionRejectedTemplate({
+export default function SubmissionOnHoldTemplate({
+  holdReason,
   name,
   reviewUrl,
   submissionName,
   submissionType,
-  rejectionReason,
-}: SubmissionRejectedProps) {
+}: SubmissionOnHoldProps) {
   return (
     <EmailLayout
-      preview={`Your ${submissionType} "${submissionName}" needs some changes on ${siteConfig.name}`}
+      preview={`Your ${submissionType} "${submissionName}" is on hold on ${siteConfig.name}`}
     >
-      <Text style={styles.heading}>Submission needs changes</Text>
+      <Text style={styles.heading}>Submission on hold</Text>
       <Text style={styles.body}>Hi {name},</Text>
       <Text style={styles.body}>
-        Thanks for submitting your {submissionType}{" "}
-        <strong>&ldquo;{submissionName}&rdquo;</strong>. After review, we
-        weren't able to approve it at this time.
+        We reviewed your {submissionType}{" "}
+        <strong>&ldquo;{submissionName}&rdquo;</strong> and put it on hold for
+        now.
       </Text>
       <Text style={styles.reasonLabel}>Reason from our team:</Text>
-      <Text style={styles.reason}>{rejectionReason}</Text>
+      <Text style={styles.reason}>{holdReason}</Text>
       <Section style={styles.buttonSection}>
         <Button href={reviewUrl} style={styles.button}>
           Review your {submissionType}
         </Button>
       </Section>
       <Text style={styles.body}>
-        Your {submissionType} remains hidden while this decision is active. You
-        can review the current feedback from your dashboard, and we'll share
-        next steps once a resubmission flow is available.
+        Your {submissionType} is hidden while the hold is active. You can
+        review the current feedback from your dashboard, and we'll share next
+        steps once a resubmission flow is available.
       </Text>
       <Text style={styles.disclaimer}>
         If you have any questions, reply to this email or reach out to{" "}

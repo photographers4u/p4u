@@ -35,7 +35,8 @@ export const nameSlugSchema = z
 export const emailSchema = z
   .string()
   .trim()
-  .email("Please enter a valid email address");
+  .email("Please enter a valid email address")
+  .transform((value) => value.toLowerCase());
 
 export const passwordSchema = z
   .string()

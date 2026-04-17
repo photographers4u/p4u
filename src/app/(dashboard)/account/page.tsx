@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import PageHeader from "@/components/page-header";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -84,7 +85,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
     <div className="space-y-8">
       <PageHeader
         title="Account"
-        subtitle="Review the account details currently attached to this starter app."
+        subtitle="Review your sign-in details, email status, and current account access."
       />
 
       {notice ? (
@@ -114,6 +115,12 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
               <p className="mt-1 text-base font-medium">{account.user.email}</p>
             </div>
             <div className="rounded-3xl border bg-muted/30 p-4">
+              <p className="text-sm text-muted-foreground">Email status</p>
+              <p className="mt-1 text-base font-medium">
+                {account.user.emailVerified ? "Verified" : "Verification required"}
+              </p>
+            </div>
+            <div className="rounded-3xl border bg-muted/30 p-4">
               <p className="text-sm text-muted-foreground">Role</p>
               <p className="mt-1 text-base font-medium capitalize">
                 {account.user.role || "user"}
@@ -125,6 +132,19 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                 {account.pendingEmail || "No pending email change"}
               </p>
             </div>
+            {!account.user.emailVerified ? (
+              <div className="rounded-3xl border bg-amber-50 p-4 text-sm text-amber-950 sm:col-span-2 dark:bg-amber-950/30 dark:text-amber-100">
+                Your email still needs verification before email-password sign-in
+                is fully available.{" "}
+                <Link
+                  href={`/email-verification?email=${encodeURIComponent(account.user.email)}`}
+                  className="underline underline-offset-4"
+                >
+                  Resend the verification email
+                </Link>
+                .
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 
@@ -138,8 +158,8 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-3xl border bg-muted/30 p-4 text-sm text-muted-foreground">
-              You are currently signed in and can access the cleaned item-only
-              dashboard.
+              You are currently signed in and can continue managing your
+              photographer account from the dashboard.
             </div>
             <SignOutButton />
           </CardContent>

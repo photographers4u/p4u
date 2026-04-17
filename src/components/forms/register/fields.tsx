@@ -16,6 +16,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { buildAuthRedirectPath } from "@/lib/auth-redirect";
 import { authClient } from "@/lib/auth-client";
 import { type EmailPasswordAuth, emailPasswordAuthSchema } from "@/zod/schema";
 
@@ -45,9 +46,11 @@ export function RegisterFields() {
       .replace(/[._]/g, " ")
       .replace(/\b\w/g, (c) => c.toUpperCase());
 
+    const normalizedEmail = values.email.trim().toLowerCase();
+
     const { error } = await authClient.signUp.email({
       name: username,
-      email: values.email,
+      email: normalizedEmail,
       password: values.password,
       callbackURL: "/account",
     });
@@ -57,11 +60,15 @@ export function RegisterFields() {
       return;
     }
 
-    // TODO: send email verification before redirecting
-
     setIsRedirecting(true);
 
-    router.replace("/account");
+    router.replace(
+      buildAuthRedirectPath("/email-verification", {
+        callbackUrl: "/account",
+        email: normalizedEmail,
+        intent: "signup",
+      }),
+    );
   }
 
   return (
@@ -114,7 +121,7 @@ export function RegisterFields() {
         ) : isRedirecting ? (
           <span className="flex items-center justify-center gap-2">
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-            Redirecting to your account...
+            Taking you to email verification...
           </span>
         ) : (
           "Create account"

@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import db, { type DBExecutor, type DBTransaction } from "@/server/db";
 import { photographerContact } from "@/server/db/schema";
 
@@ -32,7 +32,9 @@ export const photographerContactDal = {
     const [record] = await executor
       .select()
       .from(photographerContact)
-      .where(eq(photographerContact.email, email));
+      .where(
+        sql`lower(btrim(${photographerContact.email})) = ${email.trim().toLowerCase()}`,
+      );
 
     return record ?? null;
   },

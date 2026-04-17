@@ -18,6 +18,10 @@ import type {
 
 type DBClient = DBExecutor | DBTransaction;
 
+function normalizePhotographerContactEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
 function toPhotographerContact(
   contact: PhotographerContactRecord | null,
 ): PhotographerContact | null {
@@ -55,12 +59,13 @@ async function savePhotographerContactByPhotographerId(
   input: SavePhotographerContactInput,
   executor: DBClient = db,
 ) {
+  const normalizedEmail = normalizePhotographerContactEmail(input.email);
   const existingContact = await photographerContactDal.getByPhotographerId(
     photographerId,
     executor,
   );
   const conflictingContact = await photographerContactDal.getByEmail(
-    input.email,
+    normalizedEmail,
     executor,
   );
 
@@ -78,7 +83,7 @@ async function savePhotographerContactByPhotographerId(
       {
         photographerId,
         phone: input.phone,
-        email: input.email,
+        email: normalizedEmail,
         emailVerified: false,
         isPublic: input.isPublic,
       },
@@ -93,14 +98,14 @@ async function savePhotographerContactByPhotographerId(
   }
 
   const nextEmailVerified =
-    existingContact.email === input.email
+    normalizePhotographerContactEmail(existingContact.email) === normalizedEmail
       ? existingContact.emailVerified
       : false;
   const contact = await photographerContactDal.updateById(
     existingContact.id,
     {
       phone: input.phone,
-      email: input.email,
+      email: normalizedEmail,
       emailVerified: nextEmailVerified,
       isPublic: input.isPublic,
     },

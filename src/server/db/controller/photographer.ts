@@ -3,6 +3,7 @@ import {
   isApprovedPhotographer,
   isPhotographerSubmittedForReview,
 } from "@/lib/photographer-status";
+import { env } from "@/lib/env";
 import db, { type DBExecutor, type DBTransaction } from "@/server/db";
 import { photographerContactController } from "@/server/db/controller/photographer-contact";
 import {
@@ -19,6 +20,7 @@ import {
   InternalError,
   NotFoundError,
 } from "@/server/db/helpers/errors";
+import { email } from "@/server/email";
 import { ONBOARDING_STEPS } from "@/zod/helpers";
 import type {
   CreatePhotographerProfileInput,
@@ -74,6 +76,14 @@ export type AdminPhotographerReviewEntry = {
 };
 
 type PhotographerModerationState = Pick<PhotographerOnboardingState, "status">;
+type PhotographerReviewNotification = {
+  rejectionReason: string | undefined;
+  reviewUrl: string;
+  status: ReviewPhotographerInput["status"];
+  submissionName: string;
+  submissionType: string;
+  userId: string;
+};
 
 function toPublicPhotographer(photographer: PhotographerRecord) {
   return {
@@ -535,6 +545,20 @@ async function buildAdminPhotographerReviewEntry(
   };
 }
 
+async function sendPhotographerReviewNotification(
+  notification: PhotographerReviewNotification,
+) {
+  try {
+    await email.notifySubmissionReviewed(notification);
+  } catch (error) {
+    console.error("Failed to send photographer review notification", {
+      error,
+      status: notification.status,
+      userId: notification.userId,
+    });
+  }
+}
+
 export const photographerController = {
   async getPhotographerOnboardingByUserId(userId: string) {
     const photographer = await photographerDal.getByUserId(userId);
@@ -742,7 +766,7 @@ export const photographerController = {
     reviewerId: string,
     input: ReviewPhotographerInput,
   ): Promise<AdminPhotographerReviewEntry> {
-    return db.transaction(async (tx) => {
+    const { entry, notification } = await db.transaction(async (tx) => {
       const photographer = await photographerDal.getById(id, tx);
 
       if (!photographer) {
@@ -779,8 +803,23 @@ export const photographerController = {
         throw new InternalError("Failed to review photographer");
       }
 
-      return buildAdminPhotographerReviewEntry(reviewedPhotographer, tx);
+      return {
+        entry: await buildAdminPhotographerReviewEntry(reviewedPhotographer, tx),
+        notification: {
+          rejectionReason: input.rejectionReason ?? undefined,
+          reviewUrl: `${env.NEXT_PUBLIC_BASE_URL}/dashboard/portfolio`,
+          status: input.status,
+          submissionName:
+            reviewedPhotographer.name?.trim() || "photographer profile",
+          submissionType: "profile",
+          userId: reviewedPhotographer.userId,
+        } satisfies PhotographerReviewNotification,
+      };
     });
+
+    await sendPhotographerReviewNotification(notification);
+
+    return entry;
   },
 
   async updatePhotographerProfile(

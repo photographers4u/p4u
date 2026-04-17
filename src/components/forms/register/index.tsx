@@ -20,7 +20,7 @@ export const RegisterForm = () => {
       subtitle={
         mode === "magic"
           ? "We'll email you a secure link to get started."
-          : "Sign up with your email and password."
+          : "Sign up with your email and password, then verify your inbox to continue."
       }
     >
       <div className="flex flex-col gap-6">

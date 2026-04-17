@@ -15,6 +15,13 @@
       "when": 1776362669868,
       "tag": "0001_stale_fabian_cortez",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776422913402,
+      "tag": "0002_talented_lucky_pierre",
+      "breakpoints": true
     }
   ]
 }

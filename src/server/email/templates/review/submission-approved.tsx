@@ -23,17 +23,18 @@ export default function SubmissionApprovedTemplate({
       <Text style={styles.heading}>You're live!</Text>
       <Text style={styles.body}>Hi {name},</Text>
       <Text style={styles.body}>
-        Great news — your {submissionType}{" "}
-        <strong>&ldquo;{submissionName}&rdquo;</strong> has been reviewed and
-        approved. It's now publicly visible on {siteConfig.name}.
+        Great news - your {submissionType}{" "}
+        <strong>&ldquo;{submissionName}&rdquo;</strong> has been reviewed,
+        approved, and is now live on {siteConfig.name}.
       </Text>
       <Section style={styles.buttonSection}>
         <Button href={viewUrl} style={styles.button}>
-          View your {submissionType}
+          Review your {submissionType}
         </Button>
       </Section>
       <Text style={styles.disclaimer}>
-        Thanks for contributing to the community. Keep sharing great work!
+        Thanks for contributing to the community. You can keep your details up
+        to date from your dashboard any time.
       </Text>
     </EmailLayout>
   );

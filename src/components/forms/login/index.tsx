@@ -24,7 +24,7 @@ export const LoginForm = ({
       subtitle={
         mode === "magic"
           ? "We'll send you a secure link to sign in."
-          : "Enter your email and password to continue."
+          : "Enter your email and password to continue. Unverified accounts will get a fresh verification link."
       }
     >
       <div className="flex flex-col gap-6">

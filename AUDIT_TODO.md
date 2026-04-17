@@ -34,27 +34,27 @@
 
 ## 4. Review Notifications
 
-- [ ] Wire `src/server/email/senders/review.ts` into photographer review actions so users are notified after approval or rejection.
-- [ ] Decide whether `on_hold` should also send a notification email and implement it if needed.
-- [ ] Trigger notifications only after the moderation transaction commits successfully.
-- [ ] Handle notification failures without rolling back a successful moderation write.
+- [x] Wire `src/server/email/senders/review.ts` into photographer review actions so users are notified after approval or rejection.
+- [x] Decide whether `on_hold` should also send a notification email and implement it if needed.
+- [x] Trigger notifications only after the moderation transaction commits successfully.
+- [x] Handle notification failures without rolling back a successful moderation write.
 
 ## 5. Auth / Verification Consistency
 
-- [ ] Decide the real signup verification policy for the app.
-- [ ] If verification is required, enable it in `src/server/auth/index.ts`.
-- [ ] If verification is required, send verification on signup instead of leaving the current TODO in `src/components/forms/register/fields.tsx`.
-- [ ] If verification is not required, remove the misleading verification copy from `src/components/forms/register/fields.tsx`.
-- [ ] Align login/register/account copy with the actual auth configuration.
+- [x] Decide the real signup verification policy for the app. Email/password signups now require verification.
+- [x] If verification is required, enable it in `src/server/auth/index.ts`.
+- [x] If verification is required, send verification on signup instead of leaving the current TODO in `src/components/forms/register/fields.tsx`.
+- [x] If verification is not required, remove the misleading verification copy from `src/components/forms/register/fields.tsx`. Not applicable because verification is now required and wired.
+- [x] Align login/register/account copy with the actual auth configuration.
 
 ## 6. Email / Contact Data Integrity
 
-- [ ] Normalize photographer contact emails to lowercase before saving in `src/server/db/controller/photographer-contact.ts`.
-- [ ] Normalize photographer contact emails at schema/input boundaries where possible.
-- [ ] Update conflict checks in photographer contact save flow to use normalized email values.
-- [ ] Make email verification reset logic compare normalized values instead of raw strings.
-- [ ] Enforce case-insensitive uniqueness for photographer contact emails at the database layer.
-- [ ] Audit existing stored contact emails for case-variant duplicates before adding a stricter DB constraint.
+- [x] Normalize photographer contact emails to lowercase before saving in `src/server/db/controller/photographer-contact.ts`.
+- [x] Normalize photographer contact emails at schema/input boundaries where possible.
+- [x] Update conflict checks in photographer contact save flow to use normalized email values.
+- [x] Make email verification reset logic compare normalized values instead of raw strings.
+- [x] Enforce case-insensitive uniqueness for photographer contact emails at the database layer.
+- [x] Audit existing stored contact emails for case-variant duplicates before adding a stricter DB constraint. The new migration aborts if normalized duplicates already exist.
 
 ## 7. Performance / Scalability
 
@@ -153,7 +153,7 @@
 
 - [x] Phase 1: lock down backend permissions and moderation transition rules.
 - [x] Phase 2: replace implicit workflow heuristics with explicit photographer state.
-- [ ] Phase 3: wire notifications and fix signup/email consistency.
+- [x] Phase 3: wire notifications and fix signup/email consistency.
 - [ ] Phase 4: clean performance issues in photographer/admin queries.
 - [ ] Phase 5: finish or remove the uploads/images feature.
 - [ ] Phase 6: attack DRY refactors and dead code removal.
