@@ -2,7 +2,10 @@ import Link from "next/link";
 import PageHeader from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { isPhotographerPendingReview } from "@/lib/photographer-status";
+import {
+  isApprovedPhotographer,
+  isPhotographerSubmittedForReview,
+} from "@/lib/photographer-status";
 import { photographerController } from "@/server/db/controller/photographer";
 
 function getProfileInitials(name: string | null) {
@@ -19,12 +22,10 @@ function getProfileInitials(name: string | null) {
 }
 
 function getStatusDetails(entry: {
-  status: "pending" | "approved" | "rejected" | "on_hold";
+  status: "draft" | "submitted" | "approved" | "rejected" | "on_hold";
   isPublished: boolean;
-  onboardingStep: 1 | 2 | 3 | 4;
-  contact: { email: string } | null;
 }) {
-  if (entry.status === "approved" || entry.isPublished) {
+  if (isApprovedPhotographer(entry)) {
     return {
       label: "Approved",
       variant: "default" as const,
@@ -45,9 +46,9 @@ function getStatusDetails(entry: {
     };
   }
 
-  if (isPhotographerPendingReview(entry)) {
+  if (isPhotographerSubmittedForReview(entry)) {
     return {
-      label: "Pending review",
+      label: "Submitted",
       variant: "secondary" as const,
     };
   }

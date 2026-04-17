@@ -1,5 +1,7 @@
 import z from "zod";
 
+type ReviewStatusTuple = readonly [string, ...string[]];
+
 export const idValueSchema = z.uuid();
 export const isoTimestampSchema = z.string().datetime();
 export const reviewStatusValues = [
@@ -8,7 +10,14 @@ export const reviewStatusValues = [
   "rejected",
   "on_hold",
 ] as const;
-export const reviewStatusSchema = z.enum(reviewStatusValues);
+
+export function createReviewStatusSchema<
+  const TValues extends ReviewStatusTuple,
+>(statusValues: TValues) {
+  return z.enum(statusValues);
+}
+
+export const reviewStatusSchema = createReviewStatusSchema(reviewStatusValues);
 
 /**
  * Standard UUID primary key.
@@ -98,24 +107,47 @@ export function eventTimestamp() {
 /**
  * Moderation / review fields.
  *
- * Mirrors `reviewColumns()` in packages/db.
- * Spread into any schema that goes through a moderation flow.
+ * Mirrors `reviewColumns()` in packages/db by default.
+ * Pass a custom `statusSchema` when an entity has its own workflow states.
  */
-export function reviewSchema() {
+export function reviewSchema<
+  const TValues extends ReviewStatusTuple,
+>(options?: {
+  defaultStatus?: TValues[number];
+  statusSchema?: z.ZodType<TValues[number]>;
+}) {
+  if (options?.statusSchema && options.defaultStatus === undefined) {
+    throw new Error(
+      "Custom review status schemas must provide a defaultStatus.",
+    );
+  }
+
+  const statusSchema = (options?.statusSchema ??
+    reviewStatusSchema) as z.ZodType<TValues[number]>;
+  const defaultStatus = (options?.defaultStatus ??
+    "pending") as TValues[number];
+
   return {
-    status: reviewStatusSchema.default("pending"),
+    status: statusSchema.default(defaultStatus),
     rejectionReason: z.string().nullable(),
     reviewedBy: z.string().nullable(),
     reviewedAt: eventTimestamp(),
   };
 }
 
-export function reviewEntitySchema<TShape extends z.ZodRawShape>(
+export function reviewEntitySchema<
+  TShape extends z.ZodRawShape,
+  const TValues extends ReviewStatusTuple,
+>(
   shape: TShape,
+  options?: {
+    defaultStatus?: TValues[number];
+    statusSchema?: z.ZodType<TValues[number]>;
+  },
 ) {
   return entitySchema({
     ...shape,
-    ...reviewSchema(),
+    ...reviewSchema(options),
   });
 }
 

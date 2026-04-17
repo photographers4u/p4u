@@ -6,7 +6,7 @@ import { PhotographerProfileUpdateForm } from "@/components/forms/photographer/p
 import PageHeader from "@/components/page-header";
 import {
   isApprovedPhotographer,
-  isPhotographerPendingReview,
+  isPhotographerSubmittedForReview,
 } from "@/lib/photographer-status";
 import {
   getServerPhotographer,
@@ -27,7 +27,7 @@ type PortfolioBanner = {
 function getPortfolioBanner(
   photographer: Photographer,
 ): PortfolioBanner | null {
-  if (photographer.status === "pending") {
+  if (photographer.status === "submitted") {
     return {
       tone: "info",
       message: "Your profile has been submitted for review.",
@@ -158,17 +158,13 @@ export default async function PortfolioPage() {
   ]);
 
   const isApproved = isApprovedPhotographer(photographer);
-  const isSubmittedForReview = isPhotographerPendingReview({
-    contact,
-    onboardingStep: photographer.onboardingStep,
-    status: photographer.status,
-  });
+  const isSubmittedForReview = isPhotographerSubmittedForReview(photographer);
   const shouldShowReviewForms =
     photographer.status === "on_hold" ||
     photographer.status === "rejected" ||
     isSubmittedForReview;
 
-  if (photographer.status === "pending" && !isSubmittedForReview) {
+  if (photographer.status === "draft") {
     redirect("/onboarding");
   }
 
@@ -188,7 +184,7 @@ export default async function PortfolioPage() {
       {banner ? <PortfolioStatusBanner banner={banner} /> : null}
 
       <PageHeader
-        className={photographer.status === "approved" ? "" : "mt-10"}
+        className={isApproved ? "" : "mt-10"}
         title="Photographer Profile"
         subtitle="Control how you appear to visitors."
       />

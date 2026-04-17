@@ -8,6 +8,13 @@
       "when": 1776014005708,
       "tag": "0000_organic_fat_cobra",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776362669868,
+      "tag": "0001_stale_fabian_cortez",
+      "breakpoints": true
     }
   ]
 }

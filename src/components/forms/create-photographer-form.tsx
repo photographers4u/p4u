@@ -14,12 +14,12 @@ import { apiClient } from "@/lib/api-client";
 import { getApiErrorMessage } from "@/lib/api-error";
 import {
   isApprovedPhotographer,
-  isPhotographerPendingReview,
+  isPhotographerSubmittedForReview,
 } from "@/lib/photographer-status";
 import { cn } from "@/lib/utils";
 import { ONBOARDING_STEPS } from "@/zod/helpers";
-import { savePhotographerOnboardingStepSchema } from "@/zod/schema/photographer";
 import type { PhotographerOnboardingState } from "@/zod/schema/photographer";
+import { savePhotographerOnboardingStepSchema } from "@/zod/schema/photographer";
 import {
   type AvailableSpecialityOption,
   type OnboardingFormValues,
@@ -59,7 +59,7 @@ const onboardingStepMeta: Array<{
 
 function buildProfileStepPayload(values: OnboardingFormValues) {
   return {
-    step: ONBOARDING_STEPS[1],
+    step: ONBOARDING_STEPS[0],
     name: values.name,
     bio: values.bio.trim() ? values.bio : undefined,
     locationCity: values.locationCity,
@@ -83,13 +83,16 @@ function buildSpecialitiesStepPayload(values: OnboardingFormValues) {
   };
 }
 
-function buildStepPayload(step: StepNumber, values: OnboardingFormValues): unknown {
+function buildStepPayload(
+  step: StepNumber,
+  values: OnboardingFormValues,
+): unknown {
   switch (step) {
     case ONBOARDING_STEPS[0]:
       return buildProfileStepPayload(values);
     case ONBOARDING_STEPS[1]:
       return {
-        step: ONBOARDING_STEPS[0],
+        step,
         avatar: values.avatar,
       };
     case ONBOARDING_STEPS[2]:
@@ -206,7 +209,7 @@ export function CreatePhotographerForm({
     initialData.contact?.emailVerified ?? false,
   );
   const [isSubmittedForReview, setIsSubmittedForReview] = useState(
-    isPhotographerPendingReview(initialData),
+    isPhotographerSubmittedForReview(initialData),
   );
   const [isEditingApprovedProfile, setIsEditingApprovedProfile] = useState(
     isApprovedPhotographer(initialData),
@@ -317,20 +320,16 @@ export function CreatePhotographerForm({
 
       form.reset(nextValues);
       setContactEmailVerified(nextState.contact?.emailVerified ?? false);
-      setIsSubmittedForReview(isPhotographerPendingReview(nextState));
+      setIsSubmittedForReview(isPhotographerSubmittedForReview(nextState));
       setIsEditingApprovedProfile(isApprovedPhotographer(nextState));
       setActiveStep(nextResumeStep);
 
       toast.success(
-        getStepSuccessMessage(
-          step,
-          wasPendingReview,
-          wasApprovedProfile,
-        ),
+        getStepSuccessMessage(step, wasPendingReview, wasApprovedProfile),
       );
 
       if (
-        isPhotographerPendingReview(nextState) ||
+        isPhotographerSubmittedForReview(nextState) ||
         isApprovedPhotographer(nextState)
       ) {
         router.replace("/dashboard/portfolio");
@@ -366,8 +365,7 @@ export function CreatePhotographerForm({
               disabled={isSaving || !isUnlocked}
               className={cn(
                 "rounded-2xl border px-4 py-4 text-left transition",
-                isCurrent &&
-                  "border-primary bg-primary/5 shadow-sm",
+                isCurrent && "border-primary bg-primary/5 shadow-sm",
                 !isCurrent &&
                   isUnlocked &&
                   "border-border/70 hover:border-border hover:bg-muted/20",

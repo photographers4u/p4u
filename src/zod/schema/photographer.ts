@@ -2,18 +2,18 @@ import z from "zod";
 import {
   CITIES,
   EXPERIENCE_YEARS,
+  entitySchema,
+  eventTimestamp,
   idValueSchema,
   NAME_MAX_LENGTH,
   nullableTextSchema,
   ONBOARDING_STEPS,
   requiredTextSchema,
   reviewDecisionSchema,
-  reviewEntitySchema,
-  reviewStatusSchema,
 } from "@/zod/helpers";
 import {
-  savePhotographerContactSchema,
   type SavePhotographerContactInput,
+  savePhotographerContactSchema,
 } from "./photographer-contact";
 
 const BIO_MAX_LENGTH = 1000;
@@ -29,6 +29,17 @@ const startingPriceSchema = z
   .union([z.number(), z.string().trim().min(1, "Starting price is required")])
   .transform((value) => Number(value))
   .pipe(z.number().int().min(0, "Starting price must be 0 or greater"));
+
+export const photographerWorkflowStatusValues = [
+  "draft",
+  "submitted",
+  "approved",
+  "rejected",
+  "on_hold",
+] as const;
+export const photographerWorkflowStatusSchema = z.enum(
+  photographerWorkflowStatusValues,
+);
 
 const photographerEntityShape = {
   userId: idValueSchema,
@@ -62,7 +73,17 @@ const photographerProfileInputShape = {
 
 export const photographerBaseSchema = z.object(photographerEntityShape);
 
-export const photographerSchema = reviewEntitySchema(photographerEntityShape);
+const photographerWorkflowShape = {
+  status: photographerWorkflowStatusSchema.default("draft"),
+  rejectionReason: z.string().nullable(),
+  reviewedBy: z.string().nullable(),
+  reviewedAt: eventTimestamp(),
+};
+
+export const photographerSchema = entitySchema({
+  ...photographerEntityShape,
+  ...photographerWorkflowShape,
+});
 
 export const createPhotographerSchema = z
   .object({
@@ -106,8 +127,7 @@ export const photographerOnboardingUploadInputSchema = z.object({
   imageUrl: requiredTextSchema("Image"),
 });
 
-const savePhotographerProfileStepSchema = z.object({
-  step: z.literal(ONBOARDING_STEPS[1]),
+const savePhotographerProfileStepFields = {
   name: requiredTextSchema("Name").max(
     NAME_MAX_LENGTH,
     `Name must be at most ${NAME_MAX_LENGTH} characters`,
@@ -119,6 +139,11 @@ const savePhotographerProfileStepSchema = z.object({
     .optional(),
   locationCity: z.enum(CITIES),
   experienceYears: z.enum(EXPERIENCE_YEARS),
+};
+
+const savePhotographerProfileStepSchema = z.object({
+  step: z.literal(ONBOARDING_STEPS[0]),
+  ...savePhotographerProfileStepFields,
 });
 
 const savePhotographerSpecialitiesStepSchema = z.object({
@@ -133,18 +158,51 @@ const savePhotographerContactStepSchema = z.object({
   contact: savePhotographerContactSchema,
 });
 
+const savePhotographerOnboardingAvatarStepSchema = z.object({
+  step: z.literal(ONBOARDING_STEPS[1]),
+  avatar: requiredTextSchema("Avatar"),
+});
+
 export const savePhotographerOnboardingStepSchema = z.discriminatedUnion(
   "step",
   [
-    z.object({
-      step: z.literal(ONBOARDING_STEPS[0]),
-      avatar: requiredTextSchema("Avatar"),
-    }),
     savePhotographerProfileStepSchema,
+    savePhotographerOnboardingAvatarStepSchema,
     savePhotographerSpecialitiesStepSchema,
     savePhotographerContactStepSchema,
   ],
 );
+
+const legacySavePhotographerOnboardingAvatarStepSchema = z
+  .object({
+    step: z.literal(ONBOARDING_STEPS[0]),
+    avatar: requiredTextSchema("Avatar"),
+  })
+  .transform((input) => ({
+    step: ONBOARDING_STEPS[1],
+    avatar: input.avatar,
+  }));
+
+const legacySavePhotographerProfileStepSchema = z
+  .object({
+    step: z.literal(ONBOARDING_STEPS[1]),
+    ...savePhotographerProfileStepFields,
+  })
+  .transform((input) => ({
+    step: ONBOARDING_STEPS[0],
+    name: input.name,
+    bio: input.bio,
+    locationCity: input.locationCity,
+    experienceYears: input.experienceYears,
+  }));
+
+// Accept stale pre-refresh tabs temporarily, but normalize everything to the
+// new canonical step mapping before controller logic runs.
+export const savePhotographerOnboardingStepRequestSchema = z.union([
+  savePhotographerOnboardingStepSchema,
+  legacySavePhotographerOnboardingAvatarStepSchema,
+  legacySavePhotographerProfileStepSchema,
+]);
 
 export const photographerOnboardingStateSchema = z.object({
   avatar: z.string().nullable(),
@@ -164,7 +222,7 @@ export const photographerOnboardingStateSchema = z.object({
   name: z.string().nullable(),
   onboardingStep: onboardingStepSchema,
   rejectionReason: z.string().nullable(),
-  status: reviewStatusSchema,
+  status: photographerWorkflowStatusSchema,
   specialities: z.array(photographerOnboardingSpecialityInputSchema),
   uploads: z.array(photographerOnboardingUploadInputSchema),
 });
@@ -201,6 +259,9 @@ export type SavePhotographerOnboardingStepInput = z.infer<
 >;
 export type PhotographerOnboardingState = z.infer<
   typeof photographerOnboardingStateSchema
+>;
+export type PhotographerWorkflowStatus = z.infer<
+  typeof photographerWorkflowStatusSchema
 >;
 export type UpdatePhotographerProfileInput = z.infer<
   typeof updatePhotographerProfileSchema

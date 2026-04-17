@@ -12,7 +12,7 @@ import {
   photographerIdParamsSchema,
   reviewPhotographerSchema,
   savePhotographerAvatarStepSchema,
-  savePhotographerOnboardingStepSchema,
+  savePhotographerOnboardingStepRequestSchema,
   updatePhotographerProfileSchema,
 } from "@/zod/schema/photographer";
 
@@ -129,7 +129,7 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
   .patch(
     "/onboarding",
     requireAuth,
-    zValidator("json", savePhotographerOnboardingStepSchema),
+    zValidator("json", savePhotographerOnboardingStepRequestSchema),
     async (c) => {
       const user = c.get("user");
 

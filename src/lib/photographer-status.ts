@@ -1,44 +1,30 @@
-import { ONBOARDING_STEPS } from "@/zod/helpers";
+import type { PhotographerWorkflowStatus } from "@/zod/schema/photographer";
 
 const reviewDecisionStatuses = ["approved", "rejected", "on_hold"] as const;
 
 export type PhotographerReviewDecisionStatus =
   (typeof reviewDecisionStatuses)[number];
 
-type PhotographerPublicationState = {
-  isPublished: boolean;
-  status: string | null | undefined;
+type PhotographerWorkflowState = {
+  status: PhotographerWorkflowStatus | null | undefined;
 };
 
-type PhotographerReviewState = {
-  contact: unknown;
-  onboardingStep: number;
-  status: string | null | undefined;
-};
-
-export function isApprovedPhotographer(
-  state: PhotographerPublicationState,
-) {
-  return state.status === "approved" || state.isPublished;
+export function isApprovedPhotographer(state: PhotographerWorkflowState) {
+  return state.status === "approved";
 }
 
-export function isPhotographerPendingReview(
-  state: PhotographerReviewState,
+export function isPhotographerSubmittedForReview(
+  state: PhotographerWorkflowState,
 ) {
-  return (
-    state.status === "pending" &&
-    state.onboardingStep === ONBOARDING_STEPS[3] &&
-    Boolean(state.contact)
-  );
+  return state.status === "submitted";
 }
 
-type PhotographerModerationState = PhotographerPublicationState &
-  PhotographerReviewState;
+type PhotographerModerationState = PhotographerWorkflowState;
 
 export function getAllowedPhotographerReviewStatuses(
   state: PhotographerModerationState,
 ): PhotographerReviewDecisionStatus[] {
-  if (isPhotographerPendingReview(state)) {
+  if (isPhotographerSubmittedForReview(state)) {
     return ["approved", "rejected"];
   }
 

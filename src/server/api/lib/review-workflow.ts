@@ -8,18 +8,21 @@ export const reviewSortOrderSchema = z.enum(["asc", "desc"]);
 
 export function createReviewListQuerySchema<
   TCategorySchema extends z.ZodTypeAny,
+  TStatusSchema extends z.ZodTypeAny = typeof reviewStatusSchema,
 >(
   categorySchema: TCategorySchema,
   options?: {
     defaultLimit?: number;
     maxLimit?: number;
+    statusSchema?: TStatusSchema;
   },
 ) {
   const defaultLimit = options?.defaultLimit ?? 8;
   const maxLimit = options?.maxLimit ?? 24;
+  const statusSchema = options?.statusSchema ?? reviewStatusSchema;
 
   return z.object({
-    status: reviewStatusSchema.optional(),
+    status: statusSchema.optional(),
     category: categorySchema.optional(),
     sortBy: reviewSortBySchema.default("createdAt"),
     sortOrder: reviewSortOrderSchema.default("desc"),

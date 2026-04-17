@@ -1,9 +1,9 @@
 "use client";
 
 import type { Route } from "next";
-import type { PhotographerReviewDecisionStatus } from "@/lib/photographer-status";
 import { apiClient } from "@/lib/api-client";
 import { getApiErrorMessage } from "@/lib/api-error";
+import type { PhotographerReviewDecisionStatus } from "@/lib/photographer-status";
 import type { ReviewPhotographerInput } from "@/zod/schema/photographer";
 import { ReviewDecisionActions } from "./review-decision-actions";
 
@@ -14,7 +14,7 @@ export function AdminPhotographerReviewActions({
 }: {
   allowedTransitions: PhotographerReviewDecisionStatus[];
   photographerId: string;
-  currentStatus: "pending" | "approved" | "rejected" | "on_hold";
+  currentStatus: "draft" | "submitted" | "approved" | "rejected" | "on_hold";
 }) {
   return (
     <ReviewDecisionActions

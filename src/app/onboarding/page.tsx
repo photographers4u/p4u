@@ -3,14 +3,14 @@ import { redirect } from "next/navigation";
 import { CreatePhotographerForm } from "@/components/forms/create-photographer-form";
 import PageHeader from "@/components/page-header";
 import {
+  isApprovedPhotographer,
+  isPhotographerSubmittedForReview,
+} from "@/lib/photographer-status";
+import {
   getServerAccount,
   getServerPhotographer,
   getServerPhotographerOnboarding,
 } from "@/lib/server-api";
-import {
-  isApprovedPhotographer,
-  isPhotographerPendingReview,
-} from "@/lib/photographer-status";
 import { specialityDal } from "@/server/db/dal/speciality";
 
 export default async function OnboardingPage() {
@@ -31,7 +31,7 @@ export default async function OnboardingPage() {
     (photographer && isApprovedPhotographer(photographer)) ||
     photographer?.status === "rejected" ||
     photographer?.status === "on_hold" ||
-    isPhotographerPendingReview(onboarding)
+    isPhotographerSubmittedForReview(onboarding)
   ) {
     redirect("/dashboard/portfolio");
   }

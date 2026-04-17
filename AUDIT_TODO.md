@@ -10,18 +10,18 @@
 
 ## 2. Photographer Workflow / Business Logic
 
-- [ ] Replace the current implicit photographer workflow with an explicit state model such as `draft | submitted | approved | rejected | on_hold`.
-- [ ] Stop using `pending + onboardingStep + contact` as a proxy for “submitted for review”.
-- [ ] Add a real persisted submission marker such as `submittedAt` if a separate workflow enum is not added.
-- [ ] Simplify the onboarding step system so UI step numbers and backend step numbers mean the same thing.
-- [ ] Remove the current reverse/offset step mapping in `src/components/forms/create-photographer-form.tsx`.
-- [ ] Rename or simplify onboarding constants in `src/server/db/controller/photographer.ts` so `AVATAR_COMPLETED_STEP`, `PROFILE_COMPLETED_STEP`, and `FINAL_ONBOARDING_STEP` are unambiguous.
-- [ ] Make “draft” a first-class domain state instead of representing drafts as `status: "pending"`.
-- [ ] Update `src/lib/photographer-status.ts` to read the new explicit workflow state instead of heuristics.
-- [ ] Update onboarding redirects in `src/app/onboarding/page.tsx` to use the new workflow state.
-- [ ] Update portfolio page behavior in `src/app/(dashboard)/dashboard/portfolio/page.tsx` to use the new workflow state.
-- [ ] Update admin photographer status rendering in `src/app/(dashboard)/admin/photographers/page.tsx` to use the new workflow state.
-- [ ] Update admin photographer detail status rendering in `src/app/(dashboard)/admin/photographer/[id]/page.tsx` to use the new workflow state.
+- [x] Replace the current implicit photographer workflow with an explicit state model such as `draft | submitted | approved | rejected | on_hold`.
+- [x] Stop using `pending + onboardingStep + contact` as a proxy for "submitted for review."
+- [x] Add a real persisted submission marker such as `submittedAt` if a separate workflow enum is not added. The explicit workflow enum was added instead.
+- [x] Simplify the onboarding step system so UI step numbers and backend step numbers mean the same thing.
+- [x] Remove the current reverse/offset step mapping in `src/components/forms/create-photographer-form.tsx`.
+- [x] Rename or simplify onboarding constants in `src/server/db/controller/photographer.ts` so `AVATAR_COMPLETED_STEP`, `PROFILE_COMPLETED_STEP`, and `FINAL_ONBOARDING_STEP` are unambiguous.
+- [x] Make "draft" a first-class domain state instead of representing drafts as `status: "pending"`.
+- [x] Update `src/lib/photographer-status.ts` to read the new explicit workflow state instead of heuristics.
+- [x] Update onboarding redirects in `src/app/onboarding/page.tsx` to use the new workflow state.
+- [x] Update portfolio page behavior in `src/app/(dashboard)/dashboard/portfolio/page.tsx` to use the new workflow state.
+- [x] Update admin photographer status rendering in `src/app/(dashboard)/admin/photographers/page.tsx` to use the new workflow state.
+- [x] Update admin photographer detail status rendering in `src/app/(dashboard)/admin/photographer/[id]/page.tsx` to use the new workflow state.
 
 ## 3. Admin Moderation Rules
 
@@ -67,7 +67,7 @@
 
 ## 8. Server-Side Data Access Architecture
 
-- [ ] Stop calling the app’s own HTTP API from server components when direct controller/service calls are available.
+- [ ] Stop calling the app's own HTTP API from server components when direct controller/service calls are available.
 - [ ] Decide on one server-side access pattern: direct domain services or internal HTTP, not both.
 - [ ] Refactor `src/lib/server-api.ts` usage out of server-rendered dashboard pages where direct calls are cleaner.
 - [ ] Keep HTTP routes as thin adapters for browser/external consumers instead of making them the internal server API layer.
@@ -133,7 +133,7 @@
 
 ## 15. Naming / Product Cleanup
 
-- [ ] Remove stale “item-first starter app” copy from the product if this repo is now photographer-centric.
+- [ ] Remove stale "item-first starter app" copy from the product if this repo is now photographer-centric.
 - [ ] Remove stale `dezine-mafia` naming from runtime messages and upload metadata.
 - [ ] Update `src/config/site.ts` to match the real product direction.
 - [ ] Update the public homepage copy to match the real product.
@@ -152,7 +152,7 @@
 ## Suggested Execution Order
 
 - [x] Phase 1: lock down backend permissions and moderation transition rules.
-- [ ] Phase 2: replace implicit workflow heuristics with explicit photographer state.
+- [x] Phase 2: replace implicit workflow heuristics with explicit photographer state.
 - [ ] Phase 3: wire notifications and fix signup/email consistency.
 - [ ] Phase 4: clean performance issues in photographer/admin queries.
 - [ ] Phase 5: finish or remove the uploads/images feature.

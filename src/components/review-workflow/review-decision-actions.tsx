@@ -3,9 +3,9 @@
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { PhotographerReviewDecisionStatus } from "@/lib/photographer-status";
 import { Button } from "@/components/ui/button";
 import { FieldDescription, FieldError } from "@/components/ui/field";
+import type { PhotographerReviewDecisionStatus } from "@/lib/photographer-status";
 
 export function ReviewDecisionActions({
   allowedTransitions,
@@ -27,7 +27,7 @@ export function ReviewDecisionActions({
   approvingLabel: string;
   rejectingLabel: string;
   successHref: Route;
-  currentStatus?: "pending" | "approved" | "rejected" | "on_hold";
+  currentStatus?: "draft" | "submitted" | "approved" | "rejected" | "on_hold";
   submitReview: (input: {
     id: string;
     data:
@@ -52,7 +52,7 @@ export function ReviewDecisionActions({
   const [rejectSuccess, setRejectSuccess] = useState(false);
   const [showRejectReason, setShowRejectReason] = useState(false);
 
-  const reviewStatus = currentStatus ?? "pending";
+  const reviewStatus = currentStatus ?? "draft";
   const canApprove = allowedTransitions.includes("approved");
   const isAlreadyApproved = reviewStatus === "approved";
   const isCurrentlyRejected = reviewStatus === "rejected";

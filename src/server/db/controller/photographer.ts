@@ -1,16 +1,16 @@
 import {
   canReviewPhotographerWithStatus,
   isApprovedPhotographer,
-  isPhotographerPendingReview,
+  isPhotographerSubmittedForReview,
 } from "@/lib/photographer-status";
 import db, { type DBExecutor, type DBTransaction } from "@/server/db";
+import { photographerContactController } from "@/server/db/controller/photographer-contact";
 import {
   type PhotographerRecord,
   photographerDal,
 } from "@/server/db/dal/photographer";
 import { photographerSpecialityDal } from "@/server/db/dal/photographer-speciality";
 import { photographerUploadDal } from "@/server/db/dal/photographer-upload";
-import { photographerContactController } from "@/server/db/controller/photographer-contact";
 import { specialityDal } from "@/server/db/dal/speciality";
 import {
   BadRequestError,
@@ -33,10 +33,11 @@ import type {
 type DBClient = DBExecutor | DBTransaction;
 
 const DEFAULT_LOCATION_COUNTRY = "india";
-const AVATAR_COMPLETED_STEP = ONBOARDING_STEPS[1];
-const PROFILE_COMPLETED_STEP = ONBOARDING_STEPS[2];
-const SPECIALITIES_COMPLETED_STEP = ONBOARDING_STEPS[3];
-const FINAL_ONBOARDING_STEP = ONBOARDING_STEPS[3];
+const PROFILE_ONBOARDING_STEP = ONBOARDING_STEPS[0];
+const AVATAR_ONBOARDING_STEP = ONBOARDING_STEPS[1];
+const SPECIALITIES_ONBOARDING_STEP = ONBOARDING_STEPS[2];
+const CONTACT_ONBOARDING_STEP = ONBOARDING_STEPS[3];
+const FINAL_ONBOARDING_STEP = CONTACT_ONBOARDING_STEP;
 
 export type AdminPhotographerReviewEntry = {
   id: string;
@@ -72,10 +73,7 @@ export type AdminPhotographerReviewEntry = {
   portfolioPreview: string | null;
 };
 
-type PhotographerModerationState = Pick<
-  PhotographerOnboardingState,
-  "contact" | "isPublished" | "onboardingStep" | "status"
->;
+type PhotographerModerationState = Pick<PhotographerOnboardingState, "status">;
 
 function toPublicPhotographer(photographer: PhotographerRecord) {
   return {
@@ -100,8 +98,9 @@ function buildCreatePhotographerData(
     ...input,
     bio: input.bio?.trim() ? input.bio : null,
     locationCountry: input.locationCountry ?? DEFAULT_LOCATION_COUNTRY,
-    onboardingStep: PROFILE_COMPLETED_STEP,
+    onboardingStep: PROFILE_ONBOARDING_STEP,
     isPublished: false,
+    status: "draft" as const,
   };
 }
 
@@ -117,7 +116,7 @@ function buildEmptyOnboardingState(): PhotographerOnboardingState {
     name: null,
     onboardingStep: ONBOARDING_STEPS[0],
     rejectionReason: null,
-    status: "pending",
+    status: "draft",
     specialities: [],
     uploads: [],
   };
@@ -201,6 +200,7 @@ async function ensurePhotographerByUserId(
     {
       userId,
       isPublished: false,
+      status: "draft",
     },
     executor,
   );
@@ -275,10 +275,11 @@ async function assertReadyForPublication(
   photographer: PhotographerRecord,
   executor: DBClient = db,
 ) {
-  const contact = await photographerContactController.getPhotographerContactByPhotographerId(
-    photographer.id,
-    executor,
-  );
+  const contact =
+    await photographerContactController.getPhotographerContactByPhotographerId(
+      photographer.id,
+      executor,
+    );
   const specialities = await photographerSpecialityDal.getByPhotographerId(
     photographer.id,
     executor,
@@ -322,10 +323,11 @@ async function buildOnboardingState(
     return buildEmptyOnboardingState();
   }
 
-  const contact = await photographerContactController.getPhotographerContactByPhotographerId(
-    photographer.id,
-    executor,
-  );
+  const contact =
+    await photographerContactController.getPhotographerContactByPhotographerId(
+      photographer.id,
+      executor,
+    );
   const specialities = await photographerSpecialityDal.getByPhotographerId(
     photographer.id,
     executor,
@@ -353,7 +355,7 @@ async function buildOnboardingState(
     name: photographer.name,
     onboardingStep: normalizeOnboardingStep(photographer.onboardingStep),
     rejectionReason: photographer.rejectionReason,
-    status: photographer.status ?? "pending",
+    status: photographer.status ?? "draft",
     specialities: specialities.map((speciality) => ({
       specialityId: speciality.specialityId,
       startingPrice: speciality.startingPrice,
@@ -365,11 +367,11 @@ async function buildOnboardingState(
 }
 
 function getAdminReviewPriority(entry: AdminPhotographerReviewEntry) {
-  if (isPhotographerPendingReview(entry)) {
+  if (isPhotographerSubmittedForReview(entry)) {
     return 0;
   }
 
-  if (entry.status === "pending") {
+  if (entry.status === "draft") {
     return 1;
   }
 
@@ -384,21 +386,11 @@ function getAdminReviewPriority(entry: AdminPhotographerReviewEntry) {
   return 4;
 }
 
-async function getPhotographerModerationState(
+function getPhotographerModerationState(
   photographer: PhotographerRecord,
-  executor: DBClient = db,
-): Promise<PhotographerModerationState> {
-  const contact =
-    await photographerContactController.getPhotographerContactByPhotographerId(
-      photographer.id,
-      executor,
-    );
-
+): PhotographerModerationState {
   return {
-    contact,
-    isPublished: photographer.isPublished,
-    onboardingStep: normalizeOnboardingStep(photographer.onboardingStep),
-    status: photographer.status ?? "pending",
+    status: photographer.status ?? "draft",
   };
 }
 
@@ -417,7 +409,9 @@ function assertApprovedPhotographerEditPermission(
   );
 }
 
-function getLockedResubmissionMessage(status: PhotographerOnboardingState["status"]) {
+function getLockedResubmissionMessage(
+  status: PhotographerOnboardingState["status"],
+) {
   if (status === "rejected") {
     return "Rejected photographer profiles are locked until a resubmission flow is implemented.";
   }
@@ -429,10 +423,9 @@ function getLockedResubmissionMessage(status: PhotographerOnboardingState["statu
   return "Submitted photographer profiles can't be edited while review is pending.";
 }
 
-async function assertPhotographerCanSaveOnboardingStep(
+function assertPhotographerCanSaveOnboardingStep(
   photographer: PhotographerRecord,
   step: SavePhotographerOnboardingStepInput["step"],
-  executor: DBClient = db,
 ) {
   if (isApprovedPhotographer(photographer)) {
     if (step === ONBOARDING_STEPS[2]) {
@@ -446,15 +439,12 @@ async function assertPhotographerCanSaveOnboardingStep(
     );
   }
 
-  const moderationState = await getPhotographerModerationState(
-    photographer,
-    executor,
-  );
+  const moderationState = getPhotographerModerationState(photographer);
 
   if (
     moderationState.status === "rejected" ||
     moderationState.status === "on_hold" ||
-    isPhotographerPendingReview(moderationState)
+    isPhotographerSubmittedForReview(moderationState)
   ) {
     throw new ForbiddenError(
       getLockedResubmissionMessage(moderationState.status),
@@ -462,11 +452,9 @@ async function assertPhotographerCanSaveOnboardingStep(
   }
 }
 
-function getInvalidReviewTransitionMessage(
-  state: PhotographerModerationState,
-) {
-  if (state.status === "pending" && !isPhotographerPendingReview(state)) {
-    return "Only photographer profiles that have been submitted for review can be moderated.";
+function getInvalidReviewTransitionMessage(state: PhotographerModerationState) {
+  if (state.status === "draft") {
+    return "Only submitted photographer profiles can be moderated.";
   }
 
   if (isApprovedPhotographer(state)) {
@@ -484,23 +472,17 @@ function getInvalidReviewTransitionMessage(
   return "This moderation action isn't allowed for the current photographer state.";
 }
 
-async function assertAllowedPhotographerReviewTransition(
+function assertAllowedPhotographerReviewTransition(
   photographer: PhotographerRecord,
   nextStatus: ReviewPhotographerInput["status"],
-  executor: DBClient = db,
 ) {
-  const moderationState = await getPhotographerModerationState(
-    photographer,
-    executor,
-  );
+  const moderationState = getPhotographerModerationState(photographer);
 
   if (canReviewPhotographerWithStatus(moderationState, nextStatus)) {
     return moderationState;
   }
 
-  throw new ForbiddenError(
-    getInvalidReviewTransitionMessage(moderationState),
-  );
+  throw new ForbiddenError(getInvalidReviewTransitionMessage(moderationState));
 }
 
 async function buildAdminPhotographerReviewEntry(
@@ -527,7 +509,7 @@ async function buildAdminPhotographerReviewEntry(
     experienceYears: photographer.experienceYears,
     onboardingStep: normalizeOnboardingStep(photographer.onboardingStep),
     isPublished: photographer.isPublished,
-    status: photographer.status ?? "pending",
+    status: photographer.status ?? "draft",
     rejectionReason: photographer.rejectionReason,
     reviewedAt: photographer.reviewedAt,
     createdAt: photographer.createdAt,
@@ -565,7 +547,7 @@ export const photographerController = {
     input: SavePhotographerAvatarStepInput,
   ) {
     const onboarding = await this.savePhotographerOnboardingStep(userId, {
-      step: ONBOARDING_STEPS[0],
+      step: AVATAR_ONBOARDING_STEP,
       avatar: input.avatar,
     });
 
@@ -578,17 +560,21 @@ export const photographerController = {
   ) {
     return db.transaction(async (tx) => {
       const existing = await ensurePhotographerByUserId(userId, tx);
-      await assertPhotographerCanSaveOnboardingStep(existing, input.step, tx);
+      assertPhotographerCanSaveOnboardingStep(existing, input.step);
 
       switch (input.step) {
         case ONBOARDING_STEPS[0]: {
           const photographer = await updatePhotographerRecord(
             existing,
             {
-              avatar: input.avatar,
+              name: input.name,
+              bio: input.bio?.trim() ? input.bio : null,
+              locationCity: input.locationCity,
+              locationCountry: DEFAULT_LOCATION_COUNTRY,
+              experienceYears: input.experienceYears,
               onboardingStep: getProgressedOnboardingStep(
                 existing.onboardingStep,
-                AVATAR_COMPLETED_STEP,
+                PROFILE_ONBOARDING_STEP,
               ),
             },
             tx,
@@ -601,14 +587,10 @@ export const photographerController = {
           const photographer = await updatePhotographerRecord(
             existing,
             {
-              name: input.name,
-              bio: input.bio?.trim() ? input.bio : null,
-              locationCity: input.locationCity,
-              locationCountry: DEFAULT_LOCATION_COUNTRY,
-              experienceYears: input.experienceYears,
+              avatar: input.avatar,
               onboardingStep: getProgressedOnboardingStep(
                 existing.onboardingStep,
-                PROFILE_COMPLETED_STEP,
+                AVATAR_ONBOARDING_STEP,
               ),
             },
             tx,
@@ -629,7 +611,7 @@ export const photographerController = {
             {
               onboardingStep: getProgressedOnboardingStep(
                 existing.onboardingStep,
-                SPECIALITIES_COMPLETED_STEP,
+                SPECIALITIES_ONBOARDING_STEP,
               ),
             },
             tx,
@@ -644,26 +626,32 @@ export const photographerController = {
             input.contact,
             tx,
           );
-          const shouldKeepApprovedState = isApprovedPhotographer(existing);
+          if (isApprovedPhotographer(existing)) {
+            const photographer = await updatePhotographerRecord(
+              existing,
+              {
+                onboardingStep: FINAL_ONBOARDING_STEP,
+              },
+              tx,
+            );
+
+            return buildOnboardingState(photographer, tx);
+          }
+
+          await assertReadyForPublication(existing, tx);
 
           const photographer = await updatePhotographerRecord(
             existing,
-            shouldKeepApprovedState
-              ? {
-                  onboardingStep: FINAL_ONBOARDING_STEP,
-                }
-              : {
-                  onboardingStep: FINAL_ONBOARDING_STEP,
-                  isPublished: false,
-                  rejectionReason: null,
-                  reviewedAt: null,
-                  reviewedBy: null,
-                  status: "pending",
-                },
+            {
+              onboardingStep: FINAL_ONBOARDING_STEP,
+              isPublished: false,
+              rejectionReason: null,
+              reviewedAt: null,
+              reviewedBy: null,
+              status: "submitted",
+            },
             tx,
           );
-
-          await assertReadyForPublication(photographer, tx);
 
           return buildOnboardingState(photographer, tx);
         }
@@ -761,11 +749,7 @@ export const photographerController = {
         throw new NotFoundError("Photographer not found");
       }
 
-      await assertAllowedPhotographerReviewTransition(
-        photographer,
-        input.status,
-        tx,
-      );
+      assertAllowedPhotographerReviewTransition(photographer, input.status);
 
       if (input.status === "approved") {
         await assertReadyForPublication(photographer, tx);
@@ -807,7 +791,7 @@ export const photographerController = {
     assertApprovedPhotographerEditPermission(existing, "profile");
     const onboardingStep = getProgressedOnboardingStep(
       existing.onboardingStep,
-      PROFILE_COMPLETED_STEP,
+      PROFILE_ONBOARDING_STEP,
     );
     const data = {
       ...input,

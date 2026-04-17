@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/card";
 import {
   getAllowedPhotographerReviewStatuses,
-  isPhotographerPendingReview,
+  isApprovedPhotographer,
+  isPhotographerSubmittedForReview,
 } from "@/lib/photographer-status";
 import {
   type AdminPhotographerReviewEntry,
@@ -57,7 +58,7 @@ function formatCountry(country: string) {
 }
 
 function getStatusDetails(entry: AdminPhotographerReviewEntry) {
-  if (entry.status === "approved" || entry.isPublished) {
+  if (isApprovedPhotographer(entry)) {
     return {
       description: entry.isPublished
         ? "Approved and currently visible in the public photographer directory."
@@ -85,11 +86,11 @@ function getStatusDetails(entry: AdminPhotographerReviewEntry) {
     };
   }
 
-  if (isPhotographerPendingReview(entry)) {
+  if (isPhotographerSubmittedForReview(entry)) {
     return {
       description:
         "This photographer profile has been submitted and is waiting for review.",
-      label: "Pending review",
+      label: "Submitted",
       variant: "secondary" as const,
     };
   }
