@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Footer } from "@/components/footer";
 import Navbar from "@/components/navbar";
 import { siteConfig } from "@/config/site";
-import { getAuthSession } from "@/lib/auth-session";
+import { getAuthSession } from "@/server/auth/session";
 
 const effectiveDate = "April 7, 2026";
 

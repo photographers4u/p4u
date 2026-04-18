@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Photographers4U
 
-## Getting Started
+Photographers4U is a Next.js application for photographer onboarding, profile
+management, and admin moderation. Photographers can build a draft profile,
+complete onboarding, submit for review, and manage approved profile details.
+Admins can review photographer submissions and maintain the shared item library
+used elsewhere in the product.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 App Router with React 19 and TypeScript
+- Better Auth for email/password auth, magic links, and email verification
+- Hono for the `/api` surface
+- Drizzle ORM with PostgreSQL
+- Resend for transactional email
+- ImageKit for image uploads
+
+## Local Setup
+
+1. Copy `.env.sample` to `.env` and fill in the required secrets.
+2. Start PostgreSQL with `pnpm db:up`.
+3. Install dependencies with `pnpm install`.
+4. Generate and run migrations:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm db:generate
+pnpm db:migrate
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Seed the photographer specialities:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm db:seed:speciality
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+6. Start the app:
 
-## Learn More
+```bash
+pnpm dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open `http://localhost:3000` after the dev server starts.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Useful Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `pnpm dev` - run the Next.js dev server
+- `pnpm build` - create a production build
+- `pnpm typecheck` - run Next.js type generation and TypeScript checking
+- `pnpm lint` - run Biome checks
+- `pnpm db:up` / `pnpm db:down` - start or stop the local PostgreSQL container
+- `pnpm db:generate` - generate Drizzle migrations
+- `pnpm db:migrate` - apply migrations
+- `pnpm db:seed:speciality` - seed onboarding specialities
+- `pnpm db:studio` - open Drizzle Studio
 
-## Deploy on Vercel
+## Architecture Notes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Server-rendered pages should read data through
+  `src/server/auth/session.ts` and `src/server/services/*` instead of calling
+  the app's own HTTP routes.
+- `src/server/db/dal/*` owns persistence, `src/server/db/controller/*` owns
+  domain rules, and `src/server/api/routes/*` stays focused on validation,
+  auth, and HTTP response mapping.
+- Photographer moderation uses explicit workflow states:
+  `draft`, `submitted`, `approved`, `rejected`, and `on_hold`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Product Areas
+
+- Photographer onboarding and approved-profile management
+- Admin moderation queue for photographer submissions
+- Shared item library with bookmark support
+- Auth flows for verification, password reset, and email changes

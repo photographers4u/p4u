@@ -1,8 +1,8 @@
 import { headers } from "next/headers";
 import { PhotographerOfferingsForm } from "@/components/forms/photographer/offerings";
 import PageHeader from "@/components/page-header";
-import { getApprovedPhotographerPanelData } from "@/lib/photographer-panel";
 import { specialityDal } from "@/server/db/dal/speciality";
+import { getApprovedPhotographerPanelData } from "@/server/services/photographer-panel";
 
 export default async function PhotographerOfferingsPage() {
   const requestHeaders = await headers();

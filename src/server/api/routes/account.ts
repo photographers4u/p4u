@@ -13,6 +13,7 @@ import {
   requireAuth,
 } from "@/server/api/lib/require-auth-middleware";
 import { auth } from "@/server/auth";
+import { getAccountOverview } from "@/server/services/account";
 
 const setPasswordSchema = z.object({
   newPassword: z.string().min(8, "Password must be at least 8 characters."),
@@ -28,21 +29,13 @@ const confirmEmailChangeQuerySchema = z.object({
 
 export const accountRouter = new Hono<ApiAuthEnv>()
   .get("/", requireAuth, async (c) => {
-    const pendingEmailState = await getPendingEmailChangeState({
-      headers: c.req.raw.headers,
-    });
+    const account = await getAccountOverview(c.req.raw.headers);
 
-    if (pendingEmailState.kind === "unauthorized") {
+    if (!account) {
       return c.body(null, 401);
     }
 
-    return c.json(
-      {
-        pendingEmail: pendingEmailState.value.pendingEmail,
-        user: c.get("user"),
-      },
-      200,
-    );
+    return c.json(account, 200);
   })
   .post(
     "/set-password",

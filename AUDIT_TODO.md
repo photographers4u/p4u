@@ -67,11 +67,11 @@
 
 ## 8. Server-Side Data Access Architecture
 
-- [ ] Stop calling the app's own HTTP API from server components when direct controller/service calls are available.
-- [ ] Decide on one server-side access pattern: direct domain services or internal HTTP, not both.
-- [ ] Refactor `src/lib/server-api.ts` usage out of server-rendered dashboard pages where direct calls are cleaner.
-- [ ] Keep HTTP routes as thin adapters for browser/external consumers instead of making them the internal server API layer.
-- [ ] Introduce a dedicated service layer if controllers are being used both by routes and by server components.
+- [x] Stop calling the app's own HTTP API from server components when direct controller/service calls are available.
+- [x] Decide on one server-side access pattern: direct domain services or internal HTTP, not both.
+- [x] Refactor `src/lib/server-api.ts` usage out of server-rendered dashboard pages where direct calls are cleaner.
+- [x] Keep HTTP routes as thin adapters for browser/external consumers instead of making them the internal server API layer.
+- [x] Introduce a dedicated service layer if controllers are being used both by routes and by server components.
 
 ## 9. Bookmark State / Performance
 
@@ -98,7 +98,7 @@
 - [ ] Decide whether uploads are part of onboarding completeness or a post-approval feature.
 - [ ] If uploads are part of onboarding, include them in readiness checks.
 - [ ] If uploads are not ready to ship, remove the dead `/dashboard/images` surface until the feature exists.
-- [ ] Audit storage tag/folder naming to remove stale values such as `dezine-mafia`.
+- [x] Audit storage tag/folder naming to remove stale values such as `dezine-mafia`.
 
 ## 12. DRY Refactors
 
@@ -127,18 +127,18 @@
 
 ## 14. Proxy / Middleware Cleanup
 
-- [ ] Delete `src/proxy.ts` if route-level auth checks remain the real protection.
-- [ ] If `src/proxy.ts` is kept, fix the matcher so it actually covers nested dashboard routes.
-- [ ] Remove misleading comments or temporary auth behavior once the final approach is chosen.
+- [x] Delete `src/proxy.ts` if route-level auth checks remain the real protection.
+- [x] If `src/proxy.ts` is kept, fix the matcher so it actually covers nested dashboard routes. Not applicable because `src/proxy.ts` was deleted.
+- [x] Remove misleading comments or temporary auth behavior once the final approach is chosen.
 
 ## 15. Naming / Product Cleanup
 
-- [ ] Remove stale "item-first starter app" copy from the product if this repo is now photographer-centric.
-- [ ] Remove stale `dezine-mafia` naming from runtime messages and upload metadata.
-- [ ] Update `src/config/site.ts` to match the real product direction.
-- [ ] Update the public homepage copy to match the real product.
-- [ ] Update dashboard/account/admin copy to stop referring to a starter template if that is no longer true.
-- [ ] Replace the stock `README.md` with real project documentation.
+- [x] Remove stale "item-first starter app" copy from the product if this repo is now photographer-centric.
+- [x] Remove stale `dezine-mafia` naming from runtime messages and upload metadata.
+- [x] Update `src/config/site.ts` to match the real product direction.
+- [x] Update the public homepage copy to match the real product.
+- [x] Update dashboard/account/admin copy to stop referring to a starter template if that is no longer true.
+- [x] Replace the stock `README.md` with real project documentation.
 
 ## 16. Nice-to-Have Structural Refactor
 
@@ -157,4 +157,4 @@
 - [x] Phase 4: clean performance issues in photographer/admin queries.
 - [ ] Phase 5: finish or remove the uploads/images feature.
 - [x] Phase 6: attack DRY refactors and dead code removal, excluding uploads/images cleanup deferred with Phase 5.
-- [ ] Phase 7: do naming/docs cleanup and broader architecture simplification.
+- [x] Phase 7: do naming/docs cleanup and broader architecture simplification.

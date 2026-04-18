@@ -6,7 +6,7 @@ export const siteConfig = {
   handle: "@photographers4u",
   logo: "P",
   description:
-    "A clean item-first starter app with public browsing, an authenticated dashboard, and a simple admin workflow.",
+    "A moderated platform for photographer onboarding, profile management, and admin review workflows.",
   contact: {
     email: "hello@photographers4u.app",
     support: "support@photographers4u.app",
@@ -28,6 +28,6 @@ export const siteConfig = {
       template: "%s | Photographers4U",
     },
     description:
-      "A clean item-first starter app with public browsing, an authenticated dashboard, and a simple admin workflow.",
+      "A moderated platform for photographer onboarding, profile management, and admin review workflows.",
   } satisfies Metadata,
 } as const;

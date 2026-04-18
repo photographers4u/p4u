@@ -1,0 +1,67 @@
+import { zValidator } from "@hono/zod-validator";
+import { Hono } from "hono";
+import {
+  type ApiAuthEnv,
+  getRequiredUser,
+  requireAuth,
+} from "@/server/api/lib/require-auth-middleware";
+import { mapError } from "@/server/api/lib/route-helpers";
+import { photographerUploadController } from "@/server/db/controller/photographer-upload";
+import {
+  photographerUploadIdParamsSchema,
+  reorderPhotographerUploadsSchema,
+} from "@/zod/schema/photographer-upload";
+
+export const photographerUploadRouter = new Hono<ApiAuthEnv>()
+  .get("/", requireAuth, async (c) => {
+    try {
+      const user = getRequiredUser(c);
+      const uploads =
+        await photographerUploadController.getPortfolioUploadsByUserId(user.id);
+
+      return c.json({ uploads }, 200);
+    } catch (error) {
+      const [status, message] = mapError(error);
+      return c.json({ message }, status);
+    }
+  })
+  .patch(
+    "/reorder",
+    requireAuth,
+    zValidator("json", reorderPhotographerUploadsSchema),
+    async (c) => {
+      try {
+        const user = getRequiredUser(c);
+        const uploads =
+          await photographerUploadController.reorderPortfolioUploadsByUserId(
+            user.id,
+            c.req.valid("json"),
+          );
+
+        return c.json({ uploads }, 200);
+      } catch (error) {
+        const [status, message] = mapError(error);
+        return c.json({ message }, status);
+      }
+    },
+  )
+  .delete(
+    "/:id",
+    requireAuth,
+    zValidator("param", photographerUploadIdParamsSchema),
+    async (c) => {
+      try {
+        const user = getRequiredUser(c);
+        const result =
+          await photographerUploadController.deletePortfolioUploadByUserId(
+            user.id,
+            c.req.valid("param").id,
+          );
+
+        return c.json(result, 200);
+      } catch (error) {
+        const [status, message] = mapError(error);
+        return c.json({ message }, status);
+      }
+    },
+  );

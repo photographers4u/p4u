@@ -4,7 +4,7 @@ import { Footer } from "@/components/footer";
 import { ItemCard } from "@/components/item-card";
 import Navbar from "@/components/navbar";
 import { Button } from "@/components/ui/button";
-import { getAuthSession } from "@/lib/auth-session";
+import { getAuthSession } from "@/server/auth/session";
 import { itemController } from "@/server/db/controller/item";
 
 export default async function ItemsPage() {
@@ -25,12 +25,12 @@ export default async function ItemsPage() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl space-y-3">
                 <h1 className="text-4xl font-semibold tracking-tight">
-                  Browse every item in one clean starter flow.
+                  Browse the shared item library.
                 </h1>
                 <p className="text-base leading-7 text-muted-foreground">
-                  This repo now centers on a single resource. Use the admin area
-                  to create items, then see them appear here and inside the
-                  authenticated dashboard.
+                  This public library supports the wider photographer platform.
+                  Admins can publish entries here, and signed-in users can keep
+                  personal bookmarks in the dashboard.
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
@@ -45,8 +45,8 @@ export default async function ItemsPage() {
             <div className="py-14 text-center">
               <h2 className="text-2xl font-semibold">No items yet</h2>
               <p className="mt-2 text-muted-foreground">
-                Create the first item from the admin page to seed the starter
-                app.
+                Create the first item from the admin area to populate the
+                library.
               </p>
             </div>
           ) : (

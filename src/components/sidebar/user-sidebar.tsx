@@ -5,6 +5,7 @@ import {
   Camera,
   Fan,
   HatGlasses,
+  Images,
   Layers3,
   User as UserIcon,
 } from "lucide-react";
@@ -114,6 +115,11 @@ function getPhotographerGroup(photographer: Photographer | null) {
       title: "Offerings",
       url: "/dashboard/offerings" as Route,
       icon: Layers3,
+    });
+    items.push({
+      title: "Images",
+      url: "/dashboard/images" as Route,
+      icon: Images,
     });
   }
 

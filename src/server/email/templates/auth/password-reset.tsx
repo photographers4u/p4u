@@ -1,5 +1,6 @@
 import { Button, Section, Text } from "@react-email/components";
 import type * as React from "react";
+import { siteConfig } from "@/config/site";
 import { EmailLayout } from "../../components/email-layout";
 
 interface PasswordResetProps {
@@ -12,7 +13,7 @@ export default function PasswordResetTemplate({
   url,
 }: PasswordResetProps) {
   return (
-    <EmailLayout preview="Reset your Dezine Mafia password">
+    <EmailLayout preview={`Reset your ${siteConfig.name} password`}>
       <Text style={styles.heading}>Reset your password</Text>
       <Text style={styles.body}>Hi {name},</Text>
       <Text style={styles.body}>

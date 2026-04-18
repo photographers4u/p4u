@@ -22,6 +22,20 @@
       "when": 1776422913402,
       "tag": "0002_talented_lucky_pierre",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1776446325187,
+      "tag": "0003_easy_vector",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1776502412003,
+      "tag": "0004_chunky_lily_hollister",
+      "breakpoints": true
     }
   ]
 }

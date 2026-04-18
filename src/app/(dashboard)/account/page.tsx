@@ -10,7 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getServerAccount } from "@/lib/server-api";
+import { getEmailChangeErrorMessage } from "@/server/account/email-change";
+import { getAccountOverview } from "@/server/services/account";
 
 type AccountPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -23,21 +24,6 @@ type AccountNotice = {
 
 function getFirstValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
-}
-
-function getEmailChangeErrorMessage(code: string | undefined) {
-  switch (code) {
-    case "email-in-use":
-      return "That new email address is already being used by another account.";
-    case "invalid-link":
-      return "This email-change link is invalid or has expired.";
-    case "invalid-session":
-      return "Open this link while signed into the same account that requested the change.";
-    case "stale-request":
-      return "This approval link is no longer current. Request the email change again.";
-    default:
-      return null;
-  }
 }
 
 function getAccountNotice(
@@ -73,7 +59,7 @@ function getAccountNotice(
 export default async function AccountPage({ searchParams }: AccountPageProps) {
   const requestHeaders = await headers();
   const params = await searchParams;
-  const account = await getServerAccount(requestHeaders);
+  const account = await getAccountOverview(requestHeaders);
 
   if (!account?.user) {
     redirect("/login");
@@ -99,8 +85,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
           <CardHeader>
             <CardTitle>Profile summary</CardTitle>
             <CardDescription>
-              This page is now a lightweight overview instead of the removed
-              profile editor.
+              Review the account details tied to your photographer workspace.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
@@ -117,7 +102,9 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
             <div className="rounded-3xl border bg-muted/30 p-4">
               <p className="text-sm text-muted-foreground">Email status</p>
               <p className="mt-1 text-base font-medium">
-                {account.user.emailVerified ? "Verified" : "Verification required"}
+                {account.user.emailVerified
+                  ? "Verified"
+                  : "Verification required"}
               </p>
             </div>
             <div className="rounded-3xl border bg-muted/30 p-4">
@@ -134,8 +121,8 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
             </div>
             {!account.user.emailVerified ? (
               <div className="rounded-3xl border bg-amber-50 p-4 text-sm text-amber-950 sm:col-span-2 dark:bg-amber-950/30 dark:text-amber-100">
-                Your email still needs verification before email-password sign-in
-                is fully available.{" "}
+                Your email still needs verification before email-password
+                sign-in is fully available.{" "}
                 <Link
                   href={`/email-verification?email=${encodeURIComponent(account.user.email)}`}
                   className="underline underline-offset-4"

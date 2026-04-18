@@ -7,16 +7,14 @@ import {
 } from "@/server/api/lib/require-auth-middleware";
 import { mapError } from "@/server/api/lib/route-helpers";
 import { photographerContactController } from "@/server/db/controller/photographer-contact";
+import { getPhotographerContactByUserId } from "@/server/services/photographer";
 import { savePhotographerContactSchema } from "@/zod/schema";
 
 export const photographerContactRouter = new Hono<ApiAuthEnv>()
   .get("/", requireAuth, async (c) => {
     try {
       const user = getRequiredUser(c);
-      const contact =
-        await photographerContactController.getPhotographerContactByUserId(
-          user.id,
-        );
+      const contact = await getPhotographerContactByUserId(user.id);
 
       return c.json(contact, 200);
     } catch (error) {

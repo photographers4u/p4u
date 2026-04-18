@@ -8,14 +8,14 @@ import {
   getPhotographerStatusViewModel,
   type PhotographerPortfolioBanner,
 } from "@/lib/photographer-presentation";
-import {
-  getServerPhotographer,
-  getServerPhotographerContact,
-  getServerPhotographerOnboarding,
-} from "@/lib/server-api";
 import { cn } from "@/lib/utils";
-import { auth } from "@/server/auth";
+import { getAuthSession } from "@/server/auth/session";
 import { specialityDal } from "@/server/db/dal/speciality";
+import {
+  getCurrentPhotographer,
+  getCurrentPhotographerContact,
+  getCurrentPhotographerOnboarding,
+} from "@/server/services/photographer";
 
 function PortfolioStatusBanner({
   banner,
@@ -45,7 +45,7 @@ function ContactSection({
   contact,
 }: {
   canSubmit: boolean;
-  contact: Awaited<ReturnType<typeof getServerPhotographerContact>>;
+  contact: Awaited<ReturnType<typeof getCurrentPhotographerContact>>;
 }) {
   if (!contact) {
     return null;
@@ -75,7 +75,7 @@ function OfferingsSection({
     name: string;
   }>;
   canSubmit: boolean;
-  onboarding: Awaited<ReturnType<typeof getServerPhotographerOnboarding>>;
+  onboarding: Awaited<ReturnType<typeof getCurrentPhotographerOnboarding>>;
 }) {
   if (!onboarding) {
     return null;
@@ -102,21 +102,21 @@ function OfferingsSection({
 
 export default async function PortfolioPage() {
   const requestHeaders = await headers();
-  const session = await auth.api.getSession({ headers: requestHeaders });
+  const session = await getAuthSession({ headers: requestHeaders });
 
-  if (!session) {
+  if (!session?.user) {
     redirect("/login");
   }
 
-  const photographer = await getServerPhotographer(requestHeaders);
+  const photographer = await getCurrentPhotographer(requestHeaders);
 
   if (!photographer) {
     redirect("/onboarding");
   }
 
   const [onboarding, contact] = await Promise.all([
-    getServerPhotographerOnboarding(requestHeaders),
-    getServerPhotographerContact(requestHeaders),
+    getCurrentPhotographerOnboarding(requestHeaders),
+    getCurrentPhotographerContact(requestHeaders),
   ]);
   const photographerStatus = getPhotographerStatusViewModel(photographer);
 

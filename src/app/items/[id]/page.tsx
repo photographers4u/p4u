@@ -7,7 +7,7 @@ import { InternalServerState } from "@/components/internal-server-state";
 import Navbar from "@/components/navbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getAuthSession } from "@/lib/auth-session";
+import { getAuthSession } from "@/server/auth/session";
 import { itemController } from "@/server/db/controller/item";
 import { NotFoundError } from "@/server/db/helpers/errors";
 

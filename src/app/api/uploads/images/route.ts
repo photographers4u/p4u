@@ -1,44 +1,38 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import {
-  getImageUploadPrivateKey,
-  imageUploadAcceptMimeTypes,
-  imageUploadKinds,
+  type ImageUploadKind,
+  imageUploadTagNamespace,
+  isAcceptedImageUploadMimeType,
   isImageUploadKind,
   maxImageUploadSizeBytes,
-  type ImageUploadKind,
 } from "@/lib/imagekit";
 import { auth } from "@/server/auth";
+import { photographerDal } from "@/server/db/dal/photographer";
+import {
+  ImageUploadProviderError,
+  uploadProviderImage,
+} from "@/server/services/image-upload";
 
 export const runtime = "nodejs";
 
-const uploadEndpoint = "https://upload.imagekit.io/api/v1/files/upload";
-
-function sanitizeFileNamePart(value: string) {
-  return value.replace(/[^a-zA-Z0-9.-]/g, "_");
-}
-
-function createFileName(kind: ImageUploadKind, originalName: string) {
-  const { fileNamePrefix } = imageUploadKinds[kind];
-  const extension =
-    originalName.lastIndexOf(".") >= 0
-      ? originalName.slice(originalName.lastIndexOf("."))
-      : "";
-
-  return `${sanitizeFileNamePart(fileNamePrefix)}-${Date.now()}${extension}`;
-}
-
-function getUploadErrorMessage(payload: unknown) {
-  if (
-    payload &&
-    typeof payload === "object" &&
-    "message" in payload &&
-    typeof payload.message === "string"
-  ) {
-    return payload.message;
+async function getUploadAuthorizationError(
+  userId: string,
+  uploadKind: ImageUploadKind,
+) {
+  if (uploadKind === "photographerAvatar") {
+    return null;
   }
 
-  return "Couldn't upload the image right now.";
+  if (uploadKind === "photographerPortfolio") {
+    const photographer = await photographerDal.getByUserId(userId);
+
+    return photographer
+      ? null
+      : "Only photographers can upload portfolio images.";
+  }
+
+  return "That upload target isn't allowed for this account.";
 }
 
 export async function POST(request: Request) {
@@ -50,17 +44,6 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { message: "Please sign in to upload images." },
       { status: 401 },
-    );
-  }
-
-  let privateKey: string;
-
-  try {
-    privateKey = getImageUploadPrivateKey();
-  } catch {
-    return NextResponse.json(
-      { message: "Image uploads are not configured yet." },
-      { status: 503 },
     );
   }
 
@@ -82,11 +65,16 @@ export async function POST(request: Request) {
     );
   }
 
-  if (
-    !imageUploadAcceptMimeTypes.includes(
-      file.type as (typeof imageUploadAcceptMimeTypes)[number],
-    )
-  ) {
+  const authorizationError = await getUploadAuthorizationError(
+    session.user.id,
+    uploadKind,
+  );
+
+  if (authorizationError) {
+    return NextResponse.json({ message: authorizationError }, { status: 403 });
+  }
+
+  if (!isAcceptedImageUploadMimeType(file.type)) {
     return NextResponse.json(
       { message: "Please choose a PNG, JPG, WEBP, or GIF image." },
       { status: 415 },
@@ -100,43 +88,29 @@ export async function POST(request: Request) {
     );
   }
 
-  const providerFormData = new FormData();
-  providerFormData.set("file", file, file.name);
-  providerFormData.set("fileName", createFileName(uploadKind, file.name));
-  providerFormData.set("folder", imageUploadKinds[uploadKind].folder);
-  providerFormData.set("tags", ["dezine-mafia", uploadKind].join(","));
-  providerFormData.set("useUniqueFileName", "true");
+  try {
+    const payload = await uploadProviderImage({
+      file,
+      tags: [
+        imageUploadTagNamespace,
+        uploadKind,
+        `user:${session.user.id}`,
+      ],
+      uploadKind,
+    });
 
-  const response = await fetch(uploadEndpoint, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${Buffer.from(`${privateKey}:`).toString("base64")}`,
-    },
-    body: providerFormData,
-    cache: "no-store",
-  });
+    return NextResponse.json(payload);
+  } catch (error) {
+    if (error instanceof ImageUploadProviderError) {
+      return NextResponse.json(
+        { message: error.message },
+        { status: error.status },
+      );
+    }
 
-  const payload = await response.json().catch(() => null);
-
-  if (!response.ok) {
     return NextResponse.json(
-      { message: getUploadErrorMessage(payload) },
-      { status: response.status >= 500 ? 502 : response.status },
+      { message: "Couldn't upload the image right now." },
+      { status: 500 },
     );
   }
-
-  if (
-    !payload ||
-    typeof payload !== "object" ||
-    !("url" in payload) ||
-    typeof payload.url !== "string" ||
-    payload.url.length === 0
-  ) {
-    return NextResponse.json(
-      { message: "Upload finished, but we couldn't save the image." },
-      { status: 502 },
-    );
-  }
-
-  return NextResponse.json({ url: payload.url });
 }

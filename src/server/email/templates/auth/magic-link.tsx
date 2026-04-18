@@ -1,5 +1,6 @@
 import { Button, Section, Text } from "@react-email/components";
 import type * as React from "react";
+import { siteConfig } from "@/config/site";
 import { EmailLayout } from "../../components/email-layout";
 
 interface MagicLinkProps {
@@ -8,8 +9,8 @@ interface MagicLinkProps {
 
 export default function MagicLinkTemplate({ url }: MagicLinkProps) {
   return (
-    <EmailLayout preview="Your sign-in link for Dezine Mafia">
-      <Text style={styles.heading}>Sign in to Dezine Mafia</Text>
+    <EmailLayout preview={`Your sign-in link for ${siteConfig.name}`}>
+      <Text style={styles.heading}>Sign in to {siteConfig.name}</Text>
       <Text style={styles.body}>
         Click the button below to sign in. This link expires in 10 minutes and
         can only be used once.

@@ -116,6 +116,8 @@ export const photographerOnboardingSpecialityInputSchema = z.object({
 });
 
 export const photographerOnboardingUploadInputSchema = z.object({
+  id: idValueSchema,
+  displayOrder: z.number().int().min(0),
   imageUrl: requiredTextSchema("Image"),
 });
 

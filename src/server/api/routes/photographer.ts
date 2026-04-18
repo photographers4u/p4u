@@ -9,6 +9,10 @@ import { getAdminUserOrResponse } from "@/server/api/lib/review-workflow";
 import { mapError } from "@/server/api/lib/route-helpers";
 import { photographerController } from "@/server/db/controller/photographer";
 import {
+  getPhotographerOnboardingByUserId,
+  getPhotographerProfileByUserId,
+} from "@/server/services/photographer";
+import {
   photographerIdParamsSchema,
   reviewPhotographerSchema,
   savePhotographerAvatarStepSchema,
@@ -20,8 +24,7 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
   .get("/onboarding", requireAuth, async (c) => {
     try {
       const user = getRequiredUser(c);
-      const photographer =
-        await photographerController.getPhotographerOnboardingByUserId(user.id);
+      const photographer = await getPhotographerOnboardingByUserId(user.id);
 
       return c.json(photographer, 200);
     } catch (error) {
@@ -32,9 +35,7 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
   .get("/", requireAuth, async (c) => {
     try {
       const user = getRequiredUser(c);
-      const photographer = await photographerController.getPhotographerByUserId(
-        user.id,
-      );
+      const photographer = await getPhotographerProfileByUserId(user.id);
 
       return c.json(photographer, 200);
     } catch (error) {

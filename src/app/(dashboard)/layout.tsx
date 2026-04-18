@@ -1,8 +1,13 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { UserSidebar } from "@/components/sidebar/user-sidebar";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { getServerPhotographer, getServerSession } from "@/lib/server-api";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { getAuthSession } from "@/server/auth/session";
+import { getCurrentPhotographer } from "@/server/services/photographer";
 
 export default async function layout({
   children,
@@ -11,11 +16,11 @@ export default async function layout({
 }) {
   const requestHeaders = await headers();
   const [session, photographer] = await Promise.all([
-    getServerSession(requestHeaders),
-    getServerPhotographer(requestHeaders),
+    getAuthSession({ headers: requestHeaders }),
+    getCurrentPhotographer(requestHeaders),
   ]);
 
-  if (!session || !session.user) {
+  if (!session?.user) {
     return redirect("/login");
   }
 
@@ -36,7 +41,9 @@ export default async function layout({
       <SidebarInset>
         <header className="flex h-12 items-center gap-2 border-b px-4 md:hidden">
           <SidebarTrigger />
-          <span className="text-sm font-medium text-muted-foreground">Menu</span>
+          <span className="text-sm font-medium text-muted-foreground">
+            Menu
+          </span>
         </header>
         <div className="flex flex-1 flex-col max-w-6xl mx-auto w-full py-6 px-4 sm:py-10 sm:px-6 lg:py-16 lg:px-8">
           {children}

@@ -1,8 +1,8 @@
-import { notFound } from "next/navigation";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { DeleteItemButton } from "@/components/delete-item-button";
-import PageHeader from "@/components/page-header";
 import { ItemForm } from "@/components/forms/item-form";
+import PageHeader from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { itemController } from "@/server/db/controller/item";
 import { NotFoundError } from "@/server/db/helpers/errors";
@@ -25,7 +25,7 @@ export default async function AdminEditItemPage({
       <div className="space-y-8">
         <PageHeader
           title="Edit Item"
-          subtitle="Update the item title without touching the generic bookmark model."
+          subtitle="Update this item entry without disrupting saved bookmarks."
         />
 
         <div className="max-w-2xl space-y-6">

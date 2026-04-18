@@ -1,5 +1,6 @@
 import { Button, Section, Text } from "@react-email/components";
 import type * as React from "react";
+import { siteConfig } from "@/config/site";
 import { EmailLayout } from "../../components/email-layout";
 
 interface VerifyEmailProps {
@@ -9,7 +10,7 @@ interface VerifyEmailProps {
 
 export default function VerifyEmailTemplate({ name, url }: VerifyEmailProps) {
   return (
-    <EmailLayout preview="Verify your Dezine Mafia email address">
+    <EmailLayout preview={`Verify your ${siteConfig.name} email address`}>
       <Text style={styles.heading}>Verify your email</Text>
       <Text style={styles.body}>Hi {name},</Text>
       <Text style={styles.body}>

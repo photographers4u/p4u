@@ -3,17 +3,15 @@ import { redirect } from "next/navigation";
 import { CreatePhotographerForm } from "@/components/forms/create-photographer-form";
 import PageHeader from "@/components/page-header";
 import { getPhotographerStatusViewModel } from "@/lib/photographer-presentation";
-import {
-  getServerAccount,
-  getServerPhotographerOnboarding,
-} from "@/lib/server-api";
 import { specialityDal } from "@/server/db/dal/speciality";
+import { getAccountOverview } from "@/server/services/account";
+import { getCurrentPhotographerOnboarding } from "@/server/services/photographer";
 
 export default async function OnboardingPage() {
   const requestHeaders = await headers();
   const [account, onboarding, availableSpecialities] = await Promise.all([
-    getServerAccount(requestHeaders),
-    getServerPhotographerOnboarding(requestHeaders),
+    getAccountOverview(requestHeaders),
+    getCurrentPhotographerOnboarding(requestHeaders),
     specialityDal.getAll(),
   ]);
 

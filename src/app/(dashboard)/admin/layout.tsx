@@ -1,11 +1,11 @@
 import { headers } from "next/headers";
-import { getServerAdminSession } from "@/lib/server-api";
+import { getAdminAuthSession } from "@/server/auth/session";
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await getServerAdminSession(await headers());
+  await getAdminAuthSession({ headers: await headers() });
   return children;
 }

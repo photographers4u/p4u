@@ -82,6 +82,8 @@ export type AdminPhotographerReviewEntry = {
     startingPrice: number;
   }>;
   uploads: Array<{
+    displayOrder: number;
+    id: string;
     imageUrl: string;
   }>;
   uploadsCount: number;
@@ -398,6 +400,8 @@ async function buildOnboardingState(
       startingPrice: speciality.startingPrice,
     })),
     uploads: uploads.map((upload) => ({
+      displayOrder: upload.displayOrder,
+      id: upload.id,
       imageUrl: upload.imageUrl,
     })),
   };
@@ -431,6 +435,8 @@ function buildAdminPhotographerListEntry(
   row: AdminPhotographerListRow,
   specialitiesCount: number,
   uploads: Array<{
+    displayOrder: number;
+    id: string;
     imageUrl: string;
   }>,
 ): AdminPhotographerListEntry {
@@ -594,6 +600,8 @@ async function buildAdminPhotographerReviewEntry(
       startingPrice: speciality.startingPrice,
     })),
     uploads: uploads.map((upload) => ({
+      displayOrder: upload.displayOrder,
+      id: upload.id,
       imageUrl: upload.imageUrl,
     })),
     uploadsCount: uploads.length,
@@ -803,6 +811,8 @@ export const photographerController = {
           row,
           specialitiesByPhotographerId.get(row.id)?.length ?? 0,
           (uploadsByPhotographerId.get(row.id) ?? []).map((upload) => ({
+            displayOrder: upload.displayOrder,
+            id: upload.id,
             imageUrl: upload.imageUrl,
           })),
         ),

@@ -3,14 +3,14 @@ import Link from "next/link";
 import { ItemCard } from "@/components/item-card";
 import PageHeader from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { getServerSession } from "@/lib/server-api";
+import { getAuthSession } from "@/server/auth/session";
 import { itemController } from "@/server/db/controller/item";
 
 export default async function DashboardItemsPage() {
   const requestHeaders = await headers();
   const [items, session] = await Promise.all([
     itemController.getAllItems(),
-    getServerSession(requestHeaders),
+    getAuthSession({ headers: requestHeaders }),
   ]);
   const isAdmin = session?.user?.role === "admin";
 
@@ -18,7 +18,7 @@ export default async function DashboardItemsPage() {
     <div className="space-y-8">
       <PageHeader
         title="Items"
-        subtitle="The starter dashboard now focuses on one collection only."
+        subtitle="Review the shared content library that supports the wider platform."
       />
 
       <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
@@ -27,7 +27,8 @@ export default async function DashboardItemsPage() {
             {items.length} item{items.length === 1 ? "" : "s"} available
           </p>
           <p className="text-sm text-muted-foreground">
-            Admins can create, rename, and remove items from the admin area.
+            Admins can create, rename, and remove items from the admin
+            workspace.
           </p>
         </div>
         <div className="flex gap-3">
@@ -49,7 +50,7 @@ export default async function DashboardItemsPage() {
         <div className="py-14 text-center">
           <h2 className="text-2xl font-semibold">Nothing here yet</h2>
           <p className="mt-2 text-muted-foreground">
-            Add your first item from the admin screen to start shaping the app.
+            Add the first item from the admin workspace to populate the library.
           </p>
         </div>
       ) : (

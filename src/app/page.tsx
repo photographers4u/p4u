@@ -5,23 +5,17 @@ import Navbar from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
-import { getAuthSession } from "@/lib/auth-session";
 import { spaceGrotesk } from "@/lib/fonts";
+import { getAuthSession } from "@/server/auth/session";
 
 const featuredLanes = [
   {
-    eyebrow: "Public items",
-    title: "Browse the one resource this starter app is built around.",
-    description:
-      "The public directory is the cleanest way to confirm the app is reading from the item table correctly.",
-    href: "/items",
+    label: "Photographer onboarding",
+    href: "/onboarding",
   },
   {
-    eyebrow: "Dashboard",
-    title: "Give signed-in users a focused place to review the collection.",
-    description:
-      "The dashboard now lands on one route and one model, without leftover branches from the previous product shape.",
-    href: "/dashboard/items",
+    label: "Admin review",
+    href: "/admin/photographers",
   },
 ] as const;
 
@@ -37,24 +31,25 @@ export default async function HomePage() {
             <div className="mx-auto max-w-4xl py-12 text-center lg:py-20">
               <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/70 bg-white/85 px-3 py-1 text-xs font-medium tracking-[0.18em] text-amber-800 uppercase shadow-sm backdrop-blur">
                 <BadgeCheck className="size-3.5" />
-                Item-first starter kit
+                Reviewed photographer platform
               </div>
 
               <h1
                 className={`mt-6 text-5xl font-semibold tracking-tight text-balance text-slate-950 sm:text-6xl lg:text-7xl ${spaceGrotesk.className}`}
               >
-                One resource, one dashboard, one clean starting point.
+                Photographer onboarding and review, without the leftover template noise.
               </h1>
 
               <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
-                {siteConfig.description} The app has been collapsed into a
-                simpler shape that only cares about items.
+                {siteConfig.description} Photographers can build their profile,
+                offerings, and contact details in the dashboard, while admins
+                review submissions and manage the shared item library.
               </p>
 
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <Button asChild size="lg" className="h-12 rounded-full px-6">
-                  <Link href="/items">
-                    Explore items
+                  <Link href={session?.user ? "/dashboard" : "/register"}>
+                    {session?.user ? "Open dashboard" : "Create an account"}
                     <ArrowRight className="size-4" />
                   </Link>
                 </Button>
@@ -64,20 +59,18 @@ export default async function HomePage() {
                   size="lg"
                   className="h-12 rounded-full border-slate-300 bg-white/75 px-6 backdrop-blur"
                 >
-                  <Link href={session?.user ? "/dashboard/items" : "/register"}>
-                    {session?.user ? "Open dashboard" : "Create an account"}
-                  </Link>
+                  <Link href="/items">Browse items</Link>
                 </Button>
               </div>
 
               <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
                 {featuredLanes.map((lane) => (
                   <Link
-                    key={lane.eyebrow}
+                    key={lane.label}
                     href={lane.href}
                     className="rounded-full border border-white/80 bg-white/75 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm backdrop-blur transition hover:border-slate-300 hover:text-slate-950"
                   >
-                    {lane.eyebrow}
+                    {lane.label}
                   </Link>
                 ))}
               </div>
@@ -94,28 +87,27 @@ export default async function HomePage() {
               <h2
                 className={`mt-4 max-w-xl text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl ${spaceGrotesk.className}`}
               >
-                The repo now behaves like a starter instead of a half-pruned
-                marketplace.
+                Built around the actual photographer workflow.
               </h2>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-3xl border border-slate-200 bg-white p-6">
-                <p className="text-4xl font-semibold text-slate-950">1</p>
+                <p className="text-4xl font-semibold text-slate-950">4</p>
                 <p className="mt-3 text-sm text-slate-600">
-                  content model for the whole app
+                  onboarding steps photographers complete before submission
                 </p>
               </div>
               <div className="rounded-3xl border border-slate-200 bg-white p-6">
-                <p className="text-4xl font-semibold text-slate-950">3</p>
+                <p className="text-4xl font-semibold text-slate-950">5</p>
                 <p className="mt-3 text-sm text-slate-600">
-                  aligned surfaces: public, dashboard, and admin
+                  explicit workflow states from draft to approved
                 </p>
               </div>
               <div className="rounded-3xl border border-slate-200 bg-white p-6">
                 <p className="text-4xl font-semibold text-slate-950">1</p>
                 <p className="mt-3 text-sm text-slate-600">
-                  place to add and maintain starter content
+                  admin workspace for moderation and supporting content
                 </p>
               </div>
             </div>
@@ -132,11 +124,12 @@ export default async function HomePage() {
                 <h2
                   className={`mt-3 text-3xl font-semibold tracking-tight sm:text-4xl ${spaceGrotesk.className}`}
                 >
-                  Sign in, open the dashboard, and grow the item collection.
+                  Create a profile, submit it for review, and keep the rest of
+                  the workspace tidy.
                 </h2>
                 <p className="mt-4 text-base leading-7 text-slate-300">
-                  Create an account to explore the protected dashboard, or sign
-                  in as an admin to manage the shared item collection.
+                  Create an account to start photographer onboarding, or sign in
+                  as an admin to review submissions and manage shared content.
                 </p>
               </div>
 

@@ -1,0 +1,1 @@
+ALTER TABLE "app_photographer_upload" ADD COLUMN "storage_file_id" text;

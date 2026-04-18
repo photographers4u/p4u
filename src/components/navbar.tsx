@@ -82,7 +82,7 @@ function MobileMenu({ session }: { session: AuthClientSession | null }) {
             {siteConfig.shortName}
           </SheetTitle>
           <SheetDescription>
-            Browse the item directory or jump into the starter dashboard.
+            Browse the public library or jump into your photographer workspace.
           </SheetDescription>
         </SheetHeader>
 

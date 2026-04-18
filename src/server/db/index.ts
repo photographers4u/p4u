@@ -9,7 +9,7 @@ import * as schema from "@/server/db/schema";
 const connectionString = getEnvVariable("DATABASE_URL");
 
 if (!connectionString) {
-  throw new Error("DATABASE_URL is required to initialize dezine-mafia/db");
+  throw new Error("DATABASE_URL is required to initialize photographers4u/db");
 }
 
 declare global {

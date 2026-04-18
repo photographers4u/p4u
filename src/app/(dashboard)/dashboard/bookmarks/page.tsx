@@ -1,15 +1,15 @@
-import Link from "next/link";
 import { headers } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ItemCard } from "@/components/item-card";
 import PageHeader from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { getServerSession } from "@/lib/server-api";
+import { getAuthSession } from "@/server/auth/session";
 import { bookmarkController } from "@/server/db/controller/bookmark";
 import { itemController } from "@/server/db/controller/item";
 
 export default async function DashboardBookmarksPage() {
-  const session = await getServerSession(await headers());
+  const session = await getAuthSession({ headers: await headers() });
 
   if (!session?.user) {
     redirect("/login");
@@ -25,7 +25,7 @@ export default async function DashboardBookmarksPage() {
     <div className="space-y-8">
       <PageHeader
         title="Bookmarks"
-        subtitle="Your reusable bookmark system currently points at items, but the identifier model is ready for more."
+        subtitle="Keep quick access to the items you want to revisit."
       />
 
       <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
@@ -34,8 +34,8 @@ export default async function DashboardBookmarksPage() {
             {items.length} bookmarked item{items.length === 1 ? "" : "s"}
           </p>
           <p className="text-sm text-muted-foreground">
-            When you add another bookmark identifier later, the same bookmark
-            table and client logic can support it.
+            Bookmarks currently track items from the shared library and stay
+            synced with your signed-in account.
           </p>
         </div>
         <Button asChild variant="outline">

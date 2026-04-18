@@ -1,15 +1,15 @@
+import "server-only";
+
 import { redirect } from "next/navigation";
 import {
-  getServerPhotographer,
-  getServerPhotographerOnboarding,
-} from "@/lib/server-api";
+  getCurrentPhotographer,
+  getCurrentPhotographerOnboarding,
+} from "@/server/services/photographer";
 
-export async function getApprovedPhotographerPanelData(
-  requestHeaders: Headers,
-) {
+export async function getApprovedPhotographerPanelData(headers: Headers) {
   const [photographer, onboarding] = await Promise.all([
-    getServerPhotographer(requestHeaders),
-    getServerPhotographerOnboarding(requestHeaders),
+    getCurrentPhotographer(headers),
+    getCurrentPhotographerOnboarding(headers),
   ]);
 
   if (!photographer) {

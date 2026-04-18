@@ -11,7 +11,7 @@ export default async function AdminPage() {
     <div className="space-y-8">
       <PageHeader
         title="Admin"
-        subtitle="Manage items and jump into photographer review from the admin workspace."
+        subtitle="Review photographer submissions and manage supporting content from one admin workspace."
       />
 
       <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
@@ -20,8 +20,8 @@ export default async function AdminPage() {
             {items.length} item{items.length === 1 ? "" : "s"} in the collection
           </p>
           <p className="text-sm text-muted-foreground">
-            Bookmarking is reusable now, so the admin area can stay focused on
-            content management.
+            Content management lives alongside the photographer moderation queue
+            so operational work stays in one place.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -41,7 +41,7 @@ export default async function AdminPage() {
         <div className="py-14 text-center">
           <h2 className="text-xl font-semibold">No items yet</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Create the first item to seed the starter app.
+            Create the first item to populate the shared library.
           </p>
         </div>
       ) : (

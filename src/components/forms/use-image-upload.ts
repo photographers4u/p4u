@@ -5,10 +5,13 @@ import { toast } from "sonner";
 import {
   type ImageUploadKind,
   imageUploadAccept,
+  imageUploadAcceptMimeTypes,
+  isAcceptedImageUploadMimeType,
   maxImageUploadSizeBytes,
 } from "@/lib/imagekit";
 
 export type ImageUploadResponse = {
+  fileId?: string;
   message?: string;
   url?: string;
 };
@@ -73,8 +76,10 @@ export function getImageUploadErrorMessage(error: unknown) {
 }
 
 export function validateImageUploadFile(file: File) {
-  if (!file.type.startsWith("image/")) {
-    return "Please choose an image file.";
+  if (!isAcceptedImageUploadMimeType(file.type)) {
+    return `Please choose a ${imageUploadAcceptMimeTypes
+      .map((type) => type.replace("image/", "").toUpperCase())
+      .join(", ")} image.`;
   }
 
   if (file.size > maxImageUploadSizeBytes) {
@@ -93,10 +98,28 @@ export function uploadImageFile({
   onProgress?: (value: number) => void;
   uploadKind: ImageUploadKind;
 }) {
-  return new Promise<ImageUploadResponse>((resolve, reject) => {
-    const request = new XMLHttpRequest();
-    request.open("POST", "/api/uploads/images");
+  return createImageUploadRequest({
+    file,
+    onProgress,
+    uploadKind,
+  }).promise;
+}
 
+export function createImageUploadRequest<TResponse = ImageUploadResponse>({
+  file,
+  onProgress,
+  requestPath = "/api/uploads/images",
+  uploadKind,
+}: {
+  file: File;
+  onProgress?: (value: number) => void;
+  requestPath?: string;
+  uploadKind?: ImageUploadKind;
+}) {
+  const request = new XMLHttpRequest();
+  request.open("POST", requestPath);
+
+  const promise = new Promise<TResponse>((resolve, reject) => {
     request.upload.addEventListener("progress", (event) => {
       if (event.lengthComputable && event.total > 0) {
         onProgress?.((event.loaded / event.total) * 100);
@@ -116,32 +139,47 @@ export function uploadImageFile({
     });
 
     request.addEventListener("load", () => {
-      let payload: ImageUploadResponse | null = null;
+      let payload: TResponse | null = null;
+      let errorPayload: ImageUploadResponse | null = null;
 
       if (request.responseText) {
         try {
-          payload = JSON.parse(request.responseText) as ImageUploadResponse;
+          payload = JSON.parse(request.responseText) as TResponse;
+          errorPayload = payload as ImageUploadResponse;
         } catch {
           payload = null;
+          errorPayload = null;
         }
       }
 
       if (request.status >= 200 && request.status < 300) {
-        resolve(payload ?? {});
+        resolve((payload ?? {}) as TResponse);
         return;
       }
 
       reject(
-        new Error(payload?.message ?? "Couldn't upload the image right now."),
+        new Error(
+          errorPayload?.message ?? "Couldn't upload the image right now.",
+        ),
       );
     });
-
-    const formData = new FormData();
-    formData.set("file", file);
-    formData.set("uploadKind", uploadKind);
-
-    request.send(formData);
   });
+
+  const formData = new FormData();
+  formData.set("file", file);
+
+  if (uploadKind) {
+    formData.set("uploadKind", uploadKind);
+  }
+
+  request.send(formData);
+
+  return {
+    cancel() {
+      request.abort();
+    },
+    promise,
+  };
 }
 
 export function useImageUpload({

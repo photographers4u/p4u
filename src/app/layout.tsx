@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Toaster } from "@/components/ui/sonner";
-import { getAuthSession } from "@/lib/auth-session";
 import { BookmarkProvider } from "@/lib/bookmarks-context";
 import { inter } from "@/lib/fonts";
 import { siteConfig } from "@/config/site";
+import { getAuthSession } from "@/server/auth/session";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
