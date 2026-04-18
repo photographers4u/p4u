@@ -1,4 +1,14 @@
-import { and, asc, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNull,
+  or,
+  sql,
+} from "drizzle-orm";
 import db, { type DBExecutor, type DBTransaction } from "@/server/db";
 import { photographer, photographerContact } from "@/server/db/schema";
 
@@ -153,6 +163,28 @@ export const photographerDal = {
       .from(photographer)
       .where(eq(photographer.isPublished, true))
       .orderBy(desc(photographer.createdAt));
+  },
+
+  async getPublishedByIds(
+    ids: string[],
+    executor: DBClient = db,
+  ): Promise<PhotographerRecord[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const rows = await executor
+      .select()
+      .from(photographer)
+      .where(
+        and(inArray(photographer.id, ids), eq(photographer.isPublished, true)),
+      );
+    const rowMap = new Map(rows.map((row) => [row.id, row]));
+
+    return ids.flatMap((id) => {
+      const record = rowMap.get(id);
+      return record ? [record] : [];
+    });
   },
 
   async countAdminList(

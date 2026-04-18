@@ -1,8 +1,8 @@
 import { ArrowRight, BadgeCheck } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
-import Navbar from "@/components/navbar";
 import { Footer } from "@/components/footer";
+import Navbar from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { spaceGrotesk } from "@/lib/fonts";
@@ -37,13 +37,14 @@ export default async function HomePage() {
               <h1
                 className={`mt-6 text-5xl font-semibold tracking-tight text-balance text-slate-950 sm:text-6xl lg:text-7xl ${spaceGrotesk.className}`}
               >
-                Photographer onboarding and review, without the leftover template noise.
+                Photographer onboarding and review, without the leftover
+                template noise.
               </h1>
 
               <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
                 {siteConfig.description} Photographers can build their profile,
                 offerings, and contact details in the dashboard, while admins
-                review submissions and manage the shared item library.
+                review submissions and publish profiles into the live directory.
               </p>
 
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
@@ -59,7 +60,7 @@ export default async function HomePage() {
                   size="lg"
                   className="h-12 rounded-full border-slate-300 bg-white/75 px-6 backdrop-blur"
                 >
-                  <Link href="/items">Browse items</Link>
+                  <Link href="/photographers">Browse photographers</Link>
                 </Button>
               </div>
 

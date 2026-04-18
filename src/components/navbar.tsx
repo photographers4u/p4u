@@ -1,5 +1,8 @@
 "use client";
 
+import { Menu, User } from "lucide-react";
+import type { Route } from "next";
+import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Sheet,
@@ -9,18 +12,14 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Menu, User } from "lucide-react";
-
 import { siteConfig } from "@/config/site";
-import Link from "next/link";
-import type { Route } from "next";
-import { poppins } from "@/lib/fonts";
 import type { AuthClientSession } from "@/lib/auth-client";
+import { poppins } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 
 function getNav(session: AuthClientSession | null) {
   const baseNav = [
-    { label: "Items", href: "/items" as Route },
+    { label: "Photographers", href: "/photographers" as Route },
     { label: "Dashboard", href: "/dashboard" as Route },
   ];
 
@@ -82,7 +81,7 @@ function MobileMenu({ session }: { session: AuthClientSession | null }) {
             {siteConfig.shortName}
           </SheetTitle>
           <SheetDescription>
-            Browse the public library or jump into your photographer workspace.
+            Browse live photographers or jump into your workspace.
           </SheetDescription>
         </SheetHeader>
 

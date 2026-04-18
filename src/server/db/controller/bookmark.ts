@@ -1,4 +1,5 @@
 import { bookmarkDal } from "@/server/db/dal/bookmark";
+import { photographerDal } from "@/server/db/dal/photographer";
 import { BadRequestError, InternalError } from "@/server/db/helpers/errors";
 import type {
   BookmarkIdentifier,
@@ -7,6 +8,21 @@ import type {
 
 function normalizeBookmarkValue(value: string) {
   return bookmarkDal.normalizeValue(value);
+}
+
+async function assertBookmarkTargetExists(
+  identifier: BookmarkIdentifier,
+  value: string,
+) {
+  if (identifier !== "photographer") {
+    throw new BadRequestError("Unsupported bookmark target");
+  }
+
+  const photographer = await photographerDal.getById(value);
+
+  if (!photographer || !photographer.isPublished) {
+    throw new BadRequestError("Photographer not found");
+  }
 }
 
 export const bookmarkController = {
@@ -21,7 +37,11 @@ export const bookmarkController = {
       throw new BadRequestError("Value is required");
     }
 
-    const existing = await bookmarkDal.hasBookmark(userId, input.identifier, value);
+    const existing = await bookmarkDal.hasBookmark(
+      userId,
+      input.identifier,
+      value,
+    );
 
     if (existing) {
       const deleted = await bookmarkDal.deleteBookmark(
@@ -39,6 +59,8 @@ export const bookmarkController = {
         value,
       };
     }
+
+    await assertBookmarkTargetExists(input.identifier, value);
 
     const created = await bookmarkDal.createBookmark(
       userId,

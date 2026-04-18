@@ -3,8 +3,8 @@
 Photographers4U is a Next.js application for photographer onboarding, profile
 management, and admin moderation. Photographers can build a draft profile,
 complete onboarding, submit for review, and manage approved profile details.
-Admins can review photographer submissions and maintain the shared item library
-used elsewhere in the product.
+Admins can review photographer submissions and publish approved profiles into
+the live directory.
 
 ## Stack
 
@@ -68,5 +68,5 @@ Open `http://localhost:3000` after the dev server starts.
 
 - Photographer onboarding and approved-profile management
 - Admin moderation queue for photographer submissions
-- Shared item library with bookmark support
+- Public photographer directory with saved-profile bookmarks
 - Auth flows for verification, password reset, and email changes

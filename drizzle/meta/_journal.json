@@ -43,6 +43,13 @@
       "when": 1776505055635,
       "tag": "0005_lyrical_wendigo",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776507365860,
+      "tag": "0006_giant_jean_grey",
+      "breakpoints": true
     }
   ]
 }

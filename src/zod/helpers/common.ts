@@ -3,7 +3,7 @@ import z from "zod";
 export const SLUG_LENGTH = 10;
 export const NAME_MAX_LENGTH = 255;
 export const PASSWORD_MIN_LENGTH = 8;
-export const bookmarkIdentifierValues = ["item"] as const;
+export const bookmarkIdentifierValues = ["photographer"] as const;
 export const bookmarkIdentifierSchema = z.enum(bookmarkIdentifierValues);
 
 /**

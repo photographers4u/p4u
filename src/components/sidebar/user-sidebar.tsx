@@ -55,12 +55,7 @@ function getDashboardData() {
       label: "Dashboard",
       items: [
         {
-          title: "Items",
-          url: "/dashboard/items" as Route,
-          icon: Layers3,
-        },
-        {
-          title: "Bookmarks",
+          title: "Saved photographers",
           url: "/dashboard/bookmarks" as Route,
           icon: Bookmark,
         },
@@ -73,11 +68,6 @@ const adminData = [
   {
     label: "Admin",
     items: [
-      {
-        title: "Items",
-        url: "/admin" as Route,
-        icon: Layers3,
-      },
       {
         title: "Photographers",
         url: "/admin/photographers" as Route,

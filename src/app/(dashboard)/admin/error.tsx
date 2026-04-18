@@ -13,7 +13,7 @@ export default function AdminError({
     <div className="space-y-6">
       <InternalServerState
         description="Something went wrong while loading the admin area."
-        href="/dashboard/items"
+        href="/dashboard/bookmarks"
         actionLabel="Back to dashboard"
       />
       <Button type="button" onClick={() => reset()}>

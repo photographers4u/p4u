@@ -33,10 +33,10 @@ export default async function PrivacyPolicyPage() {
         <div className="space-y-8 text-sm leading-relaxed text-slate-600">
           <section>
             <p>
-              {siteConfig.name} is a moderated community and directory for
-              items. This Privacy Policy explains
-              what information we collect, why we collect it, how we share it,
-              and the choices available to you.
+              {siteConfig.name} is a moderated platform and public directory for
+              photographers. This Privacy Policy explains what information we
+              collect, why we collect it, how we share it, and the choices
+              available to you.
             </p>
             <p>
               Your use of the service is also subject to our{" "}
@@ -56,12 +56,13 @@ export default async function PrivacyPolicyPage() {
             </p>
             <p>
               It covers information we collect when you browse the site, create
-              an account, sign in, submit items, or contact us for support.
+              an account, sign in, build a photographer profile, or contact us
+              for support.
             </p>
             <p>
               It does not apply to third-party websites, image hosts, or other
-              external services linked from our product.
-              Those services operate under their own privacy practices.
+              external services linked from our product. Those services operate
+              under their own privacy practices.
             </p>
           </section>
 
@@ -91,17 +92,16 @@ export default async function PrivacyPolicyPage() {
                 <strong className="font-medium text-slate-700">
                   Submission content.
                 </strong>{" "}
-                If you submit an item, we collect the
-                information you choose to provide. Depending on the submission
-                type, that can include names, biographies, locations,
-                categories, descriptions, links, screenshots, cover images,
-                logos, skills, open-to-work status, and related metadata.
+                If you create or submit a photographer profile, we collect the
+                information you choose to provide. That can include names,
+                biographies, locations, portfolio images, services, starting
+                prices, public-contact preferences, and related metadata.
               </li>
               <li>
                 <strong className="font-medium text-slate-700">
-                  Saved items and product activity.
+                  Saved photographers and product activity.
                 </strong>{" "}
-                We store the items you bookmark and related timestamps.
+                We store the photographers you save and related timestamps.
               </li>
               <li>
                 <strong className="font-medium text-slate-700">
@@ -170,9 +170,9 @@ export default async function PrivacyPolicyPage() {
               listing may appear on public pages.
             </p>
             <p>
-              Depending on your item and account setup, that may include your
-              name, avatar, bio, location, titles, descriptions, categories,
-              links, screenshots, and any images you provide.
+              Depending on your profile and account setup, that may include your
+              name, avatar, bio, location, services, prices, contact options,
+              and portfolio images.
             </p>
             <p>
               Please avoid submitting personal information you do not want
@@ -210,7 +210,7 @@ export default async function PrivacyPolicyPage() {
                   With the public
                 </strong>{" "}
                 when approved submissions are published to the directory or
-                public item pages.
+                public photographer pages.
               </li>
               <li>
                 <strong className="font-medium text-slate-700">
@@ -302,8 +302,8 @@ export default async function PrivacyPolicyPage() {
                 account settings.
               </li>
               <li>
-                You can edit or delete your own items from the dashboard
-                features we make available.
+                You can manage your photographer profile details from the
+                dashboard features we make available.
               </li>
               <li>
                 You can request access, correction, or deletion of your account

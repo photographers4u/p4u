@@ -32,17 +32,6 @@ const acceptedFilesLabel = "PNG, JPG, WEBP, GIF";
 const maxSizeLabel = "Up to 8 MB";
 
 const imageUploadInfoByKind = {
-  itemImage: {
-    acceptedFilesLabel,
-    emptyDescription: "Use a clean, well-lit image with a clear focal point.",
-    emptyTitle: "Add an item image",
-    helperText: `${acceptedFilesLabel}. ${maxSizeLabel}.`,
-    maxSizeLabel,
-    readyMessage: "Image ready.",
-    removeLabel: "Remove image",
-    replaceLabel: "Replace image",
-    uploadLabel: "Upload image",
-  },
   photographerAvatar: {
     acceptedFilesLabel,
     emptyDescription: "A clean portrait with your face centered works best.",

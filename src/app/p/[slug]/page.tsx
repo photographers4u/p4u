@@ -2,6 +2,7 @@ import { BadgeCheck, Mail, MapPin, Phone, Sparkles } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BookmarkButton } from "@/components/bookmark-button";
 import { Footer } from "@/components/footer";
 import Navbar from "@/components/navbar";
 import { Badge } from "@/components/ui/badge";
@@ -23,13 +24,7 @@ type PublicPhotographerPageProps = {
   }>;
 };
 
-function PublicProfileStat({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function PublicProfileStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/60 bg-white/80 px-4 py-4 shadow-sm backdrop-blur">
       <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
@@ -109,15 +104,27 @@ export default async function PublicPhotographerPage({
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  {photographer.contact?.phone || (!isAuthenticated && photographer.hasPublicContact) ? (
+                  {photographer.contact?.phone ||
+                  (!isAuthenticated && photographer.hasPublicContact) ? (
                     <Button asChild size="lg" className="rounded-full px-6">
-                      <Link href={isAuthenticated ? `tel:${phoneHref}` : loginHref}>
+                      <Link
+                        href={isAuthenticated ? `tel:${phoneHref}` : loginHref}
+                      >
                         <Phone className="size-4" />
                         Call photographer
                       </Link>
                     </Button>
                   ) : null}
-                  {photographer.contact?.email || (!isAuthenticated && photographer.hasPublicContact) ? (
+                  <BookmarkButton
+                    identifier="photographer"
+                    value={photographer.id}
+                    size="lg"
+                    label="Save photographer"
+                    activeLabel="Saved photographer"
+                    className="rounded-full px-6"
+                  />
+                  {photographer.contact?.email ||
+                  (!isAuthenticated && photographer.hasPublicContact) ? (
                     <Button
                       asChild
                       size="lg"
@@ -231,7 +238,7 @@ export default async function PublicPhotographerPage({
                           {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
                           <img
                             src={upload.imageUrl}
-                            alt={`${photographer.name ?? "Photographer"} portfolio image ${index + 1}`}
+                            alt={`${photographer.name ?? "Photographer"} portfolio work ${index + 1}`}
                             className="h-full w-full object-cover transition duration-500 hover:scale-[1.03]"
                           />
                         </div>

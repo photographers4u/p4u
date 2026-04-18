@@ -951,6 +951,15 @@ export const photographerController = {
     });
   },
 
+  async getPublicPhotographersByIds(ids: string[]) {
+    const photographers = await photographerDal.getPublishedByIds(ids);
+
+    return photographers.flatMap((photographer) => {
+      const listing = toPublicPhotographerListEntry(photographer);
+      return listing ? [listing] : [];
+    });
+  },
+
   async getAdminPhotographerEntriesPage({
     page = 1,
     query,

@@ -1,19 +1,20 @@
 "use client";
 
 import { Bookmark } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { buildAuthRedirectPath } from "@/lib/auth-redirect";
 import { useBookmarks } from "@/lib/bookmarks-context";
+import { cn } from "@/lib/utils";
 import type { BookmarkIdentifier } from "@/zod/schema/bookmark";
 
 export function BookmarkButton({
   identifier,
   value,
   className,
-  label = "Bookmark",
-  activeLabel = "Bookmarked",
+  label = "Save photographer",
+  activeLabel = "Saved photographer",
   size = "icon",
 }: {
   identifier: BookmarkIdentifier;
@@ -23,17 +24,24 @@ export function BookmarkButton({
   activeLabel?: string;
   size?: React.ComponentProps<typeof Button>["size"];
 }) {
+  const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isAuthenticated, isLoaded, isBookmarked, isPending, toggleBookmark } =
     useBookmarks();
 
   const bookmarked = isBookmarked(identifier, value);
-  const pending = isPending(identifier, value) || (isAuthenticated && !isLoaded);
+  const pending =
+    isPending(identifier, value) || (isAuthenticated && !isLoaded);
+  const callbackUrl = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+  const loginHref = buildAuthRedirectPath("/login", {
+    callbackUrl,
+  });
 
   async function handleClick() {
     if (!isAuthenticated) {
-      toast.info("Sign in to bookmark items.");
-      router.push("/login");
+      toast.info("Sign in to save photographers.");
+      router.push(loginHref);
       return;
     }
 
@@ -42,7 +50,7 @@ export function BookmarkButton({
     if (result === true) {
       toast.success(`${activeLabel}.`);
     } else if (result === false) {
-      toast.success(`${label} removed.`);
+      toast.success("Removed from saved photographers.");
     }
   }
 

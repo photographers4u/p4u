@@ -1,7 +1,10 @@
 import { z } from "zod";
 import { bookmarkIdentifierSchema } from "@/zod/helpers";
 
-export const bookmarkValueSchema = z.string().trim().min(1, "Value is required");
+export const bookmarkValueSchema = z
+  .string()
+  .trim()
+  .uuid("Please provide a valid photographer id");
 
 export const bookmarkSchema = z.object({
   userId: z.string().uuid(),

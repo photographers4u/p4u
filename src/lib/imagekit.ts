@@ -1,10 +1,6 @@
 import { env } from "@/lib/env";
 
 export const imageUploadKinds = {
-  itemImage: {
-    fileNamePrefix: "item-image",
-    folder: "/photographers4u/items",
-  },
   photographerAvatar: {
     fileNamePrefix: "photographer-avatar",
     folder: "/photographers4u/photographers/avatar",

@@ -1,18 +1,19 @@
 import "server-only";
 
+import { getAuthSession } from "@/server/auth/session";
+import {
+  type PublicPhotographerDetail,
+  type PublicPhotographerListEntry,
+  photographerController,
+} from "@/server/db/controller/photographer";
+import { photographerContactController } from "@/server/db/controller/photographer-contact";
+import { NotFoundError } from "@/server/db/helpers/errors";
 import type { PhotographerContact } from "@/zod/schema";
 import type {
   Photographer,
   PhotographerOnboardingState,
 } from "@/zod/schema/photographer";
 import { photographerSchema } from "@/zod/schema/photographer";
-import { getAuthSession } from "@/server/auth/session";
-import {
-  photographerController,
-  type PublicPhotographerDetail,
-} from "@/server/db/controller/photographer";
-import { photographerContactController } from "@/server/db/controller/photographer-contact";
-import { NotFoundError } from "@/server/db/helpers/errors";
 
 function toPhotographer(
   photographer: Awaited<
@@ -38,7 +39,9 @@ export async function getPhotographerOnboardingByUserId(
 export async function getPhotographerProfileByUserId(
   userId: string,
 ): Promise<Photographer> {
-  return toPhotographer(await photographerController.getPhotographerByUserId(userId));
+  return toPhotographer(
+    await photographerController.getPhotographerByUserId(userId),
+  );
 }
 
 export async function getPhotographerContactByUserId(
@@ -54,6 +57,18 @@ export async function getPublicPhotographerBySlug(
   },
 ): Promise<PublicPhotographerDetail> {
   return photographerController.getPublicPhotographerBySlug(slug, options);
+}
+
+export async function getPublicPhotographers(): Promise<
+  PublicPhotographerListEntry[]
+> {
+  return photographerController.getPublicPhotographers();
+}
+
+export async function getPublicPhotographersByIds(
+  ids: string[],
+): Promise<PublicPhotographerListEntry[]> {
+  return photographerController.getPublicPhotographersByIds(ids);
 }
 
 async function getCurrentUserId(headers: Headers) {
