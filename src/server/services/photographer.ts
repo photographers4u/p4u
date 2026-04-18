@@ -7,7 +7,10 @@ import type {
 } from "@/zod/schema/photographer";
 import { photographerSchema } from "@/zod/schema/photographer";
 import { getAuthSession } from "@/server/auth/session";
-import { photographerController } from "@/server/db/controller/photographer";
+import {
+  photographerController,
+  type PublicPhotographerDetail,
+} from "@/server/db/controller/photographer";
 import { photographerContactController } from "@/server/db/controller/photographer-contact";
 import { NotFoundError } from "@/server/db/helpers/errors";
 
@@ -19,6 +22,7 @@ function toPhotographer(
   return photographerSchema.parse({
     ...photographer,
     createdAt: photographer.createdAt.toISOString(),
+    slug: photographer.slug ?? null,
     updatedAt: photographer.updatedAt.toISOString(),
     reviewedAt: photographer.reviewedAt?.toISOString() ?? null,
     status: photographer.status ?? "draft",
@@ -41,6 +45,15 @@ export async function getPhotographerContactByUserId(
   userId: string,
 ): Promise<PhotographerContact | null> {
   return photographerContactController.getPhotographerContactByUserId(userId);
+}
+
+export async function getPublicPhotographerBySlug(
+  slug: string,
+  options?: {
+    includeContactDetails?: boolean;
+  },
+): Promise<PublicPhotographerDetail> {
+  return photographerController.getPublicPhotographerBySlug(slug, options);
 }
 
 async function getCurrentUserId(headers: Headers) {

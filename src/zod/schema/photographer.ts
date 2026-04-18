@@ -5,6 +5,7 @@ import {
   entitySchema,
   eventTimestamp,
   idValueSchema,
+  nameSlugSchema,
   NAME_MAX_LENGTH,
   nullableTextSchema,
   ONBOARDING_STEPS,
@@ -43,6 +44,7 @@ export const photographerWorkflowStatusSchema = z.enum(
 
 const photographerEntityShape = {
   userId: idValueSchema,
+  slug: nameSlugSchema.nullable(),
   name: z.union([
     requiredTextSchema("Name").max(
       NAME_MAX_LENGTH,
@@ -223,6 +225,10 @@ export const photographerOnboardingStateSchema = z.object({
 
 export const photographerIdParamsSchema = z.object({
   id: idValueSchema,
+});
+
+export const photographerSlugParamsSchema = z.object({
+  slug: nameSlugSchema,
 });
 
 export const reviewPhotographerSchema = reviewDecisionSchema({

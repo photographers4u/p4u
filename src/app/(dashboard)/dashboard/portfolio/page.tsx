@@ -1,9 +1,11 @@
 import { headers } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PhotographerContactUpdateForm } from "@/components/forms/photographer/contact";
 import { PhotographerOfferingsForm } from "@/components/forms/photographer/offerings";
 import { PhotographerProfileUpdateForm } from "@/components/forms/photographer/profile";
 import PageHeader from "@/components/page-header";
+import { Button } from "@/components/ui/button";
 import {
   getPhotographerStatusViewModel,
   type PhotographerPortfolioBanner,
@@ -145,6 +147,27 @@ export default async function PortfolioPage() {
         title="Photographer Profile"
         subtitle="Control how you appear to visitors."
       />
+
+      {photographerStatus.isApproved &&
+      photographer.isPublished &&
+      photographer.slug ? (
+        <div className="flex flex-col gap-4 rounded-3xl border border-emerald-200 bg-emerald-50/80 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-emerald-950">
+              Your public listing is live.
+            </p>
+            <p className="text-sm text-emerald-800">
+              Visitors can view your profile at{" "}
+              <span className="font-medium">{`/p/${photographer.slug}`}</span>.
+            </p>
+          </div>
+          <Button asChild variant="outline" className="border-emerald-300">
+            <Link href={`/p/${photographer.slug}`} target="_blank">
+              View public profile
+            </Link>
+          </Button>
+        </div>
+      ) : null}
 
       {shouldShowForms ? (
         <div className="max-w-3xl space-y-12">

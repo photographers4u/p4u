@@ -128,6 +128,18 @@ export const photographerDal = {
     return record ?? null;
   },
 
+  async getBySlug(
+    slug: string,
+    executor: DBClient = db,
+  ): Promise<PhotographerRecord | null> {
+    const [record] = await executor
+      .select()
+      .from(photographer)
+      .where(eq(photographer.slug, slug));
+
+    return record ?? null;
+  },
+
   async getAll(executor: DBClient = db): Promise<PhotographerRecord[]> {
     return executor
       .select()

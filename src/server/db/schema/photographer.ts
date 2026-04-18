@@ -27,6 +27,7 @@ export const photographer = createTable("photographer", {
     .notNull()
     .unique()
     .references(() => user.id, { onDelete: "cascade" }),
+  slug: text("slug").unique(),
   name: text("name"),
   avatar: text("avatar"),
   bio: text("bio"),

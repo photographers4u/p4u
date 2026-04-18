@@ -25,7 +25,11 @@ import {
   NotFoundError,
 } from "@/server/db/helpers/errors";
 import { email } from "@/server/email";
-import { ONBOARDING_STEPS } from "@/zod/helpers";
+import {
+  ONBOARDING_STEPS,
+  photographerSlugBaseFromName,
+  photographerSlugSuffix,
+} from "@/zod/helpers";
 import type {
   PhotographerOnboardingSpecialityInput,
   PhotographerOnboardingState,
@@ -118,6 +122,35 @@ export type AdminPhotographerEntriesPage = {
   totalCount: number;
   totalPages: number;
 };
+export type PublicPhotographerListEntry = {
+  avatar: string | null;
+  bio: string | null;
+  createdAt: Date;
+  experienceYears: PhotographerRecord["experienceYears"];
+  id: string;
+  locationCity: PhotographerRecord["locationCity"];
+  locationCountry: string;
+  name: string | null;
+  slug: string;
+  updatedAt: Date;
+};
+export type PublicPhotographerDetail = PublicPhotographerListEntry & {
+  contact: {
+    email: string;
+    phone: string;
+  } | null;
+  hasPublicContact: boolean;
+  specialities: Array<{
+    id: string;
+    name: string;
+    startingPrice: number;
+  }>;
+  uploads: Array<{
+    displayOrder: number;
+    id: string;
+    imageUrl: string;
+  }>;
+};
 
 type PhotographerModerationState = Pick<PhotographerOnboardingState, "status">;
 type PhotographerReviewNotification = {
@@ -129,9 +162,16 @@ type PhotographerReviewNotification = {
   userId: string;
 };
 
-function toPublicPhotographer(photographer: PhotographerRecord) {
+function toPublicPhotographerListEntry(
+  photographer: PhotographerRecord,
+): PublicPhotographerListEntry | null {
+  if (!photographer.slug) {
+    return null;
+  }
+
   return {
     id: photographer.id,
+    slug: photographer.slug,
     name: photographer.name,
     avatar: photographer.avatar,
     bio: photographer.bio,
@@ -212,6 +252,19 @@ function normalizeSpecialities(
   );
 }
 
+function getDeterministicPhotographerSlugSuffix(attempt: number) {
+  return attempt.toString(36).padStart(8, "0");
+}
+
+function isUniqueConstraintViolation(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "23505"
+  );
+}
+
 async function getPhotographerByUserIdOrThrow(
   userId: string,
   executor: DBClient = db,
@@ -223,6 +276,61 @@ async function getPhotographerByUserIdOrThrow(
   }
 
   return photographer;
+}
+
+async function ensurePhotographerSlug(
+  photographer: PhotographerRecord,
+  executor: DBClient = db,
+  nameOverride?: string,
+) {
+  if (photographer.slug) {
+    return photographer;
+  }
+
+  const name = nameOverride?.trim() || photographer.name?.trim();
+
+  if (!name) {
+    throw new BadRequestError(
+      "Complete your profile details before continuing",
+    );
+  }
+  const slugBase = photographerSlugBaseFromName(name);
+  const attemptedSlugs = new Set<string>();
+
+  for (let attempt = 0; ; attempt += 1) {
+    const candidateSlug =
+      attempt < 10
+        ? `${slugBase}-${photographerSlugSuffix()}`
+        : `${slugBase}-${getDeterministicPhotographerSlugSuffix(attempt - 10)}`;
+
+    if (attemptedSlugs.has(candidateSlug)) {
+      continue;
+    }
+
+    attemptedSlugs.add(candidateSlug);
+
+    const existing = await photographerDal.getBySlug(candidateSlug, executor);
+
+    if (existing && existing.id !== photographer.id) {
+      continue;
+    }
+
+    try {
+      return updatePhotographerRecord(
+        photographer,
+        {
+          slug: candidateSlug,
+        },
+        executor,
+      );
+    } catch (error) {
+      if (isUniqueConstraintViolation(error)) {
+        continue;
+      }
+
+      throw error;
+    }
+  }
 }
 
 async function ensurePhotographerByUserId(
@@ -397,6 +505,53 @@ async function buildOnboardingState(
     status: photographer.status ?? "draft",
     specialities: specialities.map((speciality) => ({
       specialityId: speciality.specialityId,
+      startingPrice: speciality.startingPrice,
+    })),
+    uploads: uploads.map((upload) => ({
+      displayOrder: upload.displayOrder,
+      id: upload.id,
+      imageUrl: upload.imageUrl,
+    })),
+  };
+}
+
+async function buildPublicPhotographer(
+  photographer: PhotographerRecord,
+  {
+    includeContactDetails = false,
+  }: {
+    includeContactDetails?: boolean;
+  } = {},
+  executor: DBClient = db,
+): Promise<PublicPhotographerDetail> {
+  const listing = toPublicPhotographerListEntry(photographer);
+
+  if (!listing) {
+    throw new NotFoundError("Photographer not found");
+  }
+
+  const [contact, specialities, uploads] = await Promise.all([
+    photographerContactController.getPhotographerContactByPhotographerId(
+      photographer.id,
+      executor,
+    ),
+    photographerSpecialityDal.getByPhotographerId(photographer.id, executor),
+    photographerUploadDal.getByPhotographerId(photographer.id, executor),
+  ]);
+
+  return {
+    ...listing,
+    contact:
+      includeContactDetails && contact && contact.isPublic
+        ? {
+            email: contact.email,
+            phone: contact.phone,
+          }
+        : null,
+    hasPublicContact: contact?.isPublic ?? false,
+    specialities: specialities.map((speciality) => ({
+      id: speciality.specialityId,
+      name: speciality.name,
       startingPrice: speciality.startingPrice,
     })),
     uploads: uploads.map((upload) => ({
@@ -650,8 +805,13 @@ export const photographerController = {
 
       switch (input.step) {
         case ONBOARDING_STEPS[0]: {
-          const photographer = await updatePhotographerRecord(
+          const photographerWithSlug = await ensurePhotographerSlug(
             existing,
+            tx,
+            input.name,
+          );
+          const photographer = await updatePhotographerRecord(
+            photographerWithSlug,
             {
               name: input.name,
               bio: input.bio?.trim() ? input.bio : null,
@@ -659,7 +819,7 @@ export const photographerController = {
               locationCountry: DEFAULT_LOCATION_COUNTRY,
               experienceYears: input.experienceYears,
               onboardingStep: getProgressedOnboardingStep(
-                existing.onboardingStep,
+                photographerWithSlug.onboardingStep,
                 PROFILE_ONBOARDING_STEP,
               ),
             },
@@ -752,20 +912,43 @@ export const photographerController = {
     return getPhotographerByUserIdOrThrow(userId);
   },
 
-  async getPublicPhotographerById(id: string) {
+  async getPublicPhotographerById(
+    id: string,
+    options?: {
+      includeContactDetails?: boolean;
+    },
+  ) {
     const photographer = await photographerDal.getById(id);
 
     if (!photographer || !photographer.isPublished) {
       throw new NotFoundError("Photographer not found");
     }
 
-    return toPublicPhotographer(photographer);
+    return buildPublicPhotographer(photographer, options);
+  },
+
+  async getPublicPhotographerBySlug(
+    slug: string,
+    options?: {
+      includeContactDetails?: boolean;
+    },
+  ) {
+    const photographer = await photographerDal.getBySlug(slug);
+
+    if (!photographer || !photographer.isPublished) {
+      throw new NotFoundError("Photographer not found");
+    }
+
+    return buildPublicPhotographer(photographer, options);
   },
 
   async getPublicPhotographers() {
     const photographers = await photographerDal.getPublished();
 
-    return photographers.map(toPublicPhotographer);
+    return photographers.flatMap((photographer) => {
+      const listing = toPublicPhotographerListEntry(photographer);
+      return listing ? [listing] : [];
+    });
   },
 
   async getAdminPhotographerEntriesPage({
@@ -852,6 +1035,7 @@ export const photographerController = {
 
       if (input.status === "approved") {
         await assertReadyForPublication(photographer, tx);
+        await ensurePhotographerSlug(photographer, tx);
       }
 
       const reviewedPhotographer = await photographerDal.updateById(
@@ -906,8 +1090,13 @@ export const photographerController = {
   ) {
     const existing = await getPhotographerByUserIdOrThrow(userId);
     assertApprovedPhotographerEditPermission(existing, "profile");
+    const photographerWithSlug = await ensurePhotographerSlug(
+      existing,
+      db,
+      input.name,
+    );
     const onboardingStep = getProgressedOnboardingStep(
-      existing.onboardingStep,
+      photographerWithSlug.onboardingStep,
       PROFILE_ONBOARDING_STEP,
     );
     const data = {
@@ -918,16 +1107,19 @@ export const photographerController = {
 
     if (
       Object.keys(input).length === 0 &&
-      existing.onboardingStep === onboardingStep
+      photographerWithSlug.onboardingStep === onboardingStep
     ) {
-      return existing;
+      return photographerWithSlug;
     }
 
-    if (!hasChanges(existing, data)) {
-      return existing;
+    if (!hasChanges(photographerWithSlug, data)) {
+      return photographerWithSlug;
     }
 
-    const photographer = await photographerDal.updateById(existing.id, data);
+    const photographer = await photographerDal.updateById(
+      photographerWithSlug.id,
+      data,
+    );
 
     if (!photographer) {
       throw new InternalError("Failed to update photographer");
