@@ -1,64 +1,56 @@
 import { headers } from "next/headers";
-import { ExplorePhotographerCard } from "@/components/explore-photographer-card";
 import { Footer } from "@/components/footer";
 import Navbar from "@/components/navbar";
+import {
+  getPublicPhotographerExploreFilters,
+  getPublicPhotographerExplorePageFromParams,
+  PUBLIC_PHOTOGRAPHER_EXPLORE_PAGE_SIZE,
+} from "@/lib/public-photographer-explore";
 import { getAuthSession } from "@/server/auth/session";
-import { getPublicPhotographerExploreEntries } from "@/server/services/photographer";
+import { specialityDal } from "@/server/db/dal/speciality";
+import { getPublicPhotographerExplorePage } from "@/server/services/photographer";
+import { PhotographersBrowser } from "./photographers-browser";
 
-export default async function PhotographersPage() {
+type PhotographersPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function PhotographersPage({
+  searchParams,
+}: PhotographersPageProps) {
   const requestHeaders = await headers();
-  const [photographers, session] = await Promise.all([
-    getPublicPhotographerExploreEntries(),
+  const params = await searchParams;
+  const initialFilters = getPublicPhotographerExploreFilters(params);
+  const requestedPage = getPublicPhotographerExplorePageFromParams(params);
+  const [initialPage, session, specialities] = await Promise.all([
+    getPublicPhotographerExplorePage(initialFilters, {
+      page: 1,
+      pageSize: requestedPage * PUBLIC_PHOTOGRAPHER_EXPLORE_PAGE_SIZE,
+    }),
     getAuthSession({ headers: requestHeaders }),
+    specialityDal.getAll(),
   ]);
+  const initialLoadedPageCount = Math.max(
+    1,
+    Math.ceil(
+      initialPage.photographers.length / PUBLIC_PHOTOGRAPHER_EXPLORE_PAGE_SIZE,
+    ),
+  );
 
   return (
     <>
       <Navbar session={session} />
       <main className="min-h-screen bg-[linear-gradient(180deg,#fffaf4_0%,#f8fafc_38%,#ffffff_100%)]">
         <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-16 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-4 border-b border-slate-200 pb-7">
-            <span className="text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-              Public explore
-            </span>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-3xl space-y-3">
-                <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-                  Explore approved photographers.
-                </h1>
-                <p className="text-base leading-7 text-slate-600 sm:text-lg">
-                  Discover live photographer profiles, scan their specialities,
-                  preview recent work, and open the ones that match your vibe.
-                </p>
-              </div>
-
-              <p className="text-sm font-medium text-slate-500">
-                {photographers.length} live photographer
-                {photographers.length === 1 ? "" : "s"}
-              </p>
-            </div>
-          </div>
-
-          {photographers.length === 0 ? (
-            <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/80 px-6 py-14 text-center">
-              <h2 className="text-2xl font-semibold text-slate-950">
-                No photographers are live yet
-              </h2>
-              <p className="mt-2 text-slate-600">
-                Approved photographer profiles will show up here as soon as they
-                are published.
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {photographers.map((photographer) => (
-                <ExplorePhotographerCard
-                  key={photographer.id}
-                  photographer={photographer}
-                />
-              ))}
-            </div>
-          )}
+          <PhotographersBrowser
+            initialFilters={initialFilters}
+            initialLoadedPageCount={initialLoadedPageCount}
+            initialPage={initialPage}
+            availableSpecialities={specialities.map((speciality) => ({
+              name: speciality.name,
+              slug: speciality.slug,
+            }))}
+          />
         </section>
       </main>
       <Footer />

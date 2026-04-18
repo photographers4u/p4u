@@ -1,9 +1,10 @@
 import "server-only";
 
+import type { PublicPhotographerExploreFilters } from "@/lib/public-photographer-explore";
 import { getAuthSession } from "@/server/auth/session";
 import {
   type PublicPhotographerDetail,
-  type PublicPhotographerExploreEntry,
+  type PublicPhotographerExplorePage,
   type PublicPhotographerListEntry,
   photographerController,
 } from "@/server/db/controller/photographer";
@@ -66,10 +67,17 @@ export async function getPublicPhotographers(): Promise<
   return photographerController.getPublicPhotographers();
 }
 
-export async function getPublicPhotographerExploreEntries(): Promise<
-  PublicPhotographerExploreEntry[]
-> {
-  return photographerController.getPublicPhotographerExploreEntries();
+export async function getPublicPhotographerExplorePage(
+  filters: PublicPhotographerExploreFilters,
+  options?: {
+    page?: number;
+    pageSize?: number;
+  },
+): Promise<PublicPhotographerExplorePage> {
+  return photographerController.getPublicPhotographerExplorePage(
+    filters,
+    options,
+  );
 }
 
 export async function getPublicPhotographersByIds(

@@ -4,6 +4,8 @@ import {
   isApprovedPhotographer,
   isPhotographerSubmittedForReview,
 } from "@/lib/photographer-status";
+import type { PublicPhotographerExploreFilters } from "@/lib/public-photographer-explore";
+import { PUBLIC_PHOTOGRAPHER_EXPLORE_PAGE_SIZE } from "@/lib/public-photographer-explore";
 import db, { type DBExecutor, type DBTransaction } from "@/server/db";
 import { photographerContactController } from "@/server/db/controller/photographer-contact";
 import {
@@ -148,6 +150,13 @@ export type PublicPhotographerExploreEntry = {
     id: string;
     imageUrl: string;
   }>;
+};
+export type PublicPhotographerExplorePage = {
+  photographers: PublicPhotographerExploreEntry[];
+  hasMore: boolean;
+  page: number;
+  pageSize: number;
+  totalCount: number;
 };
 export type PublicPhotographerDetail = PublicPhotographerListEntry & {
   contact: {
@@ -1001,8 +1010,69 @@ export const photographerController = {
     });
   },
 
-  async getPublicPhotographerExploreEntries() {
-    const photographers = await photographerDal.getPublished();
+  async getPublicPhotographerExplorePage(
+    filters: PublicPhotographerExploreFilters,
+    options?: {
+      page?: number;
+      pageSize?: number;
+    },
+  ): Promise<PublicPhotographerExplorePage> {
+    const pageSize = Math.max(
+      1,
+      Math.trunc(options?.pageSize ?? PUBLIC_PHOTOGRAPHER_EXPLORE_PAGE_SIZE),
+    );
+    const requestedPage = Math.max(1, Math.trunc(options?.page ?? 1));
+    let filteredPhotographerIds: string[] | undefined;
+
+    if (filters.specialities.length > 0) {
+      const specialityRecords = await specialityDal.getBySlugs(
+        filters.specialities,
+      );
+
+      if (specialityRecords.length === 0) {
+        return {
+          photographers: [],
+          hasMore: false,
+          page: 1,
+          pageSize,
+          totalCount: 0,
+        };
+      }
+
+      filteredPhotographerIds =
+        await photographerSpecialityDal.getPhotographerIdsBySpecialityIds(
+          specialityRecords.map((speciality) => speciality.id),
+        );
+
+      if (filteredPhotographerIds.length === 0) {
+        return {
+          photographers: [],
+          hasMore: false,
+          page: 1,
+          pageSize,
+          totalCount: 0,
+        };
+      }
+    }
+
+    const totalCount = await photographerDal.countPublishedExploreList({
+      experience: filters.experience,
+      location: filters.location,
+      photographerIds: filteredPhotographerIds,
+      query: filters.query,
+      sort: filters.sort,
+    });
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const page = Math.min(requestedPage, totalPages);
+    const photographers = await photographerDal.getPublishedExplorePage({
+      experience: filters.experience,
+      limit: pageSize,
+      location: filters.location,
+      offset: (page - 1) * pageSize,
+      photographerIds: filteredPhotographerIds,
+      query: filters.query,
+      sort: filters.sort,
+    });
     const photographerIds = photographers.map(
       (photographer) => photographer.id,
     );
@@ -1014,22 +1084,30 @@ export const photographerController = {
       groupRecordsByPhotographerId(specialities);
     const uploadsByPhotographerId = groupRecordsByPhotographerId(uploads);
 
-    return photographers.flatMap((photographer) => {
-      const entry = toPublicPhotographerExploreEntry(
-        photographer,
-        (specialitiesByPhotographerId.get(photographer.id) ?? []).map(
-          (speciality) => ({
-            name: speciality.name,
-          }),
-        ),
-        (uploadsByPhotographerId.get(photographer.id) ?? []).map((upload) => ({
-          id: upload.id,
-          imageUrl: upload.imageUrl,
-        })),
-      );
+    return {
+      photographers: photographers.flatMap((photographer) => {
+        const entry = toPublicPhotographerExploreEntry(
+          photographer,
+          (specialitiesByPhotographerId.get(photographer.id) ?? []).map(
+            (speciality) => ({
+              name: speciality.name,
+            }),
+          ),
+          (uploadsByPhotographerId.get(photographer.id) ?? []).map(
+            (upload) => ({
+              id: upload.id,
+              imageUrl: upload.imageUrl,
+            }),
+          ),
+        );
 
-      return entry ? [entry] : [];
-    });
+        return entry ? [entry] : [];
+      }),
+      hasMore: page < totalPages,
+      page,
+      pageSize,
+      totalCount,
+    };
   },
 
   async getPublicPhotographersByIds(ids: string[]) {

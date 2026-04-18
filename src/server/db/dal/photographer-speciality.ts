@@ -109,4 +109,23 @@ export const photographerSpecialityDal = {
         ),
       );
   },
+
+  async getPhotographerIdsBySpecialityIds(
+    specialityIds: string[],
+    executor: DBClient = db,
+  ): Promise<string[]> {
+    if (specialityIds.length === 0) {
+      return [];
+    }
+
+    const rows = await executor
+      .select({
+        photographerId: photographerSpeciality.photographerId,
+      })
+      .from(photographerSpeciality)
+      .where(inArray(photographerSpeciality.specialityId, specialityIds))
+      .orderBy(asc(photographerSpeciality.photographerId));
+
+    return Array.from(new Set(rows.map((row) => row.photographerId)));
+  },
 };

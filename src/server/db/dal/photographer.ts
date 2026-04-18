@@ -9,6 +9,11 @@ import {
   or,
   sql,
 } from "drizzle-orm";
+import {
+  DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_SORT,
+  type PublicPhotographerExploreFilters,
+  type PublicPhotographerExploreSort,
+} from "@/lib/public-photographer-explore";
 import db, { type DBExecutor, type DBTransaction } from "@/server/db";
 import { photographer, photographerContact } from "@/server/db/schema";
 
@@ -50,6 +55,18 @@ export type AdminPhotographerListQuery = AdminPhotographerListFilters & {
   limit: number;
   offset: number;
 };
+export type PublicPhotographerExploreListFilters = {
+  experience?: PublicPhotographerExploreFilters["experience"];
+  location?: PublicPhotographerExploreFilters["location"];
+  photographerIds?: string[];
+  query?: PublicPhotographerExploreFilters["query"];
+  sort?: PublicPhotographerExploreFilters["sort"];
+};
+export type PublicPhotographerExplorePageQuery =
+  PublicPhotographerExploreListFilters & {
+    limit: number;
+    offset: number;
+  };
 export type AdminPhotographerListRow = {
   id: string;
   userId: string;
@@ -96,6 +113,38 @@ function buildAdminPhotographerListWhere({
 
   if (conditions.length === 0) {
     return undefined;
+  }
+
+  return and(...conditions);
+}
+
+function buildPublicPhotographerExploreWhere({
+  experience,
+  location,
+  photographerIds,
+  query,
+}: PublicPhotographerExploreListFilters) {
+  if (photographerIds && photographerIds.length === 0) {
+    return sql`false`;
+  }
+
+  const conditions = [eq(photographer.isPublished, true)];
+  const trimmedQuery = query?.trim();
+
+  if (trimmedQuery) {
+    conditions.push(ilike(photographer.name, `%${trimmedQuery}%`));
+  }
+
+  if (experience) {
+    conditions.push(eq(photographer.experienceYears, experience));
+  }
+
+  if (location) {
+    conditions.push(eq(photographer.locationCity, location));
+  }
+
+  if (photographerIds) {
+    conditions.push(inArray(photographer.id, photographerIds));
   }
 
   return and(...conditions);
@@ -163,6 +212,82 @@ export const photographerDal = {
       .from(photographer)
       .where(eq(photographer.isPublished, true))
       .orderBy(desc(photographer.createdAt));
+  },
+
+  async countPublishedExploreList(
+    filters: PublicPhotographerExploreListFilters = {},
+    executor: DBClient = db,
+  ): Promise<number> {
+    const whereClause = buildPublicPhotographerExploreWhere(filters);
+    const [result] = await executor
+      .select({
+        count: sql<number>`count(*)`.mapWith(Number),
+      })
+      .from(photographer)
+      .where(whereClause);
+
+    return result?.count ?? 0;
+  },
+
+  async getPublishedExplorePage(
+    {
+      experience,
+      limit,
+      location,
+      offset,
+      photographerIds,
+      query,
+      sort = DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_SORT,
+    }: PublicPhotographerExplorePageQuery,
+    executor: DBClient = db,
+  ): Promise<PhotographerRecord[]> {
+    const whereClause = buildPublicPhotographerExploreWhere({
+      experience,
+      location,
+      photographerIds,
+      query,
+    });
+    const normalizedName = sql<string>`lower(coalesce(${photographer.name}, ''))`;
+    const baseQuery = executor.select().from(photographer).where(whereClause);
+
+    switch (sort as PublicPhotographerExploreSort) {
+      case "oldest":
+        return baseQuery
+          .orderBy(
+            asc(photographer.createdAt),
+            asc(photographer.updatedAt),
+            asc(photographer.id),
+          )
+          .limit(limit)
+          .offset(offset);
+      case "name_asc":
+        return baseQuery
+          .orderBy(
+            asc(normalizedName),
+            desc(photographer.createdAt),
+            asc(photographer.id),
+          )
+          .limit(limit)
+          .offset(offset);
+      case "name_desc":
+        return baseQuery
+          .orderBy(
+            desc(normalizedName),
+            desc(photographer.createdAt),
+            desc(photographer.id),
+          )
+          .limit(limit)
+          .offset(offset);
+      default:
+        return baseQuery
+          .orderBy(
+            desc(photographer.createdAt),
+            desc(photographer.updatedAt),
+            desc(photographer.id),
+          )
+          .limit(limit)
+          .offset(offset);
+    }
   },
 
   async getPublishedByIds(

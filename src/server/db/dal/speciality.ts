@@ -50,6 +50,20 @@ export const specialityDal = {
       .where(inArray(speciality.name, names));
   },
 
+  async getBySlugs(
+    slugs: string[],
+    executor: DBClient = db,
+  ): Promise<SpecialityRecord[]> {
+    if (slugs.length === 0) {
+      return [];
+    }
+
+    return executor
+      .select()
+      .from(speciality)
+      .where(inArray(speciality.slug, slugs));
+  },
+
   async getByIds(
     ids: string[],
     executor: DBClient = db,
