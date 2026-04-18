@@ -134,6 +134,21 @@ export type PublicPhotographerListEntry = {
   slug: string;
   updatedAt: Date;
 };
+export type PublicPhotographerExploreEntry = {
+  avatar: string | null;
+  experienceYears: PhotographerRecord["experienceYears"];
+  id: string;
+  locationCity: PhotographerRecord["locationCity"];
+  locationCountry: string;
+  name: string | null;
+  remainingSpecialitiesCount: number;
+  slug: string;
+  specialities: string[];
+  uploads: Array<{
+    id: string;
+    imageUrl: string;
+  }>;
+};
 export type PublicPhotographerDetail = PublicPhotographerListEntry & {
   contact: {
     email: string;
@@ -180,6 +195,41 @@ function toPublicPhotographerListEntry(
     experienceYears: photographer.experienceYears,
     createdAt: photographer.createdAt,
     updatedAt: photographer.updatedAt,
+  };
+}
+
+function toPublicPhotographerExploreEntry(
+  photographer: PhotographerRecord,
+  specialities: Array<{
+    name: string;
+  }>,
+  uploads: Array<{
+    id: string;
+    imageUrl: string;
+  }>,
+): PublicPhotographerExploreEntry | null {
+  if (!photographer.slug) {
+    return null;
+  }
+
+  const visibleSpecialities = specialities
+    .slice(0, 3)
+    .map((entry) => entry.name);
+
+  return {
+    id: photographer.id,
+    slug: photographer.slug,
+    name: photographer.name,
+    avatar: photographer.avatar,
+    experienceYears: photographer.experienceYears,
+    locationCity: photographer.locationCity,
+    locationCountry: photographer.locationCountry,
+    specialities: visibleSpecialities,
+    remainingSpecialitiesCount: Math.max(
+      specialities.length - visibleSpecialities.length,
+      0,
+    ),
+    uploads: uploads.slice(0, 3),
   };
 }
 
@@ -948,6 +998,37 @@ export const photographerController = {
     return photographers.flatMap((photographer) => {
       const listing = toPublicPhotographerListEntry(photographer);
       return listing ? [listing] : [];
+    });
+  },
+
+  async getPublicPhotographerExploreEntries() {
+    const photographers = await photographerDal.getPublished();
+    const photographerIds = photographers.map(
+      (photographer) => photographer.id,
+    );
+    const [specialities, uploads] = await Promise.all([
+      photographerSpecialityDal.getByPhotographerIds(photographerIds),
+      photographerUploadDal.getPreviewByPhotographerIds(photographerIds, 3),
+    ]);
+    const specialitiesByPhotographerId =
+      groupRecordsByPhotographerId(specialities);
+    const uploadsByPhotographerId = groupRecordsByPhotographerId(uploads);
+
+    return photographers.flatMap((photographer) => {
+      const entry = toPublicPhotographerExploreEntry(
+        photographer,
+        (specialitiesByPhotographerId.get(photographer.id) ?? []).map(
+          (speciality) => ({
+            name: speciality.name,
+          }),
+        ),
+        (uploadsByPhotographerId.get(photographer.id) ?? []).map((upload) => ({
+          id: upload.id,
+          imageUrl: upload.imageUrl,
+        })),
+      );
+
+      return entry ? [entry] : [];
     });
   },
 

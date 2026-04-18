@@ -3,6 +3,7 @@ import "server-only";
 import { getAuthSession } from "@/server/auth/session";
 import {
   type PublicPhotographerDetail,
+  type PublicPhotographerExploreEntry,
   type PublicPhotographerListEntry,
   photographerController,
 } from "@/server/db/controller/photographer";
@@ -63,6 +64,12 @@ export async function getPublicPhotographers(): Promise<
   PublicPhotographerListEntry[]
 > {
   return photographerController.getPublicPhotographers();
+}
+
+export async function getPublicPhotographerExploreEntries(): Promise<
+  PublicPhotographerExploreEntry[]
+> {
+  return photographerController.getPublicPhotographerExploreEntries();
 }
 
 export async function getPublicPhotographersByIds(
