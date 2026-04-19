@@ -47,6 +47,11 @@ export type AdminPhotographerReviewEntry = Awaited<
 export type PublicPhotographerDetail = Awaited<
   ReturnType<typeof photographerController.getPublicPhotographerBySlug>
 >;
+export type PhotographerPortfolioSnapshot = {
+  contact: PhotographerContact | null;
+  onboarding: PhotographerOnboardingState;
+  photographer: Photographer;
+};
 export type PublicPhotographerExplorePage = Awaited<
   ReturnType<typeof photographerController.getPublicPhotographerExplorePage>
 >;
@@ -89,6 +94,21 @@ export async function getPhotographerContactByUserId(
   userId: string,
 ): Promise<PhotographerContact | null> {
   return photographerContactController.getPhotographerContactByUserId(userId);
+}
+
+export async function getPhotographerPortfolioByUserId(
+  userId: string,
+): Promise<PhotographerPortfolioSnapshot> {
+  const snapshot =
+    await photographerController.getPhotographerPortfolioSnapshotByUserId(
+      userId,
+    );
+
+  return {
+    photographer: toPhotographer(snapshot.photographer),
+    onboarding: snapshot.onboarding,
+    contact: snapshot.contact,
+  };
 }
 
 export async function getPublicPhotographerBySlug(

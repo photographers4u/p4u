@@ -188,6 +188,27 @@ type PhotographerReviewNotification = {
   submissionType: string;
   userId: string;
 };
+type OnboardingStateContact = Awaited<
+  ReturnType<
+    typeof photographerContactController.getPhotographerContactByPhotographerId
+  >
+>;
+type OnboardingStateSpecialities = Awaited<
+  ReturnType<typeof photographerSpecialityDal.getByPhotographerId>
+>;
+type OnboardingStateUploads = Awaited<
+  ReturnType<typeof photographerUploadDal.getByPhotographerId>
+>;
+type OnboardingStateDependencies = {
+  contact?: OnboardingStateContact;
+  specialities?: OnboardingStateSpecialities;
+  uploads?: OnboardingStateUploads;
+};
+export type PhotographerPortfolioSnapshot = {
+  contact: OnboardingStateContact;
+  onboarding: PhotographerOnboardingState;
+  photographer: PhotographerRecord;
+};
 
 function toPublicPhotographerListEntry(
   photographer: PhotographerRecord,
@@ -482,17 +503,26 @@ async function syncPhotographerSpecialities(
 
 async function assertReadyForPublication(
   photographer: PhotographerRecord,
+  dependencies: Pick<
+    OnboardingStateDependencies,
+    "contact" | "specialities"
+  > = {},
   executor: DBClient = db,
 ) {
-  const contact =
-    await photographerContactController.getPhotographerContactByPhotographerId(
-      photographer.id,
-      executor,
-    );
-  const specialities = await photographerSpecialityDal.getByPhotographerId(
-    photographer.id,
-    executor,
-  );
+  const [contact, specialities] = await Promise.all([
+    dependencies.contact !== undefined
+      ? dependencies.contact
+      : photographerContactController.getPhotographerContactByPhotographerId(
+          photographer.id,
+          executor,
+        ),
+    dependencies.specialities !== undefined
+      ? dependencies.specialities
+      : photographerSpecialityDal.getByPhotographerId(
+          photographer.id,
+          executor,
+        ),
+  ]);
 
   if (!photographer.avatar) {
     throw new BadRequestError(
@@ -527,24 +557,29 @@ async function assertReadyForPublication(
 async function buildOnboardingState(
   photographer: PhotographerRecord | null,
   executor: DBClient = db,
+  dependencies: OnboardingStateDependencies = {},
 ): Promise<PhotographerOnboardingState> {
   if (!photographer) {
     return buildEmptyOnboardingState();
   }
 
-  const contact =
-    await photographerContactController.getPhotographerContactByPhotographerId(
-      photographer.id,
-      executor,
-    );
-  const specialities = await photographerSpecialityDal.getByPhotographerId(
-    photographer.id,
-    executor,
-  );
-  const uploads = await photographerUploadDal.getByPhotographerId(
-    photographer.id,
-    executor,
-  );
+  const [contact, specialities, uploads] = await Promise.all([
+    dependencies.contact !== undefined
+      ? dependencies.contact
+      : photographerContactController.getPhotographerContactByPhotographerId(
+          photographer.id,
+          executor,
+        ),
+    dependencies.specialities !== undefined
+      ? dependencies.specialities
+      : photographerSpecialityDal.getByPhotographerId(
+          photographer.id,
+          executor,
+        ),
+    dependencies.uploads !== undefined
+      ? dependencies.uploads
+      : photographerUploadDal.getByPhotographerId(photographer.id, executor),
+  ]);
 
   return {
     avatar: photographer.avatar,
@@ -849,6 +884,29 @@ export const photographerController = {
     return buildOnboardingState(photographer);
   },
 
+  async getPhotographerPortfolioSnapshotByUserId(
+    userId: string,
+  ): Promise<PhotographerPortfolioSnapshot> {
+    const photographer = await getPhotographerByUserIdOrThrow(userId);
+    const [contact, specialities, uploads] = await Promise.all([
+      photographerContactController.getPhotographerContactByPhotographerId(
+        photographer.id,
+      ),
+      photographerSpecialityDal.getByPhotographerId(photographer.id),
+      photographerUploadDal.getByPhotographerId(photographer.id),
+    ]);
+
+    return {
+      photographer,
+      contact,
+      onboarding: await buildOnboardingState(photographer, db, {
+        contact,
+        specialities,
+        uploads,
+      }),
+    };
+  },
+
   async savePhotographerAvatarStep(
     userId: string,
     input: SavePhotographerAvatarStepInput,
@@ -931,11 +989,13 @@ export const photographerController = {
         }
 
         case ONBOARDING_STEPS[3]: {
-          await photographerContactController.savePhotographerContactByPhotographerId(
-            existing.id,
-            input.contact,
-            tx,
-          );
+          const contact =
+            await photographerContactController.savePhotographerContactByPhotographerId(
+              existing.id,
+              input.contact,
+              tx,
+            );
+
           if (isApprovedPhotographer(existing)) {
             const photographer = await updatePhotographerRecord(
               existing,
@@ -945,10 +1005,24 @@ export const photographerController = {
               tx,
             );
 
-            return buildOnboardingState(photographer, tx);
+            return buildOnboardingState(photographer, tx, {
+              contact,
+            });
           }
 
-          await assertReadyForPublication(existing, tx);
+          const [specialities, uploads] = await Promise.all([
+            photographerSpecialityDal.getByPhotographerId(existing.id, tx),
+            photographerUploadDal.getByPhotographerId(existing.id, tx),
+          ]);
+
+          await assertReadyForPublication(
+            existing,
+            {
+              contact,
+              specialities,
+            },
+            tx,
+          );
 
           const photographer = await updatePhotographerRecord(
             existing,
@@ -963,7 +1037,11 @@ export const photographerController = {
             tx,
           );
 
-          return buildOnboardingState(photographer, tx);
+          return buildOnboardingState(photographer, tx, {
+            contact,
+            specialities,
+            uploads,
+          });
         }
 
         default:
@@ -1207,7 +1285,7 @@ export const photographerController = {
       assertAllowedPhotographerReviewTransition(photographer, input.status);
 
       if (input.status === "approved") {
-        await assertReadyForPublication(photographer, tx);
+        await assertReadyForPublication(photographer, {}, tx);
         await ensurePhotographerSlug(photographer, tx);
       }
 

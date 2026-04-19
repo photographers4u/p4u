@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { PhotographerOnboardingAvatarStep } from "@/components/forms/photographer-onboarding/avatar-step";
@@ -174,6 +174,7 @@ export function CreatePhotographerForm({
     availableSpecialities,
   );
   const [savingStep, setSavingStep] = useState<StepNumber | null>(null);
+  const [isRoutingToPortfolio, startRoutingToPortfolio] = useTransition();
   const [activeStep, setActiveStep] = useState<StepNumber>(() =>
     getFirstIncompleteStep(defaultValues),
   );
@@ -198,6 +199,7 @@ export function CreatePhotographerForm({
   } = form;
   const watchedValues = form.watch();
   const isSaving = savingStep !== null;
+  const isBusy = isSaving || isRoutingToPortfolio;
   const firstIncompleteStep = getFirstIncompleteStep(watchedValues);
   const activeStepMeta = onboardingStepMeta.find(
     (step) => step.step === activeStep,
@@ -217,7 +219,7 @@ export function CreatePhotographerForm({
           <PhotographerOnboardingProfileStep
             errors={errors}
             form={form}
-            isSaving={isSaving}
+            isSaving={isBusy}
           />
         );
       case ONBOARDING_STEPS[1]:
@@ -225,7 +227,7 @@ export function CreatePhotographerForm({
           <PhotographerOnboardingAvatarStep
             errors={errors}
             form={form}
-            isSaving={isSaving}
+            isSaving={isBusy}
           />
         );
       case ONBOARDING_STEPS[2]:
@@ -235,7 +237,7 @@ export function CreatePhotographerForm({
             canSubmit
             errors={errors}
             form={form}
-            isSaving={isSaving}
+            isSaving={isBusy}
           />
         );
       case ONBOARDING_STEPS[3]:
@@ -244,7 +246,7 @@ export function CreatePhotographerForm({
             contactEmailVerified={contactEmailVerified}
             errors={errors}
             form={form}
-            isSaving={isSaving}
+            isSaving={isBusy}
           />
         );
       default:
@@ -284,6 +286,20 @@ export function CreatePhotographerForm({
       }
 
       const nextState = responsePayload as PhotographerOnboardingState;
+      const shouldOpenPortfolio =
+        isPhotographerSubmittedForReview(nextState) ||
+        isApprovedPhotographer(nextState);
+
+      if (shouldOpenPortfolio) {
+        toast.success(
+          getStepSuccessMessage(step, wasPendingReview, wasApprovedProfile),
+        );
+        startRoutingToPortfolio(() => {
+          router.replace("/dashboard/portfolio");
+        });
+        return;
+      }
+
       const nextValues = toFormValues(
         nextState,
         defaultEmail,
@@ -300,14 +316,6 @@ export function CreatePhotographerForm({
       toast.success(
         getStepSuccessMessage(step, wasPendingReview, wasApprovedProfile),
       );
-
-      if (
-        isPhotographerSubmittedForReview(nextState) ||
-        isApprovedPhotographer(nextState)
-      ) {
-        router.replace("/dashboard/portfolio");
-        router.refresh();
-      }
     } finally {
       setSavingStep(null);
     }
@@ -335,7 +343,7 @@ export function CreatePhotographerForm({
                   setActiveStep(step.step);
                 }
               }}
-              disabled={isSaving || !isUnlocked}
+              disabled={isBusy || !isUnlocked}
               className={cn(
                 "rounded-2xl border px-4 py-4 text-left transition",
                 isCurrent && "border-primary bg-primary/5 shadow-sm",
@@ -387,7 +395,7 @@ export function CreatePhotographerForm({
                 setActiveStep(previousStep);
               }
             }}
-            disabled={!previousStep || isSaving}
+            disabled={!previousStep || isBusy}
           >
             Back
           </Button>
@@ -396,15 +404,17 @@ export function CreatePhotographerForm({
             type="button"
             size="lg"
             onClick={() => void saveStep(activeStep)}
-            disabled={isSaving || !isStepComplete(activeStep)}
+            disabled={isBusy || !isStepComplete(activeStep)}
           >
-            {savingStep === activeStep
-              ? "Saving..."
-              : getStepActionLabel(
-                  activeStep,
-                  isSubmittedForReview,
-                  isEditingApprovedProfile,
-                )}
+            {isRoutingToPortfolio
+              ? "Opening portfolio..."
+              : savingStep === activeStep
+                ? "Saving..."
+                : getStepActionLabel(
+                    activeStep,
+                    isSubmittedForReview,
+                    isEditingApprovedProfile,
+                  )}
           </Button>
         </div>
       </section>

@@ -12,15 +12,16 @@ import {
 } from "@/lib/photographer-presentation";
 import { cn } from "@/lib/utils";
 import { getAuthSession } from "@/server/auth/session";
-import {
-  getCurrentPhotographer,
-  getCurrentPhotographerContact,
-  getCurrentPhotographerOnboarding,
-} from "@/server/services/photographer";
+import { NotFoundError } from "@/server/db/helpers/errors";
+import { getPhotographerPortfolioByUserId } from "@/server/services/photographer";
 import {
   getSpecialityFormOptions,
   type SpecialityFormOption,
 } from "@/server/services/speciality";
+
+type PortfolioSnapshot = Awaited<
+  ReturnType<typeof getPhotographerPortfolioByUserId>
+>;
 
 function PortfolioStatusBanner({
   banner,
@@ -50,7 +51,7 @@ function ContactSection({
   contact,
 }: {
   canSubmit: boolean;
-  contact: Awaited<ReturnType<typeof getCurrentPhotographerContact>>;
+  contact: PortfolioSnapshot["contact"];
 }) {
   if (!contact) {
     return null;
@@ -77,7 +78,7 @@ function OfferingsSection({
 }: {
   availableSpecialities: SpecialityFormOption[];
   canSubmit: boolean;
-  onboarding: Awaited<ReturnType<typeof getCurrentPhotographerOnboarding>>;
+  onboarding: PortfolioSnapshot["onboarding"];
 }) {
   if (!onboarding) {
     return null;
@@ -110,16 +111,18 @@ export default async function PortfolioPage() {
     redirect("/login");
   }
 
-  const photographer = await getCurrentPhotographer(requestHeaders);
+  let portfolio: PortfolioSnapshot;
+  try {
+    portfolio = await getPhotographerPortfolioByUserId(session.user.id);
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      redirect("/onboarding");
+    }
 
-  if (!photographer) {
-    redirect("/onboarding");
+    throw error;
   }
 
-  const [onboarding, contact] = await Promise.all([
-    getCurrentPhotographerOnboarding(requestHeaders),
-    getCurrentPhotographerContact(requestHeaders),
-  ]);
+  const { photographer, onboarding, contact } = portfolio;
   const photographerStatus = getPhotographerStatusViewModel(photographer);
 
   if (photographerStatus.shouldRedirectPortfolioToOnboarding) {
