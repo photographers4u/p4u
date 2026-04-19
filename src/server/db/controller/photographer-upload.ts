@@ -1,9 +1,10 @@
 import { sql } from "drizzle-orm";
+import { photographerPortfolioPinnedImageLimit } from "@/lib/photographer-upload-config";
 import db, { type DBExecutor, type DBTransaction } from "@/server/db";
 import { photographerDal } from "@/server/db/dal/photographer";
 import {
-  photographerUploadDal,
   type PhotographerUploadRecord,
+  photographerUploadDal,
 } from "@/server/db/dal/photographer-upload";
 import {
   BadRequestError,
@@ -16,6 +17,7 @@ import { deleteProviderFile } from "@/server/services/image-upload";
 import type {
   CreatePhotographerPortfolioUploadInput,
   ReorderPhotographerUploadsInput,
+  SetPhotographerUploadPinnedInput,
 } from "@/zod/schema/photographer-upload";
 
 type DBClient = DBExecutor | DBTransaction;
@@ -26,6 +28,7 @@ function toPhotographerUploadEntry(upload: PhotographerUploadRecord) {
     createdAt: upload.createdAt,
     displayOrder: upload.displayOrder,
     imageUrl: upload.imageUrl,
+    pinnedAt: upload.pinnedAt?.toISOString() ?? null,
     updatedAt: upload.updatedAt,
   };
 }
@@ -37,9 +40,7 @@ async function getOwnedPhotographerOrThrow(
   const photographer = await photographerDal.getByUserId(userId, executor);
 
   if (!photographer) {
-    throw new ForbiddenError(
-      "Only photographers can manage portfolio images.",
-    );
+    throw new ForbiddenError("Only photographers can manage portfolio images.");
   }
 
   return photographer;
@@ -119,16 +120,20 @@ export const photographerUploadController = {
         throw new NotFoundError("Portfolio image not found.");
       }
 
-      const deletedUpload = await photographerUploadDal.deleteById(uploadId, tx);
+      const deletedUpload = await photographerUploadDal.deleteById(
+        uploadId,
+        tx,
+      );
 
       if (!deletedUpload) {
         throw new InternalError("Failed to delete the portfolio image.");
       }
 
-      const remainingUploads = await photographerUploadDal.getByPhotographerId(
-        photographer.id,
-        tx,
-      );
+      const remainingUploads =
+        await photographerUploadDal.getByPhotographerIdInDisplayOrder(
+          photographer.id,
+          tx,
+        );
 
       await syncPhotographerUploadOrder(
         remainingUploads.map((upload) => upload.id),
@@ -165,6 +170,87 @@ export const photographerUploadController = {
     return uploads.map(toPhotographerUploadEntry);
   },
 
+  async setPortfolioUploadPinnedByUserId(
+    userId: string,
+    uploadId: string,
+    input: SetPhotographerUploadPinnedInput,
+  ) {
+    return db.transaction(async (tx) => {
+      const photographer = await getOwnedPhotographerOrThrow(userId, tx);
+      await lockOwnedPhotographerUploads(photographer.id, tx);
+      const existingUpload = await photographerUploadDal.getById(uploadId, tx);
+
+      if (
+        !existingUpload ||
+        existingUpload.photographerId !== photographer.id
+      ) {
+        throw new NotFoundError("Portfolio image not found.");
+      }
+
+      if (input.isPinned) {
+        if (!existingUpload.pinnedAt) {
+          const pinnedUploads =
+            await photographerUploadDal.getPinnedByPhotographerId(
+              photographer.id,
+              tx,
+            );
+          const uploadsToUnpin = pinnedUploads.slice(
+            0,
+            Math.max(
+              0,
+              pinnedUploads.length - photographerPortfolioPinnedImageLimit + 1,
+            ),
+          );
+
+          for (const uploadToUnpin of uploadsToUnpin) {
+            const updatedUpload = await photographerUploadDal.updateById(
+              uploadToUnpin.id,
+              {
+                pinnedAt: null,
+              },
+              tx,
+            );
+
+            if (!updatedUpload) {
+              throw new InternalError("Failed to update the pinned images.");
+            }
+          }
+
+          const updatedUpload = await photographerUploadDal.updateById(
+            uploadId,
+            {
+              pinnedAt: new Date(),
+            },
+            tx,
+          );
+
+          if (!updatedUpload) {
+            throw new InternalError("Failed to pin the portfolio image.");
+          }
+        }
+      } else if (existingUpload.pinnedAt) {
+        const updatedUpload = await photographerUploadDal.updateById(
+          uploadId,
+          {
+            pinnedAt: null,
+          },
+          tx,
+        );
+
+        if (!updatedUpload) {
+          throw new InternalError("Failed to unpin the portfolio image.");
+        }
+      }
+
+      const uploads = await photographerUploadDal.getByPhotographerId(
+        photographer.id,
+        tx,
+      );
+
+      return uploads.map(toPhotographerUploadEntry);
+    });
+  },
+
   async reorderPortfolioUploadsByUserId(
     userId: string,
     input: ReorderPhotographerUploadsInput,
@@ -193,7 +279,9 @@ export const photographerUploadController = {
       }
 
       if (
-        input.orderedUploadIds.some((uploadId) => !existingUploadIdSet.has(uploadId))
+        input.orderedUploadIds.some(
+          (uploadId) => !existingUploadIdSet.has(uploadId),
+        )
       ) {
         throw new BadRequestError(
           "Only the current photographer's portfolio image ids can be reordered.",

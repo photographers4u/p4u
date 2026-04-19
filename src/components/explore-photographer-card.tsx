@@ -49,7 +49,10 @@ export function ExplorePhotographerCard({
   photographer: PublicPhotographerExploreEntry;
 }) {
   const location = getLocationLabel(photographer);
-  const galleryItemClass = getGalleryItemClass(photographer.uploads.length);
+  const galleryItemClass =
+    photographer.uploads.length > 0
+      ? getGalleryItemClass(photographer.uploads.length)
+      : null;
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-[2rem] border border-slate-200/90 bg-white shadow-[0_24px_60px_-42px_rgba(15,23,42,0.5)]">
@@ -125,7 +128,7 @@ export function ExplorePhotographerCard({
           ) : null}
         </div>
 
-        {photographer.uploads.length > 0 ? (
+        {photographer.uploads.length > 0 && galleryItemClass ? (
           <div
             className={cn(
               "grid gap-3",
@@ -151,7 +154,33 @@ export function ExplorePhotographerCard({
               </div>
             ))}
           </div>
-        ) : null}
+        ) : (
+          <div className="overflow-hidden rounded-[1.35rem] border border-slate-200 bg-[radial-gradient(circle_at_top,#fff7ed,#f8fafc_65%)] p-6">
+            <div className="flex min-h-52 flex-col items-center justify-center gap-3 text-center">
+              {photographer.avatar ? (
+                // biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host
+                <img
+                  src={photographer.avatar}
+                  alt={photographer.name ?? "Photographer"}
+                  className="size-20 rounded-[1.6rem] object-cover ring-1 ring-black/5"
+                />
+              ) : (
+                <div className="flex size-20 items-center justify-center rounded-[1.6rem] bg-slate-900 text-lg font-semibold text-white">
+                  {getProfileInitials(photographer.name)}
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-slate-900">
+                  Portfolio coming soon
+                </p>
+                <p className="text-sm text-slate-500">
+                  This photographer hasn&apos;t uploaded showcase images yet.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <Button
           asChild

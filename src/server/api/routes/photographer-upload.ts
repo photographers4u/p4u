@@ -10,6 +10,7 @@ import { photographerUploadController } from "@/server/db/controller/photographe
 import {
   photographerUploadIdParamsSchema,
   reorderPhotographerUploadsSchema,
+  setPhotographerUploadPinnedSchema,
 } from "@/zod/schema/photographer-upload";
 
 export const photographerUploadRouter = new Hono<ApiAuthEnv>()
@@ -25,6 +26,28 @@ export const photographerUploadRouter = new Hono<ApiAuthEnv>()
       return c.json({ message }, status);
     }
   })
+  .patch(
+    "/:id/pin",
+    requireAuth,
+    zValidator("param", photographerUploadIdParamsSchema),
+    zValidator("json", setPhotographerUploadPinnedSchema),
+    async (c) => {
+      try {
+        const user = getRequiredUser(c);
+        const uploads =
+          await photographerUploadController.setPortfolioUploadPinnedByUserId(
+            user.id,
+            c.req.valid("param").id,
+            c.req.valid("json"),
+          );
+
+        return c.json({ uploads }, 200);
+      } catch (error) {
+        const [status, message] = mapError(error);
+        return c.json({ message }, status);
+      }
+    },
+  )
   .patch(
     "/reorder",
     requireAuth,

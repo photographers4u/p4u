@@ -47,11 +47,12 @@ export default async function PublicPhotographerPage({
     const photographer = await getPublicPhotographerBySlug(slug, {
       includeContactDetails: isAuthenticated,
     });
+    const heroUpload = photographer.uploads[0] ?? null;
     const location = photographer.locationCity
       ? `${photographer.locationCity}, ${formatPhotographerCountry(photographer.locationCountry)}`
       : formatPhotographerCountry(photographer.locationCountry);
-    const heroImage =
-      photographer.uploads[0]?.imageUrl ?? photographer.avatar ?? null;
+    const heroImage = heroUpload?.imageUrl ?? photographer.avatar ?? null;
+    const isHeroImagePinned = Boolean(heroUpload?.pinnedAt);
     const loginHref = buildAuthRedirectPath("/login", {
       callbackUrl: `/p/${slug}`,
     });
@@ -155,6 +156,13 @@ export default async function PublicPhotographerPage({
                       alt={photographer.name ?? "Photographer"}
                       className="h-full min-h-[320px] w-full object-cover"
                     />
+                    {isHeroImagePinned ? (
+                      <div className="absolute left-4 top-4">
+                        <Badge className="bg-white/92 text-slate-900 shadow-sm hover:bg-white">
+                          Pinned image
+                        </Badge>
+                      </div>
+                    ) : null}
                   </>
                 ) : (
                   <div className="flex min-h-[320px] items-center justify-center bg-[radial-gradient(circle_at_top,#fbbf24_0%,#fef3c7_38%,#ffffff_100%)]">
@@ -234,13 +242,20 @@ export default async function PublicPhotographerPage({
                         key={upload.id}
                         className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm"
                       >
-                        <div className="aspect-[4/3] overflow-hidden bg-slate-100">
+                        <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
                           {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
                           <img
                             src={upload.imageUrl}
                             alt={`${photographer.name ?? "Photographer"} portfolio work ${index + 1}`}
                             className="h-full w-full object-cover transition duration-500 hover:scale-[1.03]"
                           />
+                          {upload.pinnedAt ? (
+                            <div className="absolute left-3 top-3">
+                              <Badge className="bg-white/92 text-slate-900 shadow-sm hover:bg-white">
+                                Pinned
+                              </Badge>
+                            </div>
+                          ) : null}
                         </div>
                       </div>
                     ))}

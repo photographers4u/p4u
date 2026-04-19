@@ -10,6 +10,7 @@ import {
 import { apiClient } from "@/lib/api-client";
 import { readApiResponse } from "@/lib/api-response";
 import {
+  photographerPortfolioPinnedImageLimit,
   photographerPortfolioUploadAutoRetryLimit,
   photographerPortfolioUploadConcurrency,
 } from "@/lib/photographer-upload-config";
@@ -17,6 +18,10 @@ import type { PhotographerOnboardingUploadInput } from "@/zod/schema/photographe
 import type { PhotographerUpload } from "@/zod/schema/photographer-upload";
 
 type QueueItemSource = "existing" | "new";
+type PersistedPortfolioUpload = Pick<
+  PhotographerOnboardingUploadInput,
+  "displayOrder" | "id" | "imageUrl" | "pinnedAt"
+>;
 export type PortfolioUploadQueueState =
   | "idle"
   | "uploading"
@@ -31,6 +36,7 @@ export type PortfolioUploadQueueItem = {
   hasExactProgress: boolean;
   persistedOrder: number | null;
   persistedUploadId: string | null;
+  pinnedAt: PersistedPortfolioUpload["pinnedAt"];
   previewUrl: string;
   progress: number;
   remoteUrl: string | null;
@@ -43,7 +49,10 @@ class PortfolioUploadQueueError extends Error {
   remoteUrl: string | null;
   retryable: boolean;
 
-  constructor(message: string, options?: { remoteUrl?: string | null; retryable?: boolean }) {
+  constructor(
+    message: string,
+    options?: { remoteUrl?: string | null; retryable?: boolean },
+  ) {
     super(message);
     this.name = "PortfolioUploadQueueError";
     this.remoteUrl = options?.remoteUrl ?? null;
@@ -51,16 +60,18 @@ class PortfolioUploadQueueError extends Error {
   }
 }
 
-function createExistingQueueItem(
-  upload: PhotographerOnboardingUploadInput,
+function toPersistedQueueItem(
+  upload: PersistedPortfolioUpload,
+  existingItem?: PortfolioUploadQueueItem,
 ): PortfolioUploadQueueItem {
   return {
-    clientId: `persisted-${upload.id}`,
+    clientId: existingItem?.clientId ?? `persisted-${upload.id}`,
     errorMessage: null,
     file: null,
     hasExactProgress: true,
     persistedOrder: upload.displayOrder,
     persistedUploadId: upload.id,
+    pinnedAt: upload.pinnedAt,
     previewUrl: upload.imageUrl,
     progress: 100,
     remoteUrl: upload.imageUrl,
@@ -68,6 +79,10 @@ function createExistingQueueItem(
     source: "existing",
     state: "success",
   };
+}
+
+function createExistingQueueItem(upload: PhotographerOnboardingUploadInput) {
+  return toPersistedQueueItem(upload);
 }
 
 function createQueuedFileItem(file: File): PortfolioUploadQueueItem {
@@ -78,6 +93,7 @@ function createQueuedFileItem(file: File): PortfolioUploadQueueItem {
     hasExactProgress: false,
     persistedOrder: null,
     persistedUploadId: null,
+    pinnedAt: null,
     previewUrl: URL.createObjectURL(file),
     progress: 0,
     remoteUrl: null,
@@ -101,6 +117,25 @@ function releasePreviewUrl(previewUrl: string) {
   if (previewUrl.startsWith("blob:")) {
     URL.revokeObjectURL(previewUrl);
   }
+}
+
+function syncPersistedUploads(
+  items: PortfolioUploadQueueItem[],
+  uploads: PersistedPortfolioUpload[],
+) {
+  const existingItemsByUploadId = new Map(
+    items.flatMap((item) =>
+      item.persistedUploadId ? [[item.persistedUploadId, item] as const] : [],
+    ),
+  );
+  const pendingItems = items.filter((item) => !item.persistedUploadId);
+
+  return [
+    ...uploads.map((upload) =>
+      toPersistedQueueItem(upload, existingItemsByUploadId.get(upload.id)),
+    ),
+    ...pendingItems,
+  ];
 }
 
 function getRetriableMessage(error: Error) {
@@ -133,13 +168,10 @@ function normalizeQueueError(error: unknown, remoteUrl: string | null) {
     });
   }
 
-  return new PortfolioUploadQueueError(
-    "Couldn't upload the image right now.",
-    {
-      remoteUrl,
-      retryable: false,
-    },
-  );
+  return new PortfolioUploadQueueError("Couldn't upload the image right now.", {
+    remoteUrl,
+    retryable: false,
+  });
 }
 
 export function usePhotographerImagesQueue({
@@ -149,19 +181,16 @@ export function usePhotographerImagesQueue({
 }) {
   const [isDropActive, setIsDropActive] = useState(false);
   const [items, setItems] = useState<PortfolioUploadQueueItem[]>(() =>
-    [...initialUploads]
-      .sort((left, right) => left.displayOrder - right.displayOrder)
-      .map(createExistingQueueItem),
+    initialUploads.map(createExistingQueueItem),
   );
+  const [pinningClientIds, setPinningClientIds] = useState<string[]>([]);
   const [removingClientIds, setRemovingClientIds] = useState<string[]>([]);
   const [scheduledUploadClientIds, setScheduledUploadClientIds] = useState<
     string[]
   >([]);
   const itemsRef = useRef(items);
   const isMountedRef = useRef(false);
-  const uploadCancellationHandlersRef = useRef(
-    new Map<string, () => void>(),
-  );
+  const uploadCancellationHandlersRef = useRef(new Map<string, () => void>());
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -206,7 +235,9 @@ export function usePhotographerImagesQueue({
   }
 
   const startUpload = useEffectEvent(async (clientId: string) => {
-    const currentItem = itemsRef.current.find((item) => item.clientId === clientId);
+    const currentItem = itemsRef.current.find(
+      (item) => item.clientId === clientId,
+    );
 
     if (!currentItem || currentItem.state !== "idle") {
       return;
@@ -265,7 +296,9 @@ export function usePhotographerImagesQueue({
         return;
       }
 
-      const latestItem = itemsRef.current.find((item) => item.clientId === clientId);
+      const latestItem = itemsRef.current.find(
+        (item) => item.clientId === clientId,
+      );
       if (latestItem) {
         releasePreviewUrl(latestItem.previewUrl);
       }
@@ -278,6 +311,7 @@ export function usePhotographerImagesQueue({
           hasExactProgress: true,
           persistedOrder: payload.displayOrder,
           persistedUploadId: payload.id,
+          pinnedAt: payload.pinnedAt ?? null,
           previewUrl: payload.imageUrl,
           progress: 100,
           remoteUrl: payload.imageUrl,
@@ -326,9 +360,7 @@ export function usePhotographerImagesQueue({
                 : item.progress,
           remoteUrl: queueError.remoteUrl,
           state:
-            queueError.message === "Upload canceled."
-              ? "cancelled"
-              : "failed",
+            queueError.message === "Upload canceled." ? "cancelled" : "failed",
         })),
       );
       unscheduleUpload(clientId);
@@ -336,7 +368,9 @@ export function usePhotographerImagesQueue({
   });
 
   useEffect(() => {
-    const activeUploadCount = items.filter((item) => item.state === "uploading").length;
+    const activeUploadCount = items.filter(
+      (item) => item.state === "uploading",
+    ).length;
     const availableSlots =
       photographerPortfolioUploadConcurrency - activeUploadCount;
 
@@ -394,10 +428,12 @@ export function usePhotographerImagesQueue({
   }
 
   async function removeItem(clientId: string) {
-    const currentItem = itemsRef.current.find((item) => item.clientId === clientId);
+    const currentItem = itemsRef.current.find(
+      (item) => item.clientId === clientId,
+    );
 
     if (!currentItem) {
-      return;
+      return false;
     }
 
     if (currentItem.persistedUploadId) {
@@ -413,7 +449,7 @@ export function usePhotographerImagesQueue({
 
         if (!response.ok) {
           toast.error(errorMessage ?? "Couldn't remove the portfolio image.");
-          return;
+          return false;
         }
 
         releasePreviewUrl(currentItem.previewUrl);
@@ -421,20 +457,87 @@ export function usePhotographerImagesQueue({
         setItems((current) =>
           current.filter((item) => item.clientId !== clientId),
         );
+        return true;
       } catch {
         toast.error("Couldn't remove the portfolio image.");
+        return false;
       } finally {
         setRemovingClientIds((current) =>
           current.filter((id) => id !== clientId),
         );
       }
-
-      return;
     }
 
     releasePreviewUrl(currentItem.previewUrl);
     unscheduleUpload(clientId);
     setItems((current) => current.filter((item) => item.clientId !== clientId));
+    return true;
+  }
+
+  async function setItemPinned(clientId: string, isPinned: boolean) {
+    const currentItem = itemsRef.current.find(
+      (item) => item.clientId === clientId,
+    );
+
+    if (!currentItem?.persistedUploadId) {
+      return;
+    }
+
+    setPinningClientIds((current) => [...current, clientId]);
+
+    try {
+      const response = await apiClient.photographer.uploads[":id"].pin.$patch({
+        param: {
+          id: currentItem.persistedUploadId,
+        },
+        json: {
+          isPinned,
+        },
+      });
+      const { errorMessage, payload } = await readApiResponse<{
+        uploads?: PersistedPortfolioUpload[];
+      }>(response);
+
+      if (!response.ok || !payload?.uploads) {
+        toast.error(
+          errorMessage ??
+            `Couldn't ${isPinned ? "pin" : "unpin"} the portfolio image.`,
+        );
+        return;
+      }
+
+      const previousPinnedIds = new Set(
+        itemsRef.current
+          .filter((item) => item.pinnedAt && item.persistedUploadId)
+          .map((item) => item.persistedUploadId as string),
+      );
+      const nextPinnedIds = new Set(
+        payload.uploads
+          .filter((upload) => upload.pinnedAt)
+          .map((upload) => upload.id),
+      );
+      const evictedPinnedCount = Array.from(previousPinnedIds).filter(
+        (uploadId) =>
+          uploadId !== currentItem.persistedUploadId &&
+          !nextPinnedIds.has(uploadId),
+      ).length;
+
+      setItems((current) =>
+        syncPersistedUploads(current, payload.uploads ?? []),
+      );
+
+      if (isPinned && evictedPinnedCount > 0) {
+        toast.success(
+          `Pinned image saved. The oldest pin was removed to keep the ${photographerPortfolioPinnedImageLimit}-image limit.`,
+        );
+      }
+    } catch {
+      toast.error(
+        `Couldn't ${isPinned ? "pin" : "unpin"} the portfolio image.`,
+      );
+    } finally {
+      setPinningClientIds((current) => current.filter((id) => id !== clientId));
+    }
   }
 
   function retryItem(clientId: string) {
@@ -479,8 +582,7 @@ export function usePhotographerImagesQueue({
   ).length;
   const queuedUploadCount = newUploadItems.filter(
     (item) =>
-      item.state === "idle" &&
-      scheduledUploadClientIds.includes(item.clientId),
+      item.state === "idle" && scheduledUploadClientIds.includes(item.clientId),
   ).length;
   const savedImageCount = items.filter((item) => item.persistedUploadId).length;
   const overallProgress =
@@ -513,25 +615,25 @@ export function usePhotographerImagesQueue({
         ? `${stagedUploadCount} image${
             stagedUploadCount === 1 ? "" : "s"
           } ready to upload`
-      : queuedUploadCount > 0
-        ? `${queuedUploadCount} image${
-            queuedUploadCount === 1 ? "" : "s"
-          } waiting in the queue`
-        : failedUploadCount > 0
-          ? `${failedUploadCount} image${
-              failedUploadCount === 1 ? "" : "s"
-            } need attention`
-          : cancelledUploadCount > 0
-            ? `${cancelledUploadCount} image${
-                cancelledUploadCount === 1 ? "" : "s"
-              } cancelled`
-          : newUploadItems.length > 0
-            ? `All ${completedUploadCount} new image${
-                completedUploadCount === 1 ? "" : "s"
-              } are ready.`
-            : `${savedImageCount} portfolio image${
-                savedImageCount === 1 ? "" : "s"
-              } saved.`;
+        : queuedUploadCount > 0
+          ? `${queuedUploadCount} image${
+              queuedUploadCount === 1 ? "" : "s"
+            } waiting in the queue`
+          : failedUploadCount > 0
+            ? `${failedUploadCount} image${
+                failedUploadCount === 1 ? "" : "s"
+              } need attention`
+            : cancelledUploadCount > 0
+              ? `${cancelledUploadCount} image${
+                  cancelledUploadCount === 1 ? "" : "s"
+                } cancelled`
+              : newUploadItems.length > 0
+                ? `All ${completedUploadCount} new image${
+                    completedUploadCount === 1 ? "" : "s"
+                  } are ready.`
+                : `${savedImageCount} portfolio image${
+                    savedImageCount === 1 ? "" : "s"
+                  } saved.`;
 
   return {
     activeUploadCount,
@@ -543,12 +645,14 @@ export function usePhotographerImagesQueue({
     isDropActive,
     items,
     overallProgress,
+    pinningClientIds,
     queuedUploadCount,
     removeItem,
     removingClientIds,
     retryItem,
     savedImageCount,
     scheduledUploadClientIds,
+    setItemPinned,
     setIsDropActive,
     stagedUploadCount,
     startUploads,

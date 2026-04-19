@@ -1,0 +1,1 @@
+ALTER TABLE "app_photographer_upload" ADD COLUMN "pinned_at" timestamp with time zone;

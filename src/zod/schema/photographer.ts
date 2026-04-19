@@ -5,8 +5,8 @@ import {
   entitySchema,
   eventTimestamp,
   idValueSchema,
-  nameSlugSchema,
   NAME_MAX_LENGTH,
+  nameSlugSchema,
   nullableTextSchema,
   ONBOARDING_STEPS,
   requiredTextSchema,
@@ -121,6 +121,7 @@ export const photographerOnboardingUploadInputSchema = z.object({
   id: idValueSchema,
   displayOrder: z.number().int().min(0),
   imageUrl: requiredTextSchema("Image"),
+  pinnedAt: eventTimestamp(),
 });
 
 const savePhotographerProfileStepFields = {

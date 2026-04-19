@@ -173,6 +173,7 @@ export type PublicPhotographerDetail = PublicPhotographerListEntry & {
     displayOrder: number;
     id: string;
     imageUrl: string;
+    pinnedAt: string | null;
   }>;
 };
 
@@ -570,6 +571,7 @@ async function buildOnboardingState(
       displayOrder: upload.displayOrder,
       id: upload.id,
       imageUrl: upload.imageUrl,
+      pinnedAt: upload.pinnedAt?.toISOString() ?? null,
     })),
   };
 }
@@ -617,6 +619,7 @@ async function buildPublicPhotographer(
       displayOrder: upload.displayOrder,
       id: upload.id,
       imageUrl: upload.imageUrl,
+      pinnedAt: upload.pinnedAt?.toISOString() ?? null,
     })),
   };
 }
