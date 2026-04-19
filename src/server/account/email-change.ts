@@ -1,10 +1,12 @@
-import { createEmailVerificationToken } from "better-auth/api";
 import { z } from "zod";
 import { env } from "@/lib/env";
 import { auth } from "@/server/auth";
 import { email } from "@/server/email";
+import { sendVerificationEmailToUser } from "./email-verification";
 
 const EMAIL_CHANGE_EXPIRES_IN_SECONDS = 60 * 60;
+const EMAIL_VERIFICATION_SUCCESS_CALLBACK_URL =
+  "/email-verification?status=success";
 
 const changeEmailSchema = z.object({
   newEmail: z.string().trim().email("Enter a valid email address."),
@@ -108,47 +110,6 @@ async function getFreshSession(headers: Headers) {
       disableCookieCache: true,
     },
   });
-}
-
-async function sendVerificationEmailToUser(params: {
-  emailAddress: string;
-  name: string;
-}) {
-  const authContext = await auth.$context;
-
-  try {
-    const token = await createEmailVerificationToken(
-      authContext.secret,
-      params.emailAddress,
-      undefined,
-      EMAIL_CHANGE_EXPIRES_IN_SECONDS,
-    );
-
-    const verificationURL = new URL(
-      "/api/auth/verify-email",
-      env.NEXT_PUBLIC_BASE_URL,
-    );
-    verificationURL.searchParams.set("token", token);
-    verificationURL.searchParams.set(
-      "callbackURL",
-      getAccountURL(undefined, "/email-verification?status=success"),
-    );
-
-    await email.sendVerifyEmail(params.emailAddress, {
-      name: params.name,
-      url: verificationURL.toString(),
-    });
-
-    return { kind: "success" as const };
-  } catch (error) {
-    authContext.logger.error(
-      error instanceof Error
-        ? error.message
-        : "Failed to send verification email.",
-    );
-
-    return { kind: "error" as const };
-  }
 }
 
 async function readPendingEmailChange(
@@ -338,6 +299,7 @@ export async function changeAccountEmail(params: {
   );
 
   const verificationEmailResult = await sendVerificationEmailToUser({
+    callbackURL: EMAIL_VERIFICATION_SUCCESS_CALLBACK_URL,
     emailAddress: newEmail,
     name: updatedUser.name,
   });
@@ -374,6 +336,7 @@ export async function resendAccountVerification(params: {
   }
 
   const result = await sendVerificationEmailToUser({
+    callbackURL: EMAIL_VERIFICATION_SUCCESS_CALLBACK_URL,
     emailAddress: session.user.email,
     name: session.user.name,
   });
@@ -507,6 +470,7 @@ export async function resolveEmailChangeConfirmationRedirectURL(params: {
   );
 
   const verificationEmailResult = await sendVerificationEmailToUser({
+    callbackURL: EMAIL_VERIFICATION_SUCCESS_CALLBACK_URL,
     emailAddress: updatedUser.email,
     name: updatedUser.name,
   });

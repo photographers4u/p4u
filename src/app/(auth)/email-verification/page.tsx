@@ -12,7 +12,7 @@ import {
   DEFAULT_AUTH_CALLBACK_URL,
   getSafeAuthCallbackUrl,
 } from "@/lib/auth-redirect";
-import { readApiResponse } from "@/lib/api-response";
+import { requestVerificationEmail } from "@/lib/request-verification-email";
 
 type VerificationState = {
   description: string;
@@ -68,7 +68,8 @@ const successState: VerificationState = {
 const idleState: VerificationState = {
   eyebrow: "Email verification",
   title: "Check your email",
-  description: "Open the verification link from your inbox to finish setting up your account.",
+  description:
+    "Open the verification link from your inbox to finish setting up your account.",
   tone: "info",
 };
 
@@ -105,9 +106,18 @@ function getResendMessageEmail(
   return `We can resend a verification link to ${email}.`;
 }
 
+function getInitialDeliveryNotice(delivery: string | null) {
+  if (delivery === "failed") {
+    return "We couldn't send the verification email automatically. Use the button below to try again.";
+  }
+
+  return null;
+}
+
 function EmailVerificationContent() {
   const searchParams = useSearchParams();
   const callbackUrl = getSafeAuthCallbackUrl(searchParams.get("callbackUrl"));
+  const delivery = searchParams.get("delivery");
   const error = searchParams.get("error");
   const status = searchParams.get("status");
   const email = searchParams.get("email")?.trim().toLowerCase() ?? null;
@@ -134,6 +144,9 @@ function EmailVerificationContent() {
 
     return getResendMessageEmail(email, intent);
   }, [email, intent, status]);
+  const initialDeliveryNotice = useMemo(() => {
+    return getInitialDeliveryNotice(delivery);
+  }, [delivery]);
 
   async function onResend() {
     if (!email || isResending) {
@@ -144,21 +157,14 @@ function EmailVerificationContent() {
     setResendNotice(null);
 
     try {
-      const response = await fetch("/api/auth/send-verification-email", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          callbackURL: callbackUrl,
-        }),
+      const result = await requestVerificationEmail({
+        callbackURL: callbackUrl,
+        email,
       });
-      const { errorMessage } = await readApiResponse(response);
 
-      if (!response.ok) {
+      if (!result.ok) {
         const message =
-          errorMessage ?? "We couldn't resend the verification email.";
+          result.errorMessage ?? "We couldn't resend the verification email.";
         setResendNotice(message);
         toast.error(message);
         return;
@@ -185,6 +191,9 @@ function EmailVerificationContent() {
             <p className="mt-2 font-medium text-foreground">{email}</p>
           ) : null}
           {resendNotice ? <p className="mt-3">{resendNotice}</p> : null}
+          {!resendNotice && initialDeliveryNotice ? (
+            <p className="mt-3">{initialDeliveryNotice}</p>
+          ) : null}
         </div>
 
         {canResend ? (

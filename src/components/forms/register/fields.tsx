@@ -16,8 +16,10 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { buildAuthRedirectPath } from "@/lib/auth-redirect";
 import { authClient } from "@/lib/auth-client";
+import { buildAuthRedirectPath } from "@/lib/auth-redirect";
+import { requestRegistrationEmailStatus } from "@/lib/request-registration-email-status";
+import { requestVerificationEmail } from "@/lib/request-verification-email";
 import { type EmailPasswordAuth, emailPasswordAuthSchema } from "@/zod/schema";
 
 export function RegisterFields() {
@@ -47,6 +49,41 @@ export function RegisterFields() {
       .replace(/\b\w/g, (c) => c.toUpperCase());
 
     const normalizedEmail = values.email.trim().toLowerCase();
+    form.clearErrors("email");
+
+    const existingEmailResult = await requestRegistrationEmailStatus({
+      email: normalizedEmail,
+    }).catch(() => null);
+
+    if (!existingEmailResult?.ok) {
+      toast.error(
+        existingEmailResult?.errorMessage ??
+          "We couldn't check whether that email is available. Please try again.",
+      );
+      return;
+    }
+
+    if (existingEmailResult.status === "existing_verified") {
+      const message =
+        "An account with this email already exists. Sign in instead.";
+      form.setError("email", {
+        type: "manual",
+        message,
+      });
+      toast.error(message);
+      return;
+    }
+
+    if (existingEmailResult.status === "existing_unverified") {
+      const message =
+        "An account with this email already exists and still needs verification. Sign in to resend the verification email.";
+      form.setError("email", {
+        type: "manual",
+        message,
+      });
+      toast.error(message);
+      return;
+    }
 
     const { error } = await authClient.signUp.email({
       name: username,
@@ -60,11 +97,27 @@ export function RegisterFields() {
       return;
     }
 
+    let delivery: "failed" | undefined;
+
+    try {
+      const result = await requestVerificationEmail({
+        callbackURL: "/account",
+        email: normalizedEmail,
+      });
+
+      if (!result.ok) {
+        delivery = "failed";
+      }
+    } catch {
+      delivery = "failed";
+    }
+
     setIsRedirecting(true);
 
     router.replace(
       buildAuthRedirectPath("/email-verification", {
         callbackUrl: "/account",
+        delivery,
         email: normalizedEmail,
         intent: "signup",
       }),

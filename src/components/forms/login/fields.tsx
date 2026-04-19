@@ -15,11 +15,12 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/auth-client";
 import {
   buildAuthRedirectPath,
   getSafeAuthCallbackUrl,
 } from "@/lib/auth-redirect";
-import { authClient } from "@/lib/auth-client";
+import { requestVerificationEmail } from "@/lib/request-verification-email";
 import {
   type EmailPasswordAuth,
   emailPasswordAuthSchema,
@@ -50,7 +51,10 @@ export function LoginFields({
     formState: { errors, isSubmitting },
   } = form;
 
-  function isEmailVerificationError(error: { message?: string; status?: number }) {
+  function isEmailVerificationError(error: {
+    message?: string;
+    status?: number;
+  }) {
     return (
       error.status === 403 &&
       error.message?.toLowerCase().includes("verified") === true
@@ -69,11 +73,27 @@ export function LoginFields({
 
     if (error) {
       if (isEmailVerificationError(error)) {
+        let delivery: "failed" | undefined;
+
+        try {
+          const result = await requestVerificationEmail({
+            callbackURL: safeCallbackUrl,
+            email: normalizedEmail,
+          });
+
+          if (!result.ok) {
+            delivery = "failed";
+          }
+        } catch {
+          delivery = "failed";
+        }
+
         setRedirectTarget("verification");
         router.replace(
           buildAuthRedirectPath("/email-verification", {
             callbackUrl:
               safeCallbackUrl === "/account" ? undefined : safeCallbackUrl,
+            delivery,
             email: normalizedEmail,
             intent: "signin",
           }),

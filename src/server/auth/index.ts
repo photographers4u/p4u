@@ -73,8 +73,8 @@ export const auth = betterAuth({
   },
   emailVerification: {
     autoSignInAfterVerification: true,
-    sendOnSignIn: true,
-    sendOnSignUp: true,
+    sendOnSignIn: false,
+    sendOnSignUp: false,
 
     // emails
     sendVerificationEmail: async ({ url, user }) => {
