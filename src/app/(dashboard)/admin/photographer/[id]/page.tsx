@@ -11,19 +11,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  getAllowedPhotographerReviewStatuses,
-} from "@/lib/photographer-status";
+import { getAdminPhotographersReturnToPath } from "@/lib/admin-photographer-list";
 import {
   formatPhotographerCountry,
   formatPhotographerExperience,
   getPhotographerStatusViewModel,
   getProfileInitials,
 } from "@/lib/photographer-presentation";
-import {
-  photographerController,
-} from "@/server/db/controller/photographer";
+import { getAllowedPhotographerReviewStatuses } from "@/lib/photographer-status";
 import { NotFoundError } from "@/server/db/helpers/errors";
+import { getAdminPhotographerEntryById } from "@/server/services/photographer";
 
 const adminDateFormatter = new Intl.DateTimeFormat("en", {
   dateStyle: "medium",
@@ -47,22 +44,6 @@ type AdminPhotographerDetailPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-function getFirstValue(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function getAdminPhotographersReturnToPath(
-  value: string | string[] | undefined,
-) {
-  const returnTo = getFirstValue(value);
-
-  if (returnTo?.startsWith("/admin/photographers")) {
-    return returnTo;
-  }
-
-  return "/admin/photographers";
-}
-
 export default async function AdminPhotographerDetailPage({
   params,
   searchParams,
@@ -73,8 +54,7 @@ export default async function AdminPhotographerDetailPage({
   );
 
   try {
-    const entry =
-      await photographerController.getAdminPhotographerEntryById(id);
+    const entry = await getAdminPhotographerEntryById(id);
     const allowedTransitions = getAllowedPhotographerReviewStatuses(entry);
     const hasReviewActions = allowedTransitions.length > 0;
     const status = getPhotographerStatusViewModel(entry);

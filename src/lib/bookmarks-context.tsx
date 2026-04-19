@@ -1,14 +1,17 @@
 "use client";
 
+import type { InferResponseType } from "hono/client";
 import { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 import { readApiResponse } from "@/lib/api-response";
 import type { AuthClientSession } from "@/lib/auth-client";
-import { bookmarkIdentifierValues } from "@/zod/helpers";
+import {
+  type BookmarkStore,
+  createEmptyBookmarkStore,
+  sanitizeBookmarkStore,
+} from "@/lib/bookmark-store";
 import type { BookmarkIdentifier } from "@/zod/schema/bookmark";
-
-type BookmarkStore = Record<BookmarkIdentifier, string[]>;
 
 type BookmarkContextValue = {
   isAuthenticated: boolean;
@@ -22,16 +25,14 @@ type BookmarkContextValue = {
 };
 
 const BookmarkContext = createContext<BookmarkContextValue | null>(null);
-
-function createEmptyBookmarkStore() {
-  const store = {} as BookmarkStore;
-
-  for (const identifier of bookmarkIdentifierValues) {
-    store[identifier] = [];
-  }
-
-  return store;
-}
+type BookmarkCollectionResponse = InferResponseType<
+  typeof apiClient.bookmark.$get,
+  200
+>;
+type BookmarkToggleResponse = InferResponseType<
+  typeof apiClient.bookmark.toggle.$post,
+  200
+>;
 
 function getPendingKey(identifier: BookmarkIdentifier, value: string) {
   return `${identifier}:${value}`;
@@ -39,20 +40,30 @@ function getPendingKey(identifier: BookmarkIdentifier, value: string) {
 
 export function BookmarkProvider({
   children,
+  initialStore,
   session,
 }: {
   children: React.ReactNode;
+  initialStore?: BookmarkStore;
   session: AuthClientSession | null;
 }) {
-  const [bookmarks, setBookmarks] = useState<BookmarkStore>(
-    createEmptyBookmarkStore,
+  const [bookmarks, setBookmarks] = useState<BookmarkStore>(() =>
+    sanitizeBookmarkStore(initialStore),
   );
-  const [isLoaded, setIsLoaded] = useState(!session?.user);
+  const [isLoaded, setIsLoaded] = useState(
+    !session?.user || Boolean(initialStore),
+  );
   const [pendingKeys, setPendingKeys] = useState<string[]>([]);
 
   useEffect(() => {
     if (!session?.user) {
       setBookmarks(createEmptyBookmarkStore());
+      setIsLoaded(true);
+      return;
+    }
+
+    if (initialStore) {
+      setBookmarks(sanitizeBookmarkStore(initialStore));
       setIsLoaded(true);
       return;
     }
@@ -63,32 +74,19 @@ export function BookmarkProvider({
       setIsLoaded(false);
 
       try {
-        const nextBookmarks = createEmptyBookmarkStore();
+        const response = await apiClient.bookmark.$get();
+        const { errorMessage, payload } =
+          await readApiResponse<BookmarkCollectionResponse>(response);
 
-        for (const identifier of bookmarkIdentifierValues) {
-          const response = await apiClient.bookmark[":identifier"].$get({
-            param: { identifier },
-          });
-          const { errorMessage, payload } = await readApiResponse<{
-            values?: string[];
-          }>(response);
-
-          if (!response.ok) {
-            throw new Error(errorMessage ?? "Couldn't load bookmarks.");
-          }
-
-          if (Array.isArray(payload?.values)) {
-            nextBookmarks[identifier] = payload.values.filter(
-              (value): value is string => typeof value === "string",
-            );
-          }
+        if (!response.ok || !payload) {
+          throw new Error(errorMessage ?? "Couldn't load bookmarks.");
         }
 
         if (!isActive) {
           return;
         }
 
-        setBookmarks(nextBookmarks);
+        setBookmarks(sanitizeBookmarkStore(payload));
       } catch (error) {
         if (!isActive) {
           return;
@@ -110,7 +108,7 @@ export function BookmarkProvider({
     return () => {
       isActive = false;
     };
-  }, [session?.user?.id]);
+  }, [initialStore, session?.user]);
 
   async function toggleBookmark(
     identifier: BookmarkIdentifier,
@@ -139,21 +137,15 @@ export function BookmarkProvider({
           value: normalizedValue,
         },
       });
-      const { errorMessage, payload } = await readApiResponse<{
-        isBookmarked?: boolean;
-      }>(response);
+      const { errorMessage, payload } =
+        await readApiResponse<BookmarkToggleResponse>(response);
 
       if (!response.ok) {
         toast.error(errorMessage ?? "Couldn't update the bookmark.");
         return null;
       }
 
-      const isBookmarked = !!(
-        payload &&
-        typeof payload === "object" &&
-        "isBookmarked" in payload &&
-        payload.isBookmarked === true
-      );
+      const isBookmarked = payload?.isBookmarked === true;
 
       setBookmarks((current) => {
         const currentValues = current[identifier];

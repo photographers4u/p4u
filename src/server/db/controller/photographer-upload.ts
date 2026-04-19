@@ -74,37 +74,56 @@ async function syncPhotographerUploadOrder(
   }
 }
 
+async function createPortfolioUploadByPhotographerId(
+  photographerId: string,
+  input: CreatePhotographerPortfolioUploadInput & {
+    storageFileId?: string | null;
+  },
+) {
+  return db.transaction(async (tx) => {
+    await lockOwnedPhotographerUploads(photographerId, tx);
+    const existingUploads = await photographerUploadDal.getByPhotographerId(
+      photographerId,
+      tx,
+    );
+
+    const createdUpload = await photographerUploadDal.create(
+      {
+        photographerId,
+        displayOrder: existingUploads.length,
+        imageUrl: input.imageUrl,
+        storageFileId: input.storageFileId ?? null,
+      },
+      tx,
+    );
+
+    if (!createdUpload) {
+      throw new InternalError("Failed to save the portfolio image.");
+    }
+
+    return toPhotographerUploadEntry(createdUpload);
+  });
+}
+
 export const photographerUploadController = {
+  async createPortfolioUploadByPhotographerId(
+    photographerId: string,
+    input: CreatePhotographerPortfolioUploadInput & {
+      storageFileId?: string | null;
+    },
+  ) {
+    return createPortfolioUploadByPhotographerId(photographerId, input);
+  },
+
   async createPortfolioUploadByUserId(
     userId: string,
     input: CreatePhotographerPortfolioUploadInput & {
       storageFileId?: string | null;
     },
   ) {
-    return db.transaction(async (tx) => {
-      const photographer = await getOwnedPhotographerOrThrow(userId, tx);
-      await lockOwnedPhotographerUploads(photographer.id, tx);
-      const existingUploads = await photographerUploadDal.getByPhotographerId(
-        photographer.id,
-        tx,
-      );
+    const photographer = await getOwnedPhotographerOrThrow(userId);
 
-      const createdUpload = await photographerUploadDal.create(
-        {
-          photographerId: photographer.id,
-          displayOrder: existingUploads.length,
-          imageUrl: input.imageUrl,
-          storageFileId: input.storageFileId ?? null,
-        },
-        tx,
-      );
-
-      if (!createdUpload) {
-        throw new InternalError("Failed to save the portfolio image.");
-      }
-
-      return toPhotographerUploadEntry(createdUpload);
-    });
+    return createPortfolioUploadByPhotographerId(photographer.id, input);
   },
 
   async deletePortfolioUploadByUserId(userId: string, uploadId: string) {

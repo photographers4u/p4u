@@ -12,12 +12,15 @@ import {
 } from "@/lib/photographer-presentation";
 import { cn } from "@/lib/utils";
 import { getAuthSession } from "@/server/auth/session";
-import { specialityDal } from "@/server/db/dal/speciality";
 import {
   getCurrentPhotographer,
   getCurrentPhotographerContact,
   getCurrentPhotographerOnboarding,
 } from "@/server/services/photographer";
+import {
+  getSpecialityFormOptions,
+  type SpecialityFormOption,
+} from "@/server/services/speciality";
 
 function PortfolioStatusBanner({
   banner,
@@ -72,10 +75,7 @@ function OfferingsSection({
   canSubmit,
   onboarding,
 }: {
-  availableSpecialities: Array<{
-    id: string;
-    name: string;
-  }>;
+  availableSpecialities: SpecialityFormOption[];
   canSubmit: boolean;
   onboarding: Awaited<ReturnType<typeof getCurrentPhotographerOnboarding>>;
 }) {
@@ -131,7 +131,7 @@ export default async function PortfolioPage() {
   }
 
   const availableSpecialities = !photographerStatus.canEditApprovedProfile
-    ? await specialityDal.getAll()
+    ? await getSpecialityFormOptions()
     : [];
   const canEditProfile = photographerStatus.canEditApprovedProfile;
   const shouldShowForms = photographerStatus.shouldShowPortfolioForms;
@@ -178,12 +178,7 @@ export default async function PortfolioPage() {
           <ContactSection canSubmit={canEditProfile} contact={contact} />
           {!photographerStatus.canEditApprovedProfile ? (
             <OfferingsSection
-              availableSpecialities={availableSpecialities.map(
-                (speciality) => ({
-                  id: speciality.id,
-                  name: speciality.name,
-                }),
-              )}
+              availableSpecialities={availableSpecialities}
               canSubmit={canEditProfile}
               onboarding={onboarding}
             />

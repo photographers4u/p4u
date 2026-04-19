@@ -7,10 +7,14 @@ import {
 } from "@/server/api/lib/require-auth-middleware";
 import { getAdminUserOrResponse } from "@/server/api/lib/review-workflow";
 import { mapError } from "@/server/api/lib/route-helpers";
-import { photographerController } from "@/server/db/controller/photographer";
 import {
+  deletePhotographerByUserId,
   getPhotographerOnboardingByUserId,
   getPhotographerProfileByUserId,
+  reviewPhotographerById,
+  savePhotographerAvatarByUserId,
+  savePhotographerOnboardingStepByUserId,
+  updatePhotographerProfileByUserId,
 } from "@/server/services/photographer";
 import {
   photographerIdParamsSchema,
@@ -50,7 +54,7 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
     async (c) => {
       try {
         const user = getRequiredUser(c);
-        const photographer = await photographerController.savePhotographerAvatarStep(
+        const photographer = await savePhotographerAvatarByUserId(
           user.id,
           c.req.valid("json"),
         );
@@ -69,11 +73,10 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
     async (c) => {
       try {
         const user = getRequiredUser(c);
-        const photographer =
-          await photographerController.updatePhotographerProfile(
-            user.id,
-            c.req.valid("json"),
-          );
+        const photographer = await updatePhotographerProfileByUserId(
+          user.id,
+          c.req.valid("json"),
+        );
 
         return c.json(photographer, 200);
       } catch (error) {
@@ -89,11 +92,10 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
     async (c) => {
       try {
         const user = getRequiredUser(c);
-        const photographer =
-          await photographerController.savePhotographerOnboardingStep(
-            user.id,
-            c.req.valid("json"),
-          );
+        const photographer = await savePhotographerOnboardingStepByUserId(
+          user.id,
+          c.req.valid("json"),
+        );
 
         return c.json(photographer, 200);
       } catch (error) {
@@ -115,7 +117,7 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
       }
 
       try {
-        const photographer = await photographerController.reviewPhotographer(
+        const photographer = await reviewPhotographerById(
           c.req.valid("param").id,
           adminUserResult.user.id,
           c.req.valid("json"),
@@ -131,9 +133,7 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
   .delete("/", requireAuth, async (c) => {
     try {
       const user = getRequiredUser(c);
-      const photographer = await photographerController.deletePhotographer(
-        user.id,
-      );
+      const photographer = await deletePhotographerByUserId(user.id);
 
       return c.json(photographer, 200);
     } catch (error) {

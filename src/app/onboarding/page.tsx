@@ -3,16 +3,16 @@ import { redirect } from "next/navigation";
 import { CreatePhotographerForm } from "@/components/forms/create-photographer-form";
 import PageHeader from "@/components/page-header";
 import { getPhotographerStatusViewModel } from "@/lib/photographer-presentation";
-import { specialityDal } from "@/server/db/dal/speciality";
 import { getAccountOverview } from "@/server/services/account";
 import { getCurrentPhotographerOnboarding } from "@/server/services/photographer";
+import { getSpecialityFormOptions } from "@/server/services/speciality";
 
 export default async function OnboardingPage() {
   const requestHeaders = await headers();
   const [account, onboarding, availableSpecialities] = await Promise.all([
     getAccountOverview(requestHeaders),
     getCurrentPhotographerOnboarding(requestHeaders),
-    specialityDal.getAll(),
+    getSpecialityFormOptions(),
   ]);
 
   if (!account?.user || !onboarding) {
@@ -36,10 +36,7 @@ export default async function OnboardingPage() {
 
       <div className="max-w-4xl">
         <CreatePhotographerForm
-          availableSpecialities={availableSpecialities.map((speciality) => ({
-            id: speciality.id,
-            name: speciality.name,
-          }))}
+          availableSpecialities={availableSpecialities}
           defaultEmail={defaultEmail}
           initialData={onboarding}
         />

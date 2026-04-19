@@ -10,6 +10,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  getSearchParamFirstValue,
+  matchesSearchParamFlag,
+} from "@/lib/search-params";
 import { getEmailChangeErrorMessage } from "@/server/account/email-change";
 import { getAccountOverview } from "@/server/services/account";
 
@@ -22,15 +26,11 @@ type AccountNotice = {
   tone: "error" | "info" | "success";
 };
 
-function getFirstValue(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
-
 function getAccountNotice(
   params: Record<string, string | string[] | undefined>,
 ): AccountNotice | null {
   const emailChangeError = getEmailChangeErrorMessage(
-    getFirstValue(params.emailChangeError),
+    getSearchParamFirstValue(params.emailChangeError),
   );
 
   if (emailChangeError) {
@@ -40,16 +40,14 @@ function getAccountNotice(
     };
   }
 
-  if (getFirstValue(params.emailChanged) === "1") {
+  if (matchesSearchParamFlag(params.emailChanged)) {
     return {
-      message:
-        getFirstValue(params.verificationEmailSent) === "1"
-          ? "Your email was changed and we sent a verification link to the new address."
-          : "Your email was changed, but we couldn't send the verification email automatically.",
-      tone:
-        getFirstValue(params.verificationEmailSent) === "1"
-          ? "success"
-          : "info",
+      message: matchesSearchParamFlag(params.verificationEmailSent)
+        ? "Your email was changed and we sent a verification link to the new address."
+        : "Your email was changed, but we couldn't send the verification email automatically.",
+      tone: matchesSearchParamFlag(params.verificationEmailSent)
+        ? "success"
+        : "info",
     };
   }
 

@@ -2,20 +2,59 @@ import "server-only";
 
 import type { PublicPhotographerExploreFilters } from "@/lib/public-photographer-explore";
 import { getAuthSession } from "@/server/auth/session";
-import {
-  type PublicPhotographerDetail,
-  type PublicPhotographerExplorePage,
-  type PublicPhotographerListEntry,
-  photographerController,
-} from "@/server/db/controller/photographer";
+import { photographerController } from "@/server/db/controller/photographer";
 import { photographerContactController } from "@/server/db/controller/photographer-contact";
 import { NotFoundError } from "@/server/db/helpers/errors";
-import type { PhotographerContact } from "@/zod/schema";
 import type {
+  PhotographerContact,
+  SavePhotographerContactInput,
+} from "@/zod/schema";
+import type {
+  AdminPhotographerListSort,
+  AdminPhotographerListStatusFilter,
   Photographer,
   PhotographerOnboardingState,
+  ReviewPhotographerInput,
+  SavePhotographerAvatarStepInput,
+  SavePhotographerOnboardingStepInput,
+  UpdatePhotographerProfileInput,
 } from "@/zod/schema/photographer";
-import { photographerSchema } from "@/zod/schema/photographer";
+import {
+  adminPhotographerListSortValues as ADMIN_PHOTOGRAPHER_LIST_SORTS,
+  adminPhotographerListStatusFilterValues as ADMIN_PHOTOGRAPHER_LIST_STATUS_FILTERS,
+  DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT,
+  DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS,
+  photographerSchema,
+} from "@/zod/schema/photographer";
+export {
+  DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT,
+  DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS,
+};
+export {
+  ADMIN_PHOTOGRAPHER_LIST_SORTS,
+  ADMIN_PHOTOGRAPHER_LIST_STATUS_FILTERS,
+};
+export type { AdminPhotographerListSort, AdminPhotographerListStatusFilter };
+
+export type AdminPhotographerEntriesPage = Awaited<
+  ReturnType<typeof photographerController.getAdminPhotographerEntriesPage>
+>;
+export type AdminPhotographerListEntry =
+  AdminPhotographerEntriesPage["entries"][number];
+export type AdminPhotographerReviewEntry = Awaited<
+  ReturnType<typeof photographerController.getAdminPhotographerEntryById>
+>;
+export type PublicPhotographerDetail = Awaited<
+  ReturnType<typeof photographerController.getPublicPhotographerBySlug>
+>;
+export type PublicPhotographerExplorePage = Awaited<
+  ReturnType<typeof photographerController.getPublicPhotographerExplorePage>
+>;
+export type PublicPhotographerExploreEntry =
+  PublicPhotographerExplorePage["photographers"][number];
+export type PublicPhotographerListEntry = Awaited<
+  ReturnType<typeof photographerController.getPublicPhotographers>
+>[number];
 
 function toPhotographer(
   photographer: Awaited<
@@ -86,6 +125,21 @@ export async function getPublicPhotographersByIds(
   return photographerController.getPublicPhotographersByIds(ids);
 }
 
+export async function getAdminPhotographerEntriesPage(filters?: {
+  page?: number;
+  query?: string;
+  sort?: AdminPhotographerListSort;
+  status?: AdminPhotographerListStatusFilter;
+}): Promise<AdminPhotographerEntriesPage> {
+  return photographerController.getAdminPhotographerEntriesPage(filters);
+}
+
+export async function getAdminPhotographerEntryById(
+  id: string,
+): Promise<AdminPhotographerReviewEntry> {
+  return photographerController.getAdminPhotographerEntryById(id);
+}
+
 async function getCurrentUserId(headers: Headers) {
   const session = await getAuthSession({ headers });
   return session?.user?.id ?? null;
@@ -141,4 +195,47 @@ export async function getCurrentPhotographerContact(
 
     throw error;
   }
+}
+
+export async function savePhotographerAvatarByUserId(
+  userId: string,
+  input: SavePhotographerAvatarStepInput,
+) {
+  return photographerController.savePhotographerAvatarStep(userId, input);
+}
+
+export async function updatePhotographerProfileByUserId(
+  userId: string,
+  input: UpdatePhotographerProfileInput,
+) {
+  return photographerController.updatePhotographerProfile(userId, input);
+}
+
+export async function savePhotographerOnboardingStepByUserId(
+  userId: string,
+  input: SavePhotographerOnboardingStepInput,
+) {
+  return photographerController.savePhotographerOnboardingStep(userId, input);
+}
+
+export async function savePhotographerContactByUserId(
+  userId: string,
+  input: SavePhotographerContactInput,
+) {
+  return photographerContactController.savePhotographerContactByUserId(
+    userId,
+    input,
+  );
+}
+
+export async function reviewPhotographerById(
+  id: string,
+  reviewerId: string,
+  input: ReviewPhotographerInput,
+) {
+  return photographerController.reviewPhotographer(id, reviewerId, input);
+}
+
+export async function deletePhotographerByUserId(userId: string) {
+  return photographerController.deletePhotographer(userId);
 }

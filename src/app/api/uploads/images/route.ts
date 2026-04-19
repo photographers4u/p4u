@@ -1,39 +1,20 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import {
-  type ImageUploadKind,
   imageUploadTagNamespace,
   isAcceptedImageUploadMimeType,
   isImageUploadKind,
   maxImageUploadSizeBytes,
 } from "@/lib/imagekit";
+import { mapError } from "@/server/api/lib/route-helpers";
 import { auth } from "@/server/auth";
-import { photographerDal } from "@/server/db/dal/photographer";
 import {
   ImageUploadProviderError,
   uploadProviderImage,
 } from "@/server/services/image-upload";
+import { assertCanUploadImageByUserId } from "@/server/services/photographer-upload";
 
 export const runtime = "nodejs";
-
-async function getUploadAuthorizationError(
-  userId: string,
-  uploadKind: ImageUploadKind,
-) {
-  if (uploadKind === "photographerAvatar") {
-    return null;
-  }
-
-  if (uploadKind === "photographerPortfolio") {
-    const photographer = await photographerDal.getByUserId(userId);
-
-    return photographer
-      ? null
-      : "Only photographers can upload portfolio images.";
-  }
-
-  return "That upload target isn't allowed for this account.";
-}
 
 export async function POST(request: Request) {
   const session = await auth.api.getSession({
@@ -65,15 +46,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const authorizationError = await getUploadAuthorizationError(
-    session.user.id,
-    uploadKind,
-  );
-
-  if (authorizationError) {
-    return NextResponse.json({ message: authorizationError }, { status: 403 });
-  }
-
   if (!isAcceptedImageUploadMimeType(file.type)) {
     return NextResponse.json(
       { message: "Please choose a PNG, JPG, WEBP, or GIF image." },
@@ -89,13 +61,11 @@ export async function POST(request: Request) {
   }
 
   try {
+    await assertCanUploadImageByUserId(session.user.id, uploadKind);
+
     const payload = await uploadProviderImage({
       file,
-      tags: [
-        imageUploadTagNamespace,
-        uploadKind,
-        `user:${session.user.id}`,
-      ],
+      tags: [imageUploadTagNamespace, uploadKind, `user:${session.user.id}`],
       uploadKind,
     });
 
@@ -108,9 +78,8 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json(
-      { message: "Couldn't upload the image right now." },
-      { status: 500 },
-    );
+    const [status, message] = mapError(error);
+
+    return NextResponse.json({ message }, { status });
   }
 }

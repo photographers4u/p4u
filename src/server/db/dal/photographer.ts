@@ -16,6 +16,10 @@ import {
 } from "@/lib/public-photographer-explore";
 import db, { type DBExecutor, type DBTransaction } from "@/server/db";
 import { photographer, photographerContact } from "@/server/db/schema";
+import type {
+  AdminPhotographerListSort,
+  AdminPhotographerListStatusFilter,
+} from "@/zod/schema/photographer";
 
 type DBClient = DBExecutor | DBTransaction;
 
@@ -25,27 +29,6 @@ export type CreatePhotographerData = Omit<
   "id" | "createdAt" | "updatedAt"
 >;
 export type UpdatePhotographerData = Partial<CreatePhotographerData>;
-export const ADMIN_PHOTOGRAPHER_LIST_STATUS_FILTERS = [
-  "all",
-  "draft",
-  "submitted",
-  "approved",
-  "rejected",
-  "on_hold",
-] as const;
-export type AdminPhotographerListStatusFilter =
-  (typeof ADMIN_PHOTOGRAPHER_LIST_STATUS_FILTERS)[number];
-export const ADMIN_PHOTOGRAPHER_LIST_SORTS = [
-  "review_queue",
-  "updated_desc",
-  "updated_asc",
-  "created_desc",
-  "created_asc",
-  "name_asc",
-  "name_desc",
-] as const;
-export type AdminPhotographerListSort =
-  (typeof ADMIN_PHOTOGRAPHER_LIST_SORTS)[number];
 export type AdminPhotographerListFilters = {
   query?: string;
   sort?: AdminPhotographerListSort;

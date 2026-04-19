@@ -6,13 +6,28 @@ import {
   requireAuth,
 } from "@/server/api/lib/require-auth-middleware";
 import { mapError } from "@/server/api/lib/route-helpers";
-import { bookmarkController } from "@/server/db/controller/bookmark";
+import {
+  getBookmarkStoreByUserId,
+  getBookmarkValuesByIdentifier,
+  toggleBookmarkByUserId,
+} from "@/server/services/bookmark";
 import {
   bookmarkIdentifierParamsSchema,
   bookmarkToggleSchema,
 } from "@/zod/schema/bookmark";
 
 export const bookmarkRouter = new Hono<ApiAuthEnv>()
+  .get("/", requireAuth, async (c) => {
+    try {
+      const user = getRequiredUser(c);
+      const bookmarks = await getBookmarkStoreByUserId(user.id);
+
+      return c.json(bookmarks, 200);
+    } catch (error) {
+      const [status, message] = mapError(error);
+      return c.json({ message }, status);
+    }
+  })
   .get(
     "/:identifier",
     requireAuth,
@@ -20,10 +35,7 @@ export const bookmarkRouter = new Hono<ApiAuthEnv>()
     async (c) => {
       const user = getRequiredUser(c);
       const { identifier } = c.req.valid("param");
-      const values = await bookmarkController.getValuesByIdentifier(
-        user.id,
-        identifier,
-      );
+      const values = await getBookmarkValuesByIdentifier(user.id, identifier);
 
       return c.json({ values }, 200);
     },
@@ -35,7 +47,7 @@ export const bookmarkRouter = new Hono<ApiAuthEnv>()
     async (c) => {
       try {
         const user = getRequiredUser(c);
-        const result = await bookmarkController.toggleBookmark(
+        const result = await toggleBookmarkByUserId(
           user.id,
           c.req.valid("json"),
         );

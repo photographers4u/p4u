@@ -42,6 +42,47 @@ export const photographerWorkflowStatusSchema = z.enum(
   photographerWorkflowStatusValues,
 );
 
+export const adminPhotographerListStatusFilterValues = [
+  "all",
+  "draft",
+  "submitted",
+  "approved",
+  "rejected",
+  "on_hold",
+] as const;
+export const adminPhotographerListStatusFilterSchema = z.enum(
+  adminPhotographerListStatusFilterValues,
+);
+
+export const adminPhotographerListSortValues = [
+  "review_queue",
+  "updated_desc",
+  "updated_asc",
+  "created_desc",
+  "created_asc",
+  "name_asc",
+  "name_desc",
+] as const;
+export const adminPhotographerListSortSchema = z.enum(
+  adminPhotographerListSortValues,
+);
+
+export const DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS =
+  adminPhotographerListStatusFilterValues[0];
+export const DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT =
+  adminPhotographerListSortValues[0];
+
+export const adminPhotographerListFiltersSchema = z.object({
+  page: z.number().int().min(1).default(1),
+  query: z.string().default(""),
+  sort: adminPhotographerListSortSchema.default(
+    DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT,
+  ),
+  status: adminPhotographerListStatusFilterSchema.default(
+    DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS,
+  ),
+});
+
 const photographerEntityShape = {
   userId: idValueSchema,
   slug: nameSlugSchema.nullable(),
@@ -228,6 +269,10 @@ export const photographerIdParamsSchema = z.object({
   id: idValueSchema,
 });
 
+export const publicPhotographerListQuerySchema = z.object({
+  id: z.union([idValueSchema, z.array(idValueSchema)]).optional(),
+});
+
 export const photographerSlugParamsSchema = z.object({
   slug: nameSlugSchema,
 });
@@ -260,6 +305,18 @@ export type PhotographerOnboardingState = z.infer<
 >;
 export type PhotographerWorkflowStatus = z.infer<
   typeof photographerWorkflowStatusSchema
+>;
+export type AdminPhotographerListStatusFilter = z.infer<
+  typeof adminPhotographerListStatusFilterSchema
+>;
+export type AdminPhotographerListSort = z.infer<
+  typeof adminPhotographerListSortSchema
+>;
+export type AdminPhotographerListFilters = z.infer<
+  typeof adminPhotographerListFiltersSchema
+>;
+export type PublicPhotographerListQuery = z.infer<
+  typeof publicPhotographerListQuerySchema
 >;
 export type UpdatePhotographerProfileInput = z.infer<
   typeof updatePhotographerProfileSchema

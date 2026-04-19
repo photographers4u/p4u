@@ -9,7 +9,7 @@ import {
   getProfileInitials,
 } from "@/lib/photographer-presentation";
 import { cn } from "@/lib/utils";
-import type { PublicPhotographerExploreEntry } from "@/server/db/controller/photographer";
+import type { PublicPhotographerExploreEntry } from "@/server/services/photographer";
 
 function getLocationLabel(photographer: PublicPhotographerExploreEntry) {
   if (photographer.locationCity) {

@@ -5,117 +5,31 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+  buildAdminPhotographersHref,
+  getAdminPhotographerListFilters,
+  getAdminPhotographerSortLabel,
+  getAdminPhotographerStatusFilterLabel,
+} from "@/lib/admin-photographer-list";
+import {
   getPhotographerStatusViewModel,
   getProfileInitials,
 } from "@/lib/photographer-presentation";
+import type { SearchParamsRecord } from "@/lib/search-params";
 import {
   ADMIN_PHOTOGRAPHER_LIST_SORTS,
   ADMIN_PHOTOGRAPHER_LIST_STATUS_FILTERS,
-  type AdminPhotographerListSort,
-  type AdminPhotographerListStatusFilter,
   DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT,
   DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS,
-  photographerController,
-} from "@/server/db/controller/photographer";
+  getAdminPhotographerEntriesPage,
+} from "@/server/services/photographer";
 
 const adminDateFormatter = new Intl.DateTimeFormat("en", {
   dateStyle: "medium",
 });
 
 type AdminPhotographersPageProps = {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<SearchParamsRecord>;
 };
-
-type AdminPhotographerListFilters = {
-  page: number;
-  query: string;
-  sort: AdminPhotographerListSort;
-  status: AdminPhotographerListStatusFilter;
-};
-
-function getFirstValue(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function parsePage(value: string | undefined) {
-  const parsedPage = Number.parseInt(value ?? "", 10);
-
-  if (!Number.isFinite(parsedPage) || parsedPage < 1) {
-    return 1;
-  }
-
-  return parsedPage;
-}
-
-function isAdminPhotographerListStatusFilter(
-  value: string | undefined,
-): value is AdminPhotographerListStatusFilter {
-  return ADMIN_PHOTOGRAPHER_LIST_STATUS_FILTERS.includes(
-    value as AdminPhotographerListStatusFilter,
-  );
-}
-
-function isAdminPhotographerListSort(
-  value: string | undefined,
-): value is AdminPhotographerListSort {
-  return ADMIN_PHOTOGRAPHER_LIST_SORTS.includes(
-    value as AdminPhotographerListSort,
-  );
-}
-
-function getAdminPhotographerListFilters(
-  params: Record<string, string | string[] | undefined>,
-): AdminPhotographerListFilters {
-  const sort = getFirstValue(params.sort);
-  const status = getFirstValue(params.status);
-
-  return {
-    page: parsePage(getFirstValue(params.page)),
-    query: getFirstValue(params.q)?.trim() ?? "",
-    sort: isAdminPhotographerListSort(sort)
-      ? sort
-      : DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT,
-    status: isAdminPhotographerListStatusFilter(status)
-      ? status
-      : DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS,
-  };
-}
-
-function getStatusFilterLabel(status: AdminPhotographerListStatusFilter) {
-  switch (status) {
-    case "draft":
-      return "Drafts";
-    case "submitted":
-      return "Submitted";
-    case "approved":
-      return "Approved";
-    case "rejected":
-      return "Rejected";
-    case "on_hold":
-      return "On hold";
-    default:
-      return "All statuses";
-  }
-}
-
-function getSortLabel(sort: AdminPhotographerListSort) {
-  switch (sort) {
-    case "updated_desc":
-      return "Recently updated";
-    case "updated_asc":
-      return "Oldest updates";
-    case "created_desc":
-      return "Newest first";
-    case "created_asc":
-      return "Oldest first";
-    case "name_asc":
-      return "Name A-Z";
-    case "name_desc":
-      return "Name Z-A";
-    default:
-      return "Review queue";
-  }
-}
 
 function getSpecialitiesLabel(count: number) {
   if (count === 0) {
@@ -133,46 +47,13 @@ function getUploadsLabel(count: number) {
   return `${count} ${count === 1 ? "image" : "images"}`;
 }
 
-function buildAdminPhotographersHref(
-  filters: AdminPhotographerListFilters,
-  overrides: Partial<AdminPhotographerListFilters> = {},
-) {
-  const nextFilters = {
-    ...filters,
-    ...overrides,
-  };
-  const searchParams = new URLSearchParams();
-
-  if (nextFilters.query) {
-    searchParams.set("q", nextFilters.query);
-  }
-
-  if (nextFilters.status !== DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS) {
-    searchParams.set("status", nextFilters.status);
-  }
-
-  if (nextFilters.sort !== DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT) {
-    searchParams.set("sort", nextFilters.sort);
-  }
-
-  if (nextFilters.page > 1) {
-    searchParams.set("page", String(nextFilters.page));
-  }
-
-  const queryString = searchParams.toString();
-
-  return queryString
-    ? `/admin/photographers?${queryString}`
-    : "/admin/photographers";
-}
-
 export default async function AdminPhotographersPage({
   searchParams,
 }: AdminPhotographersPageProps) {
   const params = await searchParams;
   const filters = getAdminPhotographerListFilters(params);
   const { entries, page, pageSize, totalCount, totalPages } =
-    await photographerController.getAdminPhotographerEntriesPage(filters);
+    await getAdminPhotographerEntriesPage(filters);
   const activeFilters = {
     ...filters,
     page,
@@ -232,7 +113,7 @@ export default async function AdminPhotographersPage({
               >
                 {ADMIN_PHOTOGRAPHER_LIST_STATUS_FILTERS.map((status) => (
                   <option key={status} value={status}>
-                    {getStatusFilterLabel(status)}
+                    {getAdminPhotographerStatusFilterLabel(status)}
                   </option>
                 ))}
               </select>
@@ -253,7 +134,7 @@ export default async function AdminPhotographersPage({
               >
                 {ADMIN_PHOTOGRAPHER_LIST_SORTS.map((sort) => (
                   <option key={sort} value={sort}>
-                    {getSortLabel(sort)}
+                    {getAdminPhotographerSortLabel(sort)}
                   </option>
                 ))}
               </select>
@@ -300,8 +181,8 @@ export default async function AdminPhotographersPage({
                 {totalCount === 1 ? "" : "s"}
               </p>
               <p>
-                {getStatusFilterLabel(filters.status)} ·{" "}
-                {getSortLabel(filters.sort)}
+                {getAdminPhotographerStatusFilterLabel(filters.status)} |{" "}
+                {getAdminPhotographerSortLabel(filters.sort)}
               </p>
             </div>
 

@@ -5,6 +5,7 @@ import { photographerRouter } from "./photographer";
 import { photographerContactRouter } from "./photographer-contact";
 import { photographerUploadRouter } from "./photographer-upload";
 import { photographersRouter } from "./photographers";
+import { specialitiesRouter } from "./specialities";
 
 export const routes = new Hono()
   .route("/account", accountRouter)
@@ -12,6 +13,7 @@ export const routes = new Hono()
   .route("/photographer/contact", photographerContactRouter)
   .route("/photographer", photographerRouter)
   .route("/photographer/uploads", photographerUploadRouter)
-  .route("/photographers", photographersRouter);
+  .route("/photographers", photographersRouter)
+  .route("/specialities", specialitiesRouter);
 
 export type RoutesType = typeof routes;

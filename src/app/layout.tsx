@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { Toaster } from "@/components/ui/sonner";
-import { BookmarkProvider } from "@/lib/bookmarks-context";
-import { inter } from "@/lib/fonts";
 import { siteConfig } from "@/config/site";
-import { getAuthSession } from "@/server/auth/session";
+import { inter } from "@/lib/fonts";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -15,12 +12,19 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getAuthSession({ headers: await headers() });
-
   return (
-    <html lang="en" className={cn("h-full", "antialiased", inter.className, "font-sans", inter.variable)}>
+    <html
+      lang="en"
+      className={cn(
+        "h-full",
+        "antialiased",
+        inter.className,
+        "font-sans",
+        inter.variable,
+      )}
+    >
       <body className="min-h-full flex flex-col">
-        <BookmarkProvider session={session}>{children}</BookmarkProvider>
+        {children}
         <Toaster position="top-center" />
       </body>
     </html>

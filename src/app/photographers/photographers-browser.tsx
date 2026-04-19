@@ -1,5 +1,6 @@
 "use client";
 
+import type { InferResponseType } from "hono/client";
 import {
   ArrowUpDown,
   LoaderCircle,
@@ -22,8 +23,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { apiClient } from "@/lib/api-client";
+import { readApiResponse } from "@/lib/api-response";
 import { formatPhotographerExperience } from "@/lib/photographer-presentation";
 import {
+  buildPublicPhotographerExploreApiQuery,
   buildPublicPhotographerExploreSearchParams,
   DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS,
   getPublicPhotographerExploreDialogFilterCount,
@@ -33,17 +37,15 @@ import {
   type PublicPhotographerExploreFilters,
 } from "@/lib/public-photographer-explore";
 import { cn } from "@/lib/utils";
-import type { PublicPhotographerExplorePage } from "@/server/db/controller/photographer";
+import type { SpecialityFilterOption } from "@/server/services/speciality";
 import { CITIES, EXPERIENCE_YEARS } from "@/zod/helpers";
 
 const ALL_FILTER_VALUE = "__all__";
 
-type SpecialityOption = {
-  name: string;
-  slug: string;
-};
-
-type PhotographersExploreResponse = PublicPhotographerExplorePage;
+type PhotographersExploreResponse = InferResponseType<
+  typeof apiClient.photographers.explore.$get,
+  200
+>;
 
 function getTopBarSummary(filters: PublicPhotographerExploreFilters) {
   return `${getPublicPhotographerExploreSortLabel(filters.sort)} order`;
@@ -51,7 +53,7 @@ function getTopBarSummary(filters: PublicPhotographerExploreFilters) {
 
 function getSpecialityLabel(
   specialitySlug: string,
-  availableSpecialities: SpecialityOption[],
+  availableSpecialities: SpecialityFilterOption[],
 ) {
   return (
     availableSpecialities.find(
@@ -84,8 +86,8 @@ export function PhotographersBrowser({
 }: {
   initialFilters: PublicPhotographerExploreFilters;
   initialLoadedPageCount: number;
-  initialPage: PublicPhotographerExplorePage;
-  availableSpecialities: SpecialityOption[];
+  initialPage: PhotographersExploreResponse;
+  availableSpecialities: SpecialityFilterOption[];
 }) {
   const pathname = usePathname();
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -136,27 +138,22 @@ export function PhotographersBrowser({
     }
 
     try {
-      const searchParams = buildPublicPhotographerExploreSearchParams(filters, {
-        page,
-      });
-      const queryString = searchParams.toString();
-      const response = await fetch(
-        queryString
-          ? `/api/photographers/explore?${queryString}`
-          : "/api/photographers/explore",
+      const response = await apiClient.photographers.explore.$get(
         {
-          credentials: "include",
-          signal: controller.signal,
+          query: buildPublicPhotographerExploreApiQuery(filters, {
+            page,
+          }),
+        },
+        {
+          init: {
+            signal: controller.signal,
+          },
         },
       );
-      const payload = (await response.json().catch(() => null)) as
-        | PhotographersExploreResponse
-        | { message?: string }
-        | null;
-      const errorMessage =
-        payload && "message" in payload ? payload.message : undefined;
+      const { errorMessage, payload } =
+        await readApiResponse<PhotographersExploreResponse>(response);
 
-      if (!response.ok || !payload || !("photographers" in payload)) {
+      if (!response.ok || !payload) {
         toast.error(errorMessage ?? "Couldn't refresh photographers.");
         return;
       }

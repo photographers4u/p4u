@@ -4,8 +4,10 @@ import { redirect } from "next/navigation";
 import PageHeader from "@/components/page-header";
 import { PhotographerCard } from "@/components/photographer-card";
 import { Button } from "@/components/ui/button";
+import { sanitizeBookmarkStore } from "@/lib/bookmark-store";
+import { BookmarkProvider } from "@/lib/bookmarks-context";
 import { getAuthSession } from "@/server/auth/session";
-import { bookmarkController } from "@/server/db/controller/bookmark";
+import { getBookmarkValuesByIdentifier } from "@/server/services/bookmark";
 import { getPublicPhotographersByIds } from "@/server/services/photographer";
 
 export default async function DashboardBookmarksPage() {
@@ -15,11 +17,14 @@ export default async function DashboardBookmarksPage() {
     redirect("/login");
   }
 
-  const bookmarkedValues = await bookmarkController.getValuesByIdentifier(
+  const bookmarkedValues = await getBookmarkValuesByIdentifier(
     session.user.id,
     "photographer",
   );
   const photographers = await getPublicPhotographersByIds(bookmarkedValues);
+  const initialBookmarkStore = sanitizeBookmarkStore({
+    photographer: bookmarkedValues,
+  });
 
   return (
     <div className="space-y-8">
@@ -51,15 +56,17 @@ export default async function DashboardBookmarksPage() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {photographers.map((photographer) => (
-            <PhotographerCard
-              key={photographer.id}
-              photographer={photographer}
-              eyebrow="Saved photographer"
-            />
-          ))}
-        </div>
+        <BookmarkProvider initialStore={initialBookmarkStore} session={session}>
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {photographers.map((photographer) => (
+              <PhotographerCard
+                key={photographer.id}
+                photographer={photographer}
+                eyebrow="Saved photographer"
+              />
+            ))}
+          </div>
+        </BookmarkProvider>
       )}
     </div>
   );

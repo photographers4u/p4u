@@ -1,14 +1,14 @@
 import { headers } from "next/headers";
 import { PhotographerOfferingsForm } from "@/components/forms/photographer/offerings";
 import PageHeader from "@/components/page-header";
-import { specialityDal } from "@/server/db/dal/speciality";
 import { getApprovedPhotographerPanelData } from "@/server/services/photographer-panel";
+import { getSpecialityFormOptions } from "@/server/services/speciality";
 
 export default async function PhotographerOfferingsPage() {
   const requestHeaders = await headers();
   const [{ onboarding }, availableSpecialities] = await Promise.all([
     getApprovedPhotographerPanelData(requestHeaders),
-    specialityDal.getAll(),
+    getSpecialityFormOptions(),
   ]);
 
   return (
@@ -20,10 +20,7 @@ export default async function PhotographerOfferingsPage() {
 
       <div className="max-w-4xl">
         <PhotographerOfferingsForm
-          availableSpecialities={availableSpecialities.map((speciality) => ({
-            id: speciality.id,
-            name: speciality.name,
-          }))}
+          availableSpecialities={availableSpecialities}
           onboarding={onboarding}
         />
       </div>

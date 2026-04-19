@@ -8,7 +8,7 @@ import {
   formatPhotographerExperience,
   getProfileInitials,
 } from "@/lib/photographer-presentation";
-import type { PublicPhotographerListEntry } from "@/server/db/controller/photographer";
+import type { PublicPhotographerListEntry } from "@/server/services/photographer";
 
 function getLocationLabel(photographer: PublicPhotographerListEntry) {
   if (photographer.locationCity) {

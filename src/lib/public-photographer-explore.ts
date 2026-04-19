@@ -1,3 +1,11 @@
+import { z } from "zod";
+import {
+  getSearchParamFirstValue,
+  getSearchParamValues,
+  parsePositiveIntSearchParam,
+  type SearchParamsRecord,
+  type SearchParamValue,
+} from "@/lib/search-params";
 import { CITIES, EXPERIENCE_YEARS, NAME_MAX_LENGTH } from "@/zod/helpers";
 
 export const PUBLIC_PHOTOGRAPHER_EXPLORE_SORTS = [
@@ -18,9 +26,6 @@ export type PublicPhotographerExploreFilters = {
   specialities: string[];
 };
 
-type RawSearchParamValue = string | string[] | undefined;
-type RawSearchParams = Record<string, RawSearchParamValue>;
-
 const DEFAULT_QUERY = "";
 const DEFAULT_SPECIALITIES: string[] = [];
 const sortSet = new Set<string>(PUBLIC_PHOTOGRAPHER_EXPLORE_SORTS);
@@ -28,6 +33,18 @@ const experienceSet = new Set<string>(EXPERIENCE_YEARS);
 const locationSet = new Set<string>(CITIES);
 const MAX_SPECIALITY_FILTERS = 12;
 export const PUBLIC_PHOTOGRAPHER_EXPLORE_PAGE_SIZE = 12;
+const rawSearchParamSchema = z
+  .union([z.string(), z.array(z.string())])
+  .optional();
+
+export const publicPhotographerExploreQuerySchema = z.object({
+  experience: rawSearchParamSchema,
+  location: rawSearchParamSchema,
+  page: rawSearchParamSchema,
+  q: rawSearchParamSchema,
+  sort: rawSearchParamSchema,
+  speciality: rawSearchParamSchema,
+});
 
 export const DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_SORT: PublicPhotographerExploreSort =
   "newest";
@@ -41,34 +58,8 @@ export const DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS: PublicPhotographerExpl
     specialities: DEFAULT_SPECIALITIES,
   };
 
-function getFirstValue(value: RawSearchParamValue) {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function toArray(value: RawSearchParamValue) {
-  if (Array.isArray(value)) {
-    return value;
-  }
-
-  if (typeof value === "string") {
-    return [value];
-  }
-
-  return [];
-}
-
 function normalizeQuery(value: string | undefined) {
   return value?.trim().slice(0, NAME_MAX_LENGTH) ?? DEFAULT_QUERY;
-}
-
-function normalizePage(value: string | undefined) {
-  const parsedPage = Number.parseInt(value ?? "", 10);
-
-  if (!Number.isFinite(parsedPage) || parsedPage < 1) {
-    return 1;
-  }
-
-  return parsedPage;
 }
 
 function isPublicPhotographerExploreSort(
@@ -93,10 +84,10 @@ function isSpecialitySlug(value: string) {
   return /^[a-z0-9-]+$/.test(value);
 }
 
-function normalizeSpecialities(values: RawSearchParamValue) {
+function normalizeSpecialities(values: SearchParamValue) {
   const seen = new Set<string>();
 
-  return toArray(values)
+  return getSearchParamValues(values)
     .flatMap((value) => value.split(","))
     .map((value) => value.trim().toLowerCase())
     .filter((value) => value.length > 0 && isSpecialitySlug(value))
@@ -112,12 +103,12 @@ function normalizeSpecialities(values: RawSearchParamValue) {
 }
 
 export function getPublicPhotographerExploreFilters(
-  params: RawSearchParams,
+  params: SearchParamsRecord,
 ): PublicPhotographerExploreFilters {
-  const query = normalizeQuery(getFirstValue(params.q));
-  const sort = getFirstValue(params.sort);
-  const experience = getFirstValue(params.experience);
-  const location = getFirstValue(params.location);
+  const query = normalizeQuery(getSearchParamFirstValue(params.q));
+  const sort = getSearchParamFirstValue(params.sort);
+  const experience = getSearchParamFirstValue(params.experience);
+  const location = getSearchParamFirstValue(params.location);
 
   return {
     experience: isExperienceValue(experience) ? experience : null,
@@ -131,27 +122,44 @@ export function getPublicPhotographerExploreFilters(
 }
 
 export function getPublicPhotographerExplorePageFromParams(
-  params: RawSearchParams,
+  params: SearchParamsRecord,
 ) {
-  return normalizePage(getFirstValue(params.page));
+  return parsePositiveIntSearchParam(params.page);
 }
 
-export function getPublicPhotographerExploreFiltersFromSearchParams(
-  searchParams: URLSearchParams,
-): PublicPhotographerExploreFilters {
-  return getPublicPhotographerExploreFilters({
-    experience: searchParams.get("experience") ?? undefined,
-    location: searchParams.get("location") ?? undefined,
-    q: searchParams.get("q") ?? undefined,
-    sort: searchParams.get("sort") ?? undefined,
-    speciality: searchParams.getAll("speciality"),
-  });
-}
-
-export function getPublicPhotographerExplorePageFromSearchParams(
-  searchParams: URLSearchParams,
+export function buildPublicPhotographerExploreApiQuery(
+  filters: PublicPhotographerExploreFilters,
+  options?: {
+    page?: number;
+  },
 ) {
-  return normalizePage(searchParams.get("page") ?? undefined);
+  const query: Record<string, string | string[]> = {};
+
+  if (filters.query) {
+    query.q = filters.query;
+  }
+
+  if (filters.sort !== DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_SORT) {
+    query.sort = filters.sort;
+  }
+
+  if (filters.experience) {
+    query.experience = filters.experience;
+  }
+
+  if (filters.location) {
+    query.location = filters.location;
+  }
+
+  if (filters.specialities.length > 0) {
+    query.speciality = filters.specialities;
+  }
+
+  if (options?.page && options.page > 1) {
+    query.page = String(options.page);
+  }
+
+  return query;
 }
 
 export function buildPublicPhotographerExploreSearchParams(
@@ -161,29 +169,17 @@ export function buildPublicPhotographerExploreSearchParams(
   },
 ) {
   const searchParams = new URLSearchParams();
+  const query = buildPublicPhotographerExploreApiQuery(filters, options);
 
-  if (filters.query) {
-    searchParams.set("q", filters.query);
-  }
+  for (const [key, value] of Object.entries(query)) {
+    if (Array.isArray(value)) {
+      for (const entry of value) {
+        searchParams.append(key, entry);
+      }
+      continue;
+    }
 
-  if (filters.sort !== DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_SORT) {
-    searchParams.set("sort", filters.sort);
-  }
-
-  if (filters.experience) {
-    searchParams.set("experience", filters.experience);
-  }
-
-  if (filters.location) {
-    searchParams.set("location", filters.location);
-  }
-
-  for (const speciality of filters.specialities) {
-    searchParams.append("speciality", speciality);
-  }
-
-  if (options?.page && options.page > 1) {
-    searchParams.set("page", String(options.page));
+    searchParams.set(key, value);
   }
 
   return searchParams;

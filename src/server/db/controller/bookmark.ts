@@ -30,6 +30,22 @@ export const bookmarkController = {
     return bookmarkDal.getValuesByIdentifier(userId, identifier);
   },
 
+  async hasBookmark(
+    userId: string,
+    identifier: BookmarkIdentifier,
+    value: string,
+  ) {
+    const normalizedValue = normalizeBookmarkValue(value);
+
+    if (!normalizedValue) {
+      return false;
+    }
+
+    return Boolean(
+      await bookmarkDal.hasBookmark(userId, identifier, normalizedValue),
+    );
+  },
+
   async toggleBookmark(userId: string, input: BookmarkToggleInput) {
     const value = normalizeBookmarkValue(input.value);
 

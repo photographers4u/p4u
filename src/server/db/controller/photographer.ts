@@ -9,11 +9,7 @@ import { PUBLIC_PHOTOGRAPHER_EXPLORE_PAGE_SIZE } from "@/lib/public-photographer
 import db, { type DBExecutor, type DBTransaction } from "@/server/db";
 import { photographerContactController } from "@/server/db/controller/photographer-contact";
 import {
-  ADMIN_PHOTOGRAPHER_LIST_SORTS,
-  ADMIN_PHOTOGRAPHER_LIST_STATUS_FILTERS,
   type AdminPhotographerListRow,
-  type AdminPhotographerListSort,
-  type AdminPhotographerListStatusFilter,
   type PhotographerRecord,
   photographerDal,
 } from "@/server/db/dal/photographer";
@@ -33,12 +29,20 @@ import {
   photographerSlugSuffix,
 } from "@/zod/helpers";
 import type {
+  AdminPhotographerListSort,
+  AdminPhotographerListStatusFilter,
   PhotographerOnboardingSpecialityInput,
   PhotographerOnboardingState,
   ReviewPhotographerInput,
   SavePhotographerAvatarStepInput,
   SavePhotographerOnboardingStepInput,
   UpdatePhotographerProfileInput,
+} from "@/zod/schema/photographer";
+import {
+  adminPhotographerListSortValues as ADMIN_PHOTOGRAPHER_LIST_SORTS,
+  adminPhotographerListStatusFilterValues as ADMIN_PHOTOGRAPHER_LIST_STATUS_FILTERS,
+  DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT,
+  DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS,
 } from "@/zod/schema/photographer";
 
 type DBClient = DBExecutor | DBTransaction;
@@ -50,13 +54,11 @@ const SPECIALITIES_ONBOARDING_STEP = ONBOARDING_STEPS[2];
 const CONTACT_ONBOARDING_STEP = ONBOARDING_STEPS[3];
 const FINAL_ONBOARDING_STEP = CONTACT_ONBOARDING_STEP;
 export const ADMIN_PHOTOGRAPHER_LIST_PAGE_SIZE = 20;
-export const DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS: AdminPhotographerListStatusFilter =
-  "all";
-export const DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT: AdminPhotographerListSort =
-  "review_queue";
 export {
   ADMIN_PHOTOGRAPHER_LIST_SORTS,
   ADMIN_PHOTOGRAPHER_LIST_STATUS_FILTERS,
+  DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT,
+  DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS,
 };
 export type { AdminPhotographerListSort, AdminPhotographerListStatusFilter };
 

@@ -61,6 +61,12 @@ Open `http://localhost:3000` after the dev server starts.
 - `src/server/db/dal/*` owns persistence, `src/server/db/controller/*` owns
   domain rules, and `src/server/api/routes/*` stays focused on validation,
   auth, and HTTP response mapping.
+- `src/app/api/[[...route]]/route.ts` is the default Hono-powered API surface
+  for domain reads and writes that should be reusable across web and mobile
+  clients.
+- Direct `src/app/api/*` handlers are reserved for intentional exceptions such
+  as Better Auth adapter routes and multipart/provider upload endpoints. Those
+  handlers should still delegate domain logic to `src/server/services/*`.
 - Photographer moderation uses explicit workflow states:
   `draft`, `submitted`, `approved`, `rejected`, and `on_hold`.
 
