@@ -31,6 +31,7 @@ app.use("*", async (c, next) => {
 const routes = app.route("/", allRoutes);
 
 export type AppType = typeof routes;
+export const runtime = "nodejs";
 
 export const GET = handle(app);
 export const POST = handle(app);

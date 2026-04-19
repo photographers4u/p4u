@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Toaster } from "@/components/ui/sonner";
 import { siteConfig } from "@/config/site";
 import { inter } from "@/lib/fonts";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import ClientProvider from "@/components/client-provider";
 
 export const metadata: Metadata = siteConfig.metadata;
 
@@ -24,8 +24,7 @@ export default async function RootLayout({
       )}
     >
       <body className="min-h-full flex flex-col">
-        {children}
-        <Toaster position="top-center" />
+        <ClientProvider>{children}</ClientProvider>
       </body>
     </html>
   );

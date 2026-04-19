@@ -5,6 +5,10 @@ import {
   getRequiredUser,
   requireAuth,
 } from "@/server/api/lib/require-auth-middleware";
+import {
+  API_CACHE_NAMESPACES,
+  invalidateApiCacheNamespaces,
+} from "@/server/api/lib/response-cache";
 import { getAdminUserOrResponse } from "@/server/api/lib/review-workflow";
 import { mapError } from "@/server/api/lib/route-helpers";
 import {
@@ -23,6 +27,12 @@ import {
   savePhotographerOnboardingStepRequestSchema,
   updatePhotographerProfileSchema,
 } from "@/zod/schema/photographer";
+
+const PHOTOGRAPHER_MUTATION_CACHE_NAMESPACES = [
+  API_CACHE_NAMESPACES.publicPhotographerDirectory,
+  API_CACHE_NAMESPACES.publicPhotographerDetails,
+] as const;
+const PUBLIC_PHOTOGRAPHER_CACHE_INVALIDATION_BYPASS_SECONDS = 300;
 
 export const photographerRouter = new Hono<ApiAuthEnv>()
   .get("/onboarding", requireAuth, async (c) => {
@@ -78,6 +88,16 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
           c.req.valid("json"),
         );
 
+        if (photographer.isPublished) {
+          await invalidateApiCacheNamespaces(
+            [...PHOTOGRAPHER_MUTATION_CACHE_NAMESPACES],
+            {
+              bypassSeconds:
+                PUBLIC_PHOTOGRAPHER_CACHE_INVALIDATION_BYPASS_SECONDS,
+            },
+          );
+        }
+
         return c.json(photographer, 200);
       } catch (error) {
         const [status, message] = mapError(error);
@@ -96,6 +116,16 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
           user.id,
           c.req.valid("json"),
         );
+
+        if (photographer.isPublished) {
+          await invalidateApiCacheNamespaces(
+            [...PHOTOGRAPHER_MUTATION_CACHE_NAMESPACES],
+            {
+              bypassSeconds:
+                PUBLIC_PHOTOGRAPHER_CACHE_INVALIDATION_BYPASS_SECONDS,
+            },
+          );
+        }
 
         return c.json(photographer, 200);
       } catch (error) {
@@ -122,6 +152,13 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
           adminUserResult.user.id,
           c.req.valid("json"),
         );
+        await invalidateApiCacheNamespaces(
+          [...PHOTOGRAPHER_MUTATION_CACHE_NAMESPACES],
+          {
+            bypassSeconds:
+              PUBLIC_PHOTOGRAPHER_CACHE_INVALIDATION_BYPASS_SECONDS,
+          },
+        );
 
         return c.json(photographer, 200);
       } catch (error) {
@@ -134,6 +171,16 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
     try {
       const user = getRequiredUser(c);
       const photographer = await deletePhotographerByUserId(user.id);
+
+      if (photographer.isPublished) {
+        await invalidateApiCacheNamespaces(
+          [...PHOTOGRAPHER_MUTATION_CACHE_NAMESPACES],
+          {
+            bypassSeconds:
+              PUBLIC_PHOTOGRAPHER_CACHE_INVALIDATION_BYPASS_SECONDS,
+          },
+        );
+      }
 
       return c.json(photographer, 200);
     } catch (error) {

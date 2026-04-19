@@ -4,12 +4,18 @@ import {
   isAcceptedImageUploadMimeType,
   maxImageUploadSizeBytes,
 } from "@/lib/imagekit";
+import {
+  API_CACHE_NAMESPACES,
+  invalidateApiCacheNamespaces,
+} from "@/server/api/lib/response-cache";
 import { mapError } from "@/server/api/lib/route-helpers";
 import { auth } from "@/server/auth";
 import { ImageUploadProviderError } from "@/server/services/image-upload";
+import { getPhotographerProfileByUserId } from "@/server/services/photographer";
 import { createPhotographerPortfolioUploadFromFileByUserId } from "@/server/services/photographer-upload";
 
 export const runtime = "nodejs";
+const PUBLIC_PHOTOGRAPHER_UPLOAD_CACHE_INVALIDATION_BYPASS_SECONDS = 300;
 
 export async function POST(request: Request) {
   const session = await auth.api.getSession({
@@ -53,6 +59,20 @@ export async function POST(request: Request) {
         session.user.id,
         file,
       );
+    const photographer = await getPhotographerProfileByUserId(session.user.id);
+
+    if (photographer.isPublished) {
+      await invalidateApiCacheNamespaces(
+        [
+          API_CACHE_NAMESPACES.publicPhotographerDirectory,
+          API_CACHE_NAMESPACES.publicPhotographerDetails,
+        ],
+        {
+          bypassSeconds:
+            PUBLIC_PHOTOGRAPHER_UPLOAD_CACHE_INVALIDATION_BYPASS_SECONDS,
+        },
+      );
+    }
 
     return NextResponse.json(portfolioUpload, { status: 201 });
   } catch (error) {
