@@ -1,19 +1,12 @@
 "use client";
 
 import type { InferResponseType } from "hono/client";
-import {
-  ArrowUpDown,
-  LoaderCircle,
-  RotateCcw,
-  Search,
-  Sparkles,
-} from "lucide-react";
+import { ArrowUpDown, LoaderCircle, RotateCcw, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { startTransition, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { BrowserFilterDialog } from "@/components/browser/filter-dialog";
 import { ExplorePhotographerCard } from "@/components/explore-photographer-card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -36,7 +29,6 @@ import {
   PUBLIC_PHOTOGRAPHER_EXPLORE_SORTS,
   type PublicPhotographerExploreFilters,
 } from "@/lib/public-photographer-explore";
-import { cn } from "@/lib/utils";
 import type { SpecialityFilterOption } from "@/server/services/speciality";
 import { CITIES, EXPERIENCE_YEARS } from "@/zod/helpers";
 
@@ -46,21 +38,6 @@ type PhotographersExploreResponse = InferResponseType<
   typeof apiClient.photographers.explore.$get,
   200
 >;
-
-function getTopBarSummary(filters: PublicPhotographerExploreFilters) {
-  return `${getPublicPhotographerExploreSortLabel(filters.sort)} order`;
-}
-
-function getSpecialityLabel(
-  specialitySlug: string,
-  availableSpecialities: SpecialityFilterOption[],
-) {
-  return (
-    availableSpecialities.find(
-      (speciality) => speciality.slug === specialitySlug,
-    )?.name ?? specialitySlug
-  );
-}
 
 function areFiltersEqual(
   left: PublicPhotographerExploreFilters,
@@ -97,6 +74,7 @@ export function PhotographersBrowser({
   const [hasMore, setHasMore] = useState(initialPage.hasMore);
   const [searchInput, setSearchInput] = useState(initialFilters.query);
   const [dialogFilters, setDialogFilters] = useState({
+    sort: initialFilters.sort,
     experience: initialFilters.experience,
     location: initialFilters.location,
     specialities: [...initialFilters.specialities],
@@ -140,14 +118,10 @@ export function PhotographersBrowser({
     try {
       const response = await apiClient.photographers.explore.$get(
         {
-          query: buildPublicPhotographerExploreApiQuery(filters, {
-            page,
-          }),
+          query: buildPublicPhotographerExploreApiQuery(filters, { page }),
         },
         {
-          init: {
-            signal: controller.signal,
-          },
+          init: { signal: controller.signal },
         },
       );
       const { errorMessage, payload } =
@@ -172,6 +146,7 @@ export function PhotographersBrowser({
           setAppliedFilters(filters);
           setSearchInput(filters.query);
           setDialogFilters({
+            sort: filters.sort,
             experience: filters.experience,
             location: filters.location,
             specialities: [...filters.specialities],
@@ -212,10 +187,7 @@ export function PhotographersBrowser({
   }
 
   async function loadMorePhotographers() {
-    if (!hasMore) {
-      return;
-    }
-
+    if (!hasMore) return;
     await fetchPhotographersPage(appliedFilters, currentPage + 1, "append");
   }
 
@@ -228,18 +200,9 @@ export function PhotographersBrowser({
     });
   }
 
-  function handleSortChange(sort: PublicPhotographerExploreFilters["sort"]) {
-    const nextFilters = {
-      ...appliedFilters,
-      query: searchInput.trim(),
-      sort,
-    };
-
-    void applyFilters(nextFilters);
-  }
-
   function handleDialogOpen() {
     setDialogFilters({
+      sort: appliedFilters.sort,
       experience: appliedFilters.experience,
       location: appliedFilters.location,
       specialities: [...appliedFilters.specialities],
@@ -267,6 +230,7 @@ export function PhotographersBrowser({
 
     setSearchInput(nextFilters.query);
     setDialogFilters({
+      sort: nextFilters.sort,
       experience: null,
       location: null,
       specialities: [],
@@ -280,97 +244,36 @@ export function PhotographersBrowser({
     hasActivePublicPhotographerExploreFilters(appliedFilters);
   const isInteractionDisabled = isLoadingMore || isRefreshing;
   const visibleCount = photographers.length;
-  const statusMessage = isLoadingMore
-    ? "Loading more photographers..."
-    : isRefreshing
-      ? "Updating results..."
-      : null;
 
   return (
     <>
-      <div className="flex flex-col gap-5 border-b border-slate-200 pb-7">
-        <span className="text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-          Public explore
-        </span>
-
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl space-y-3">
-            <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-              Explore approved photographers.
-            </h1>
-            <p className="text-base leading-7 text-slate-600 sm:text-lg">
-              Discover live photographer profiles, scan their specialities,
-              preview recent work, and open the ones that match your vibe.
-            </p>
-          </div>
-
-          <div className="flex flex-col items-start gap-1 text-sm font-medium text-slate-500 lg:items-end">
-            <p>
-              {totalCount} live photographer{totalCount === 1 ? "" : "s"}
-            </p>
-            <p
-              className={cn(
-                "flex items-center gap-1.5 text-amber-700 transition-opacity",
-                statusMessage ? "opacity-100" : "opacity-0",
-              )}
-            >
-              <Sparkles className="size-3.5" />
-              {statusMessage ?? "Idle"}
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-[2rem] border border-slate-200/80 bg-white/85 p-4 shadow-[0_20px_45px_-38px_rgba(15,23,42,0.55)] backdrop-blur">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <form
-              onSubmit={handleSearchSubmit}
-              className="flex flex-1 flex-col gap-3 sm:flex-row"
-            >
-              <div className="relative flex-1">
-                <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-slate-400" />
-                <Input
-                  value={searchInput}
-                  onChange={(event) => {
-                    setSearchInput(event.target.value);
-                  }}
-                  placeholder="Search by photographer name"
-                  className="h-12 rounded-[1.35rem] border-slate-200 bg-slate-50/80 pl-11 text-sm shadow-none"
-                  disabled={isInteractionDisabled}
-                />
-              </div>
-
-              <Button
-                type="submit"
-                className="h-12 rounded-[1.35rem] px-5"
+      <div className="flex flex-col gap-5">
+        <div className="rounded-[2rem] border bg-white/85 p-4 shadow-[0_20px_45px_-38px_rgba(15,23,42,0.55)] backdrop-blur">
+          {/* Single row: search + filters + reset */}
+          <form
+            onSubmit={handleSearchSubmit}
+            className="flex items-center gap-2"
+          >
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Search by photographer name"
+                className="h-12 rounded-[1.35rem] border-slate-200 bg-slate-50/80 pl-11 text-sm shadow-none"
                 disabled={isInteractionDisabled}
-              >
-                Search
-              </Button>
-            </form>
+              />
+            </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
-              <Select
-                value={appliedFilters.sort}
-                onValueChange={(value) => {
-                  handleSortChange(
-                    value as PublicPhotographerExploreFilters["sort"],
-                  );
-                }}
-                disabled={isInteractionDisabled}
-              >
-                <SelectTrigger className="h-12 w-full min-w-[190px] rounded-[1.35rem] border-slate-200 bg-white px-4 sm:w-[210px]">
-                  <ArrowUpDown className="size-4 text-slate-500" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PUBLIC_PHOTOGRAPHER_EXPLORE_SORTS.map((sort) => (
-                    <SelectItem key={sort} value={sort}>
-                      {getPublicPhotographerExploreSortLabel(sort)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <Button
+              type="submit"
+              className="h-12 rounded-[1.35rem] px-5"
+              disabled={isInteractionDisabled}
+            >
+              Search
+            </Button>
 
+            <div className="flex items-center gap-2">
               <BrowserFilterDialog
                 open={isDialogOpen}
                 onOpenChange={setIsDialogOpen}
@@ -379,6 +282,7 @@ export function PhotographersBrowser({
                   void applyFilters({
                     ...appliedFilters,
                     query: searchInput.trim(),
+                    sort: dialogFilters.sort,
                     experience: dialogFilters.experience,
                     location: dialogFilters.location,
                     specialities: dialogFilters.specialities,
@@ -389,6 +293,34 @@ export function PhotographersBrowser({
                 triggerLabel="Filters"
               >
                 <div className="space-y-5">
+                  {/* Sort — moved inside dialog */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      Sort by
+                    </p>
+                    <Select
+                      value={dialogFilters.sort}
+                      onValueChange={(value) => {
+                        setDialogFilters((current) => ({
+                          ...current,
+                          sort: value as PublicPhotographerExploreFilters["sort"],
+                        }));
+                      }}
+                    >
+                      <SelectTrigger className="h-11 w-full">
+                        <ArrowUpDown className="size-4 text-slate-500" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PUBLIC_PHOTOGRAPHER_EXPLORE_SORTS.map((sort) => (
+                          <SelectItem key={sort} value={sort}>
+                            {getPublicPhotographerExploreSortLabel(sort)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -465,6 +397,7 @@ export function PhotographersBrowser({
                         onClick={() => {
                           setDialogFilters((current) => ({
                             ...current,
+                            sort: DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS.sort,
                             experience: null,
                             location: null,
                             specialities: [],
@@ -490,9 +423,7 @@ export function PhotographersBrowser({
                               type="button"
                               variant={isSelected ? "default" : "outline"}
                               size="sm"
-                              onClick={() => {
-                                toggleSpeciality(speciality.slug);
-                              }}
+                              onClick={() => toggleSpeciality(speciality.slug)}
                               className="h-8 rounded-full"
                             >
                               {speciality.name}
@@ -504,76 +435,26 @@ export function PhotographersBrowser({
                   </div>
                 </div>
               </BrowserFilterDialog>
-            </div>
-          </div>
 
-          <div className="mt-4 flex flex-col gap-3 border-t border-slate-200/80 pt-4">
-            <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-              <span>{getTopBarSummary(appliedFilters)}</span>
-              <span>
-                Showing {visibleCount} of {totalCount}
-              </span>
+              {/* Reset button — inline after Filters */}
               {hasActiveFilters ? (
                 <Button
                   type="button"
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={resetAllFilters}
                   disabled={isInteractionDisabled}
-                  className="h-8 rounded-full px-3 text-slate-600 hover:text-slate-950"
                 >
                   <RotateCcw className="size-3.5" />
-                  Reset all
                 </Button>
               ) : null}
             </div>
-
-            {hasActiveFilters ? (
-              <div className="flex flex-wrap gap-2">
-                {appliedFilters.query ? (
-                  <Badge
-                    variant="outline"
-                    className="h-8 rounded-full border-slate-200 bg-white px-3 text-slate-700"
-                  >
-                    Search: {appliedFilters.query}
-                  </Badge>
-                ) : null}
-
-                {appliedFilters.experience ? (
-                  <Badge
-                    variant="outline"
-                    className="h-8 rounded-full border-slate-200 bg-white px-3 text-slate-700"
-                  >
-                    {formatPhotographerExperience(appliedFilters.experience)}
-                  </Badge>
-                ) : null}
-
-                {appliedFilters.location ? (
-                  <Badge
-                    variant="outline"
-                    className="h-8 rounded-full border-slate-200 bg-white px-3 text-slate-700"
-                  >
-                    {appliedFilters.location}
-                  </Badge>
-                ) : null}
-
-                {appliedFilters.specialities.map((speciality) => (
-                  <Badge
-                    key={speciality}
-                    variant="outline"
-                    className="h-8 rounded-full border-slate-200 bg-white px-3 text-slate-700"
-                  >
-                    {getSpecialityLabel(speciality, availableSpecialities)}
-                  </Badge>
-                ))}
-              </div>
-            ) : null}
-          </div>
+          </form>
         </div>
       </div>
 
       {photographers.length === 0 ? (
-        <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/80 px-6 py-14 text-center">
+        <div className="rounded-2xl px-6 py-14 text-center">
           <h2 className="text-2xl font-semibold text-slate-950">
             {hasActiveFilters
               ? "No photographers match these filters"
@@ -584,19 +465,6 @@ export function PhotographersBrowser({
               ? "Try a broader name search, a different sort order, or reset the filters."
               : "Approved photographer profiles will show up here as soon as they are published."}
           </p>
-          {hasActiveFilters ? (
-            <div className="mt-5">
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-full border-slate-300"
-                onClick={resetAllFilters}
-                disabled={isInteractionDisabled}
-              >
-                Reset filters
-              </Button>
-            </div>
-          ) : null}
         </div>
       ) : (
         <div className="space-y-8">
@@ -618,9 +486,7 @@ export function PhotographersBrowser({
                 type="button"
                 variant="outline"
                 className="h-11 rounded-full border-slate-300 px-6"
-                onClick={() => {
-                  void loadMorePhotographers();
-                }}
+                onClick={() => void loadMorePhotographers()}
                 disabled={isInteractionDisabled}
               >
                 {isLoadingMore ? (

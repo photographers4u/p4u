@@ -21,7 +21,9 @@ type GetOrSetApiCacheInput<T> = {
 };
 
 const redis =
-  env.UPSTASH_REDIS_REST_TOKEN && env.UPSTASH_REDIS_REST_URL
+  env.UPSTASH_REDIS_CACHE_ENABLED &&
+  env.UPSTASH_REDIS_REST_TOKEN &&
+  env.UPSTASH_REDIS_REST_URL
     ? new Redis({
         token: env.UPSTASH_REDIS_REST_TOKEN,
         url: env.UPSTASH_REDIS_REST_URL,

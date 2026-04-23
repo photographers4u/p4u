@@ -70,6 +70,8 @@ export type AdminPhotographerReviewEntry = {
   name: string | null;
   avatar: string | null;
   bio: string | null;
+  instagramReelUrl: string | null;
+  youtubeVideoUrl: string | null;
   locationCity: PhotographerRecord["locationCity"];
   locationCountry: string;
   experienceYears: PhotographerRecord["experienceYears"];
@@ -168,6 +170,7 @@ export type PublicPhotographerDetail = PublicPhotographerListEntry & {
     phone: string;
   } | null;
   hasPublicContact: boolean;
+  instagramReelUrl: string | null;
   specialities: Array<{
     id: string;
     name: string;
@@ -179,6 +182,7 @@ export type PublicPhotographerDetail = PublicPhotographerListEntry & {
     imageUrl: string;
     pinnedAt: string | null;
   }>;
+  youtubeVideoUrl: string | null;
 };
 
 type PhotographerModerationState = Pick<PhotographerOnboardingState, "status">;
@@ -335,6 +339,17 @@ function normalizeSpecialities(
       startingPrice,
     }),
   );
+}
+
+function normalizeProfileVideoUrl(
+  value: string | null | undefined,
+  fallback: string | null,
+) {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  return value?.trim() ? value.trim() : null;
 }
 
 function getDeterministicPhotographerSlugSuffix(attempt: number) {
@@ -658,6 +673,7 @@ async function buildPublicPhotographer(
           }
         : null,
     hasPublicContact: contact?.isPublic ?? false,
+    instagramReelUrl: photographer.instagramReelUrl,
     specialities: specialities.map((speciality) => ({
       id: speciality.specialityId,
       name: speciality.name,
@@ -669,6 +685,7 @@ async function buildPublicPhotographer(
       imageUrl: upload.imageUrl,
       pinnedAt: upload.pinnedAt?.toISOString() ?? null,
     })),
+    youtubeVideoUrl: photographer.youtubeVideoUrl,
   };
 }
 
@@ -841,6 +858,8 @@ async function buildAdminPhotographerReviewEntry(
     name: photographer.name,
     avatar: photographer.avatar,
     bio: photographer.bio,
+    instagramReelUrl: photographer.instagramReelUrl,
+    youtubeVideoUrl: photographer.youtubeVideoUrl,
     locationCity: photographer.locationCity,
     locationCountry: photographer.locationCountry,
     experienceYears: photographer.experienceYears,
@@ -1400,7 +1419,15 @@ export const photographerController = {
     const data = {
       ...input,
       bio: input.bio?.trim() ? input.bio : null,
+      instagramReelUrl: normalizeProfileVideoUrl(
+        input.instagramReelUrl,
+        photographerWithSlug.instagramReelUrl,
+      ),
       onboardingStep,
+      youtubeVideoUrl: normalizeProfileVideoUrl(
+        input.youtubeVideoUrl,
+        photographerWithSlug.youtubeVideoUrl,
+      ),
     };
 
     if (

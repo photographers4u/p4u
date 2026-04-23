@@ -54,7 +54,7 @@ export default async function PhotographersPage({
   return (
     <>
       <Navbar session={session} />
-      <main className="min-h-screen bg-[linear-gradient(180deg,#fffaf4_0%,#f8fafc_38%,#ffffff_100%)]">
+      <main className="min-h-screen">
         <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-16 sm:px-6 lg:px-8">
           <BookmarkProvider
             initialStore={initialBookmarkStore}

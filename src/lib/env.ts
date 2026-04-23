@@ -9,6 +9,10 @@ export const env = createEnv({
     IMAGEKIT_PUBLIC_KEY: z.string().min(1).optional(),
     RESEND_API_KEY: z.string().min(1),
     DATABASE_URL: z.string().min(1),
+    UPSTASH_REDIS_CACHE_ENABLED: z
+      .enum(["true", "false"])
+      .default("true")
+      .transform((value) => value === "true"),
     UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
     UPSTASH_REDIS_REST_URL: z.string().url().optional(),
     EMAIL_FROM_NAME: z.string().min(1),
@@ -23,6 +27,7 @@ export const env = createEnv({
     IMAGEKIT_PUBLIC_KEY: process.env.IMAGEKIT_PUBLIC_KEY,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     DATABASE_URL: process.env.DATABASE_URL,
+    UPSTASH_REDIS_CACHE_ENABLED: process.env.UPSTASH_REDIS_CACHE_ENABLED,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,

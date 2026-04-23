@@ -57,6 +57,13 @@
       "when": 1776534817181,
       "tag": "0007_photographer_upload_pins",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1776937272624,
+      "tag": "0008_careless_enchantress",
+      "breakpoints": true
     }
   ]
 }

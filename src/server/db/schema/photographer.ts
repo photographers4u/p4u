@@ -31,6 +31,8 @@ export const photographer = createTable("photographer", {
   name: text("name"),
   avatar: text("avatar"),
   bio: text("bio"),
+  instagramReelUrl: text("instagram_reel_url"),
+  youtubeVideoUrl: text("youtube_video_url"),
   locationCity: photographerCityEnum("location_city"),
   locationCountry: text("country").default("india").notNull(),
   experienceYears: experienceYearsEnum("experience_years"),

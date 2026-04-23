@@ -145,6 +145,22 @@ export default async function AdminPhotographerDetailPage({
               }
             />
             <ReadOnlyField
+              label="Instagram Reel"
+              value={
+                entry.instagramReelUrl?.trim()
+                  ? entry.instagramReelUrl
+                  : "No Instagram Reel has been added yet."
+              }
+            />
+            <ReadOnlyField
+              label="YouTube video"
+              value={
+                entry.youtubeVideoUrl?.trim()
+                  ? entry.youtubeVideoUrl
+                  : "No YouTube video has been added yet."
+              }
+            />
+            <ReadOnlyField
               label="City"
               value={entry.locationCity ?? "Not added yet"}
             />

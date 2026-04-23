@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark } from "lucide-react";
+import { Heart } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -59,13 +59,17 @@ export function BookmarkButton({
       type="button"
       variant={bookmarked ? "secondary" : "outline"}
       size={size}
-      className={cn(bookmarked ? "text-primary" : "", className)}
+      className={cn(
+        "rounded-full",
+        bookmarked ? "text-pink-600" : "",
+        className,
+      )}
       onClick={handleClick}
       disabled={pending}
       aria-pressed={bookmarked}
       aria-label={bookmarked ? activeLabel : label}
     >
-      <Bookmark className={cn(bookmarked ? "fill-current" : "")} />
+      <Heart className={cn(bookmarked ? "fill-current" : "")} />
       {size !== "icon" && size !== "icon-sm" && size !== "icon-lg"
         ? bookmarked
           ? activeLabel

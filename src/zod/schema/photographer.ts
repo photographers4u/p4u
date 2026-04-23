@@ -1,5 +1,6 @@
 import z from "zod";
 import { photographerReviewPhotoMinimum } from "@/lib/photographer-upload-config";
+import { isInstagramReelUrl, isYouTubeVideoUrl } from "@/lib/video-embeds";
 import {
   CITIES,
   EXPERIENCE_YEARS,
@@ -32,6 +33,57 @@ const startingPriceSchema = z
   .union([z.number(), z.string().trim().min(1, "Starting price is required")])
   .transform((value) => Number(value))
   .pipe(z.number().int().min(0, "Starting price must be 0 or greater"));
+
+function optionalSocialVideoUrlSchema({
+  fieldName,
+  isSupportedUrl,
+  supportedUrlMessage,
+}: {
+  fieldName: string;
+  isSupportedUrl: (value: string) => boolean;
+  supportedUrlMessage: string;
+}) {
+  return z.union([
+    z
+      .string()
+      .trim()
+      .length(0)
+      .transform(() => null),
+    z
+      .string()
+      .trim()
+      .url(`Enter a valid ${fieldName} URL`)
+      .refine(isSupportedUrl, supportedUrlMessage),
+    z.null(),
+  ]);
+}
+
+const instagramReelUrlSchema = optionalSocialVideoUrlSchema({
+  fieldName: "Instagram Reel",
+  isSupportedUrl: isInstagramReelUrl,
+  supportedUrlMessage:
+    "Paste a valid Instagram Reel link, for example https://www.instagram.com/reel/...",
+});
+
+const youtubeVideoUrlSchema = optionalSocialVideoUrlSchema({
+  fieldName: "YouTube video",
+  isSupportedUrl: isYouTubeVideoUrl,
+  supportedUrlMessage:
+    "Paste a valid YouTube video link, for example https://www.youtube.com/watch?v=...",
+});
+
+const photographerProfileBioInputSchema = z.union([
+  z
+    .string()
+    .trim()
+    .length(0)
+    .transform(() => null),
+  z
+    .string()
+    .trim()
+    .max(BIO_MAX_LENGTH, `Bio must be at most ${BIO_MAX_LENGTH} characters`),
+  z.null(),
+]);
 
 export const photographerWorkflowStatusValues = [
   "draft",
@@ -97,6 +149,8 @@ const photographerEntityShape = {
   ]),
   avatar: nullableTextSchema("Avatar"),
   bio: nullableTextSchema("Bio"),
+  instagramReelUrl: instagramReelUrlSchema,
+  youtubeVideoUrl: youtubeVideoUrlSchema,
   locationCity: z.enum(CITIES).nullable(),
   locationCountry: requiredTextSchema("Location country").default("india"),
   experienceYears: z.enum(EXPERIENCE_YEARS).nullable(),
@@ -110,7 +164,9 @@ const photographerProfileInputShape = {
     `Name must be at most ${NAME_MAX_LENGTH} characters`,
   ),
   avatar: nullableTextSchema("Avatar"),
-  bio: nullableTextSchema("Bio"),
+  bio: photographerProfileBioInputSchema,
+  instagramReelUrl: instagramReelUrlSchema,
+  youtubeVideoUrl: youtubeVideoUrlSchema,
   locationCity: z.enum(CITIES),
   locationCountry: requiredTextSchema("Location country").default("india"),
   experienceYears: z.enum(EXPERIENCE_YEARS),
@@ -141,6 +197,8 @@ export const createPhotographerSchema = z
     avatar: photographerProfileInputShape.avatar.optional(),
     bio: photographerProfileInputShape.bio.optional(),
     experienceYears: photographerProfileInputShape.experienceYears.optional(),
+    instagramReelUrl: photographerProfileInputShape.instagramReelUrl.optional(),
+    youtubeVideoUrl: photographerProfileInputShape.youtubeVideoUrl.optional(),
   });
 
 export const updatePhotographerSchema = createPhotographerSchema.partial();

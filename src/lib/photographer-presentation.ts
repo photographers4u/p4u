@@ -192,16 +192,14 @@ export function getProfileInitials(name: string | null) {
     .join("");
 }
 
-export function formatPhotographerExperience(
-  experienceYears: string | null,
-) {
+export function formatPhotographerExperience(experienceYears: string | null) {
   if (!experienceYears) {
     return "Not added yet";
   }
 
   return experienceYears === "1"
-    ? "1 year experience"
-    : `${experienceYears} years experience`;
+    ? "1 year exp."
+    : `${experienceYears} years exp.`;
 }
 
 export function formatPhotographerCountry(country: string | null | undefined) {

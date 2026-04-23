@@ -203,10 +203,11 @@ export function getPublicPhotographerExploreSortLabel(
 export function getPublicPhotographerExploreDialogFilterCount(
   filters: Pick<
     PublicPhotographerExploreFilters,
-    "experience" | "location" | "specialities"
+    "experience" | "location" | "sort" | "specialities"
   >,
 ) {
   return (
+    Number(filters.sort !== DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_SORT) +
     Number(Boolean(filters.experience)) +
     Number(Boolean(filters.location)) +
     filters.specialities.length

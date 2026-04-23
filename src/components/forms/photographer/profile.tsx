@@ -33,8 +33,10 @@ const profileSchema = updatePhotographerSchema.pick({
   avatar: true,
   bio: true,
   experienceYears: true,
+  instagramReelUrl: true,
   locationCity: true,
   name: true,
+  youtubeVideoUrl: true,
 });
 
 type ProfileUpdateFormValues = z.infer<typeof profileSchema>;
@@ -42,15 +44,23 @@ type ProfileUpdateFormValues = z.infer<typeof profileSchema>;
 function toProfileFormValues(
   profile: Pick<
     Photographer,
-    "avatar" | "bio" | "experienceYears" | "locationCity" | "name"
+    | "avatar"
+    | "bio"
+    | "experienceYears"
+    | "instagramReelUrl"
+    | "locationCity"
+    | "name"
+    | "youtubeVideoUrl"
   >,
 ): ProfileUpdateFormValues {
   return {
     avatar: profile.avatar || "",
     name: profile.name || "",
     bio: profile.bio || "",
+    instagramReelUrl: profile.instagramReelUrl || "",
     locationCity: profile.locationCity || "Pune",
     experienceYears: profile.experienceYears || "1",
+    youtubeVideoUrl: profile.youtubeVideoUrl || "",
   };
 }
 
@@ -77,6 +87,8 @@ export function PhotographerProfileUpdateForm({
   const avatarId = useId();
   const nameId = useId();
   const bioId = useId();
+  const instagramReelUrlId = useId();
+  const youtubeVideoUrlId = useId();
   const cityId = useId();
   const experienceId = useId();
 
@@ -95,14 +107,11 @@ export function PhotographerProfileUpdateForm({
     const response = await apiClient.photographer.$patch({
       json: values,
     });
-    const { errorMessage, payload } = await readApiResponse<Photographer>(
-      response,
-    );
+    const { errorMessage, payload } =
+      await readApiResponse<Photographer>(response);
 
     if (!response.ok) {
-      toast.error(
-        errorMessage ?? "Couldn't update photographer profile.",
-      );
+      toast.error(errorMessage ?? "Couldn't update photographer profile.");
       return;
     }
 
@@ -192,6 +201,54 @@ export function PhotographerProfileUpdateForm({
           </FieldDescription>
         ) : null}
         <FieldErrorComponent errors={errors.bio ? [errors.bio] : []} />
+      </Field>
+
+      <Field data-invalid={!!errors.instagramReelUrl}>
+        <FieldLabel htmlFor={instagramReelUrlId}>
+          Instagram Reel link
+        </FieldLabel>
+        <FieldContent>
+          <Input
+            id={instagramReelUrlId}
+            type="url"
+            placeholder="https://www.instagram.com/reel/..."
+            aria-invalid={!!errors.instagramReelUrl}
+            disabled={isInteractionDisabled}
+            {...form.register("instagramReelUrl")}
+          />
+        </FieldContent>
+        {!errors.instagramReelUrl ? (
+          <FieldDescription>
+            Optional. Paste a public Instagram Reel URL to embed it on your
+            public About tab.
+          </FieldDescription>
+        ) : null}
+        <FieldErrorComponent
+          errors={errors.instagramReelUrl ? [errors.instagramReelUrl] : []}
+        />
+      </Field>
+
+      <Field data-invalid={!!errors.youtubeVideoUrl}>
+        <FieldLabel htmlFor={youtubeVideoUrlId}>YouTube video link</FieldLabel>
+        <FieldContent>
+          <Input
+            id={youtubeVideoUrlId}
+            type="url"
+            placeholder="https://www.youtube.com/watch?v=..."
+            aria-invalid={!!errors.youtubeVideoUrl}
+            disabled={isInteractionDisabled}
+            {...form.register("youtubeVideoUrl")}
+          />
+        </FieldContent>
+        {!errors.youtubeVideoUrl ? (
+          <FieldDescription>
+            Optional. Paste a YouTube video, Short, or youtu.be link to embed it
+            on your public About tab.
+          </FieldDescription>
+        ) : null}
+        <FieldErrorComponent
+          errors={errors.youtubeVideoUrl ? [errors.youtubeVideoUrl] : []}
+        />
       </Field>
 
       <Field data-invalid={!!errors.experienceYears}>
