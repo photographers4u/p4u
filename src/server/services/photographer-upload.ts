@@ -1,6 +1,10 @@
 import "server-only";
 
 import { type ImageUploadKind, imageUploadTagNamespace } from "@/lib/imagekit";
+import {
+  isApprovedPhotographer,
+  isPhotographerSubmittedForReview,
+} from "@/lib/photographer-status";
 import { photographerUploadController } from "@/server/db/controller/photographer-upload";
 import { photographerDal } from "@/server/db/dal/photographer";
 import { ForbiddenError } from "@/server/db/helpers/errors";
@@ -14,6 +18,24 @@ async function getOwnedPhotographerId(userId: string) {
 
   if (!photographer) {
     throw new ForbiddenError("Only photographers can upload portfolio images.");
+  }
+
+  const status = photographer.status ?? "draft";
+
+  if (
+    isPhotographerSubmittedForReview({ status }) ||
+    status === "rejected" ||
+    status === "on_hold"
+  ) {
+    throw new ForbiddenError(
+      "Portfolio images can't be changed while this photographer profile is locked for review.",
+    );
+  }
+
+  if (!isApprovedPhotographer({ status }) && status !== "draft") {
+    throw new ForbiddenError(
+      "Portfolio images can only be uploaded during onboarding or after approval.",
+    );
   }
 
   return photographer.id;

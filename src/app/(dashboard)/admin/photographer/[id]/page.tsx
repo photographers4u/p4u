@@ -21,6 +21,7 @@ import {
 import { getAllowedPhotographerReviewStatuses } from "@/lib/photographer-status";
 import { NotFoundError } from "@/server/db/helpers/errors";
 import { getAdminPhotographerEntryById } from "@/server/services/photographer";
+import { ONBOARDING_STEPS } from "@/zod/helpers";
 
 const adminDateFormatter = new Intl.DateTimeFormat("en", {
   dateStyle: "medium",
@@ -204,7 +205,7 @@ export default async function AdminPhotographerDetailPage({
             <ReadOnlyField label="Status" value={status.label} />
             <ReadOnlyField
               label="Onboarding step"
-              value={`Step ${entry.onboardingStep} of 4`}
+              value={`Step ${entry.onboardingStep} of ${ONBOARDING_STEPS.length}`}
             />
             <ReadOnlyField label="Location" value={location} />
             <ReadOnlyField

@@ -1,10 +1,9 @@
 import type { Path } from "react-hook-form";
-import {
-  type CITIES,
-  type EXPERIENCE_YEARS,
-  ONBOARDING_STEPS,
-} from "@/zod/helpers";
-import type { PhotographerOnboardingState } from "@/zod/schema/photographer";
+import type { CITIES, EXPERIENCE_YEARS, ONBOARDING_STEPS } from "@/zod/helpers";
+import type {
+  PhotographerOnboardingState,
+  PhotographerOnboardingUploadInput,
+} from "@/zod/schema/photographer";
 
 export type StepNumber = (typeof ONBOARDING_STEPS)[number];
 
@@ -24,6 +23,7 @@ export type OnboardingFormValues = {
     specialityId: string;
     startingPrice: string;
   }>;
+  uploads: PhotographerOnboardingUploadInput[];
 };
 
 export type AvailableSpecialityOption = {
@@ -36,7 +36,8 @@ export const stepFieldPaths: Record<StepNumber, Path<OnboardingFormValues>[]> =
     1: ["name", "bio", "locationCity", "experienceYears"],
     2: ["avatar"],
     3: ["selectedSpecialityIds", "specialities"],
-    4: ["contact.phone", "contact.email", "contact.isPublic"],
+    4: ["uploads"],
+    5: ["contact.phone", "contact.email", "contact.isPublic"],
   };
 
 function toSpecialityFormValues(
@@ -104,5 +105,6 @@ export function toFormValues(
       initialData.specialities,
       availableSpecialities,
     ),
+    uploads: initialData.uploads,
   };
 }

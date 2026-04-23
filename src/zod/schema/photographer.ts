@@ -1,4 +1,5 @@
 import z from "zod";
+import { photographerReviewPhotoMinimum } from "@/lib/photographer-upload-config";
 import {
   CITIES,
   EXPERIENCE_YEARS,
@@ -24,6 +25,7 @@ const onboardingStepSchema = z.union([
   z.literal(ONBOARDING_STEPS[1]),
   z.literal(ONBOARDING_STEPS[2]),
   z.literal(ONBOARDING_STEPS[3]),
+  z.literal(ONBOARDING_STEPS[4]),
 ]);
 
 const startingPriceSchema = z
@@ -191,8 +193,22 @@ const savePhotographerSpecialitiesStepSchema = z.object({
     .min(1, "Enter a price for at least one speciality"),
 });
 
-const savePhotographerContactStepSchema = z.object({
+const savePhotographerReviewPhotosStepSchema = z.object({
   step: z.literal(ONBOARDING_STEPS[3]),
+  uploads: z
+    .array(idValueSchema)
+    .min(
+      photographerReviewPhotoMinimum,
+      `Upload at least ${photographerReviewPhotoMinimum} review photo`,
+    )
+    .refine(
+      (uploadIds) => new Set(uploadIds).size === uploadIds.length,
+      "Each review photo can only be included once",
+    ),
+});
+
+const savePhotographerContactStepSchema = z.object({
+  step: z.literal(ONBOARDING_STEPS[4]),
   contact: savePhotographerContactSchema,
 });
 
@@ -207,6 +223,7 @@ export const savePhotographerOnboardingStepSchema = z.discriminatedUnion(
     savePhotographerProfileStepSchema,
     savePhotographerOnboardingAvatarStepSchema,
     savePhotographerSpecialitiesStepSchema,
+    savePhotographerReviewPhotosStepSchema,
     savePhotographerContactStepSchema,
   ],
 );
@@ -234,12 +251,23 @@ const legacySavePhotographerProfileStepSchema = z
     experienceYears: input.experienceYears,
   }));
 
+const legacySavePhotographerContactStepSchema = z
+  .object({
+    step: z.literal(ONBOARDING_STEPS[3]),
+    contact: savePhotographerContactSchema,
+  })
+  .transform((input) => ({
+    step: ONBOARDING_STEPS[4],
+    contact: input.contact,
+  }));
+
 // Accept stale pre-refresh tabs temporarily, but normalize everything to the
 // new canonical step mapping before controller logic runs.
 export const savePhotographerOnboardingStepRequestSchema = z.union([
   savePhotographerOnboardingStepSchema,
   legacySavePhotographerOnboardingAvatarStepSchema,
   legacySavePhotographerProfileStepSchema,
+  legacySavePhotographerContactStepSchema,
 ]);
 
 export const photographerOnboardingStateSchema = z.object({

@@ -11,6 +11,7 @@ import {
   buildSpecialitiesStepPayload,
 } from "@/components/forms/photographer-onboarding/form-helpers";
 import { PhotographerOnboardingProfileStep } from "@/components/forms/photographer-onboarding/profile-step";
+import { PhotographerOnboardingReviewPhotosStep } from "@/components/forms/photographer-onboarding/review-photos-step";
 import { PhotographerOnboardingServicesStep } from "@/components/forms/photographer-onboarding/services-step";
 import { Button } from "@/components/ui/button";
 import { apiClient } from "@/lib/api-client";
@@ -55,6 +56,11 @@ const onboardingStepMeta: Array<{
   },
   {
     step: ONBOARDING_STEPS[3],
+    title: "Review photos",
+    description: "Upload 4 strong samples if you can; 1 is enough to continue.",
+  },
+  {
+    step: ONBOARDING_STEPS[4],
     title: "Contact details",
     description:
       "When the rest of your portfolio is ready, save these details to submit for review.",
@@ -88,6 +94,11 @@ function buildStepPayload(
     case ONBOARDING_STEPS[3]:
       return {
         step,
+        uploads: values.uploads.map((upload) => upload.id),
+      };
+    case ONBOARDING_STEPS[4]:
+      return {
+        step,
         contact: {
           email: values.contact.email,
           isPublic: values.contact.isPublic,
@@ -104,7 +115,7 @@ function getStepActionLabel(
   isSubmittedForReview: boolean,
   isEditingApprovedProfile: boolean,
 ) {
-  if (step !== ONBOARDING_STEPS[3]) {
+  if (step !== ONBOARDING_STEPS[4]) {
     return "Save and continue";
   }
 
@@ -126,6 +137,8 @@ function getStepSuccessMessage(
     case ONBOARDING_STEPS[2]:
       return "Specialities saved.";
     case ONBOARDING_STEPS[3]:
+      return "Review photos saved.";
+    case ONBOARDING_STEPS[4]:
       return wasPendingReview || wasApprovedProfile
         ? "Changes saved."
         : "Submitted for review.";
@@ -145,7 +158,7 @@ function getFirstIncompleteStep(values: OnboardingFormValues): StepNumber {
     }
   }
 
-  return ONBOARDING_STEPS[3];
+  return ONBOARDING_STEPS[ONBOARDING_STEPS.length - 1];
 }
 
 function getPreviousStep(step: StepNumber): StepNumber | null {
@@ -242,6 +255,10 @@ export function CreatePhotographerForm({
         );
       case ONBOARDING_STEPS[3]:
         return (
+          <PhotographerOnboardingReviewPhotosStep errors={errors} form={form} />
+        );
+      case ONBOARDING_STEPS[4]:
+        return (
           <PhotographerOnboardingContactStep
             contactEmailVerified={contactEmailVerified}
             errors={errors}
@@ -328,7 +345,7 @@ export function CreatePhotographerForm({
         anytime.
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         {onboardingStepMeta.map((step, index) => {
           const isCurrent = step.step === activeStep;
           const isComplete = isStepComplete(step.step);
@@ -378,7 +395,7 @@ export function CreatePhotographerForm({
             {activeStepMeta?.title}
           </h2>
           <p className="text-sm text-muted-foreground">
-            {activeStep === ONBOARDING_STEPS[3] && isEditingApprovedProfile
+            {activeStep === ONBOARDING_STEPS[4] && isEditingApprovedProfile
               ? "Save the best email and phone number for your photographer profile."
               : activeStepMeta?.description}
           </p>

@@ -22,6 +22,7 @@ import {
   DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS,
   getAdminPhotographerEntriesPage,
 } from "@/server/services/photographer";
+import { ONBOARDING_STEPS } from "@/zod/helpers";
 
 const adminDateFormatter = new Intl.DateTimeFormat("en", {
   dateStyle: "medium",
@@ -248,7 +249,8 @@ export default async function AdminPhotographersPage({
                                 {entry.name ?? "Untitled photographer profile"}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                Step {entry.onboardingStep} of 4
+                                Step {entry.onboardingStep} of{" "}
+                                {ONBOARDING_STEPS.length}
                               </p>
                             </div>
                           </Link>

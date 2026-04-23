@@ -31,7 +31,7 @@ export default async function OnboardingPage() {
     <div className="space-y-8">
       <PageHeader
         title="Photographer Onboarding"
-        subtitle="Complete your profile, upload your avatar, add your specialities, and submit your details for review."
+        subtitle="Complete your profile, upload your avatar, add specialities and review photos, then submit your details for moderation."
       />
 
       <div className="max-w-4xl">

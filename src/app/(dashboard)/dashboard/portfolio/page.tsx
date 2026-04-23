@@ -6,6 +6,7 @@ import { PhotographerOfferingsForm } from "@/components/forms/photographer/offer
 import { PhotographerProfileUpdateForm } from "@/components/forms/photographer/profile";
 import PageHeader from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   getPhotographerStatusViewModel,
   type PhotographerPortfolioBanner,
@@ -103,6 +104,48 @@ function OfferingsSection({
   );
 }
 
+function SubmittedReviewPhotosSection({
+  uploads,
+}: {
+  uploads: PortfolioSnapshot["onboarding"]["uploads"];
+}) {
+  if (uploads.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="space-y-5">
+      <div className="space-y-1">
+        <h2 className="text-xl font-bold">Submitted review photos</h2>
+        <p className="text-sm text-muted-foreground">
+          These are the photos currently waiting for admin review. Once your
+          profile is approved, you can manage them from Images.
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {uploads.map((upload, index) => (
+          <Card
+            key={upload.id}
+            className="overflow-hidden border border-border/70 p-0 shadow-sm"
+          >
+            <CardContent className="p-0">
+              <div className="aspect-square overflow-hidden bg-muted/15">
+                {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
+                <img
+                  src={upload.imageUrl}
+                  alt={`Submitted review sample ${index + 1}`}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default async function PortfolioPage() {
   const requestHeaders = await headers();
   const session = await getAuthSession({ headers: requestHeaders });
@@ -138,6 +181,8 @@ export default async function PortfolioPage() {
     : [];
   const canEditProfile = photographerStatus.canEditApprovedProfile;
   const shouldShowForms = photographerStatus.shouldShowPortfolioForms;
+  const shouldShowSubmittedPhotos =
+    photographerStatus.isSubmittedForReview && onboarding.uploads.length > 0;
 
   return (
     <div className="space-y-8">
@@ -170,6 +215,10 @@ export default async function PortfolioPage() {
             </Link>
           </Button>
         </div>
+      ) : null}
+
+      {shouldShowSubmittedPhotos ? (
+        <SubmittedReviewPhotosSection uploads={onboarding.uploads} />
       ) : null}
 
       {shouldShowForms ? (

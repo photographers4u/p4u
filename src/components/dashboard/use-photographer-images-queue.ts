@@ -584,6 +584,19 @@ export function usePhotographerImagesQueue({
     (item) =>
       item.state === "idle" && scheduledUploadClientIds.includes(item.clientId),
   ).length;
+  const persistedUploads: PhotographerOnboardingUploadInput[] = items.flatMap(
+    (item) =>
+      item.persistedUploadId
+        ? [
+            {
+              displayOrder: item.persistedOrder ?? 0,
+              id: item.persistedUploadId,
+              imageUrl: item.remoteUrl ?? item.previewUrl,
+              pinnedAt: item.pinnedAt,
+            },
+          ]
+        : [],
+  );
   const savedImageCount = items.filter((item) => item.persistedUploadId).length;
   const overallProgress =
     newUploadItems.length === 0
@@ -645,6 +658,7 @@ export function usePhotographerImagesQueue({
     isDropActive,
     items,
     overallProgress,
+    persistedUploads,
     pinningClientIds,
     queuedUploadCount,
     removeItem,

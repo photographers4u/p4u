@@ -9,7 +9,7 @@ import {
   Trash2,
   UploadCloud,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -36,8 +36,12 @@ import {
   usePhotographerImagesQueue,
 } from "./use-photographer-images-queue";
 
-function getItemTitle(item: PortfolioUploadQueueItem, index: number) {
-  return item.file?.name || `Portfolio image ${index + 1}`;
+function getItemTitle(
+  item: PortfolioUploadQueueItem,
+  index: number,
+  fallbackLabel: string,
+) {
+  return item.file?.name || `${fallbackLabel} ${index + 1}`;
 }
 
 function getUploadOverlayLabel(item: PortfolioUploadQueueItem) {
@@ -59,9 +63,13 @@ function getUploadOverlayLabel(item: PortfolioUploadQueueItem) {
 }
 
 export function PhotographerImagesManager({
+  context = "portfolio",
   initialUploads,
+  onUploadsChange,
 }: {
+  context?: "portfolio" | "review";
   initialUploads: PhotographerOnboardingUploadInput[];
+  onUploadsChange?: (uploads: PhotographerOnboardingUploadInput[]) => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -70,6 +78,31 @@ export function PhotographerImagesManager({
   const queue = usePhotographerImagesQueue({
     initialUploads,
   });
+  const fallbackItemLabel =
+    context === "review" ? "Review photo" : "Portfolio image";
+  const addButtonLabel =
+    context === "review" ? "Add review photos" : "Add images";
+  const dialogTitle = context === "review" ? "Add review photos" : "Add images";
+  const dropTitle =
+    context === "review" ? "Drop review photos here" : "Drop images here";
+  const emptyGalleryLabel =
+    context === "review" ? "No review photos yet." : "No portfolio images yet.";
+  const savedCountLabel =
+    context === "review" ? "review photo" : "portfolio image";
+  const notifyUploadsChange = useEffectEvent(() => {
+    onUploadsChange?.(queue.persistedUploads);
+  });
+  const persistedUploadsSignature = queue.persistedUploads
+    .map((upload) =>
+      [
+        upload.id,
+        upload.displayOrder,
+        upload.imageUrl,
+        upload.pinnedAt ?? "",
+      ].join(":"),
+    )
+    .join("|");
+  const previousPersistedUploadsSignatureRef = useRef<string | null>(null);
 
   const galleryItems = queue.items.filter((item) => item.persistedUploadId);
   const deleteItem = deleteClientId
@@ -80,7 +113,7 @@ export function PhotographerImagesManager({
     : -1;
   const deleteItemLabel =
     deleteItem && deleteItemIndex >= 0
-      ? getItemTitle(deleteItem, deleteItemIndex)
+      ? getItemTitle(deleteItem, deleteItemIndex, fallbackItemLabel)
       : "this image";
   const isDeletingSelectedImage =
     deleteItem !== null &&
@@ -95,6 +128,17 @@ export function PhotographerImagesManager({
     queue.completedUploadCount > 0 ||
     queue.failedUploadCount > 0 ||
     queue.cancelledUploadCount > 0;
+
+  useEffect(() => {
+    if (
+      previousPersistedUploadsSignatureRef.current === persistedUploadsSignature
+    ) {
+      return;
+    }
+
+    previousPersistedUploadsSignatureRef.current = persistedUploadsSignature;
+    notifyUploadsChange();
+  }, [notifyUploadsChange, persistedUploadsSignature]);
 
   function openFilePicker() {
     fileInputRef.current?.click();
@@ -151,28 +195,34 @@ export function PhotographerImagesManager({
         <div className="space-y-1">
           <p className="text-sm text-muted-foreground">
             {galleryItems.length === 0
-              ? "No portfolio images yet."
-              : `${galleryItems.length} portfolio image${
+              ? emptyGalleryLabel
+              : `${galleryItems.length} ${savedCountLabel}${
                   galleryItems.length === 1 ? "" : "s"
                 }`}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {pinnedImageCount} pinned of 5 max
-          </p>
+          {context === "portfolio" ? (
+            <p className="text-xs text-muted-foreground">
+              {pinnedImageCount} pinned of 5 max
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Pick your strongest work for admin review.
+            </p>
+          )}
         </div>
 
         <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <AlertDialogTrigger asChild>
             <Button type="button" size="sm" variant="outline">
               <ImagePlus className="size-4" />
-              Add images
+              {addButtonLabel}
             </Button>
           </AlertDialogTrigger>
 
           <AlertDialogContent className="max-w-3xl p-0 sm:max-w-3xl">
             <div className="space-y-4 p-4">
               <AlertDialogHeader className="items-start text-left">
-                <AlertDialogTitle>Add images</AlertDialogTitle>
+                <AlertDialogTitle>{dialogTitle}</AlertDialogTitle>
               </AlertDialogHeader>
 
               <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
@@ -197,8 +247,8 @@ export function PhotographerImagesManager({
                 </div>
               ) : null}
 
-              <div
-                role="presentation"
+              <button
+                type="button"
                 onClick={openFilePicker}
                 onDragEnter={(event) => {
                   event.preventDefault();
@@ -224,33 +274,24 @@ export function PhotographerImagesManager({
                   queue.addFiles(event.dataTransfer.files);
                 }}
                 className={cn(
-                  "cursor-pointer rounded-lg border border-dashed px-4 py-8 text-center transition-colors",
+                  "w-full cursor-pointer rounded-lg border border-dashed px-4 py-8 text-center transition-colors",
                   queue.isDropActive
                     ? "border-foreground/25 bg-muted/20"
                     : "border-border/70 bg-background",
                 )}
               >
-                <div className="flex flex-col items-center gap-1.5">
+                <span className="flex flex-col items-center gap-1.5">
                   <UploadCloud className="size-4 text-muted-foreground" />
-                  <p className="text-sm text-foreground">Drop images here</p>
-                  <p className="text-xs text-muted-foreground">
+                  <span className="text-sm text-foreground">{dropTitle}</span>
+                  <span className="text-xs text-muted-foreground">
                     PNG, JPG, WEBP, GIF up to 8 MB each.
-                  </p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      openFilePicker();
-                    }}
-                    className="mt-2"
-                  >
+                  </span>
+                  <span className="mt-2 inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground shadow-xs transition-colors">
                     <ImagePlus className="size-4" />
                     Choose files
-                  </Button>
-                </div>
-              </div>
+                  </span>
+                </span>
+              </button>
 
               {pendingItems.length > 0 ? (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -275,7 +316,7 @@ export function PhotographerImagesManager({
                             {/* biome-ignore lint/performance/noImgElement: local blob previews and external uploaded assets are rendered here */}
                             <img
                               src={item.previewUrl}
-                              alt={getItemTitle(item, index)}
+                              alt={getItemTitle(item, index, fallbackItemLabel)}
                               className="h-full w-full object-cover"
                             />
 
@@ -415,7 +456,7 @@ export function PhotographerImagesManager({
                     {/* biome-ignore lint/performance/noImgElement: local blob previews and external uploaded assets are rendered here */}
                     <img
                       src={item.previewUrl}
-                      alt={getItemTitle(item, index)}
+                      alt={getItemTitle(item, index, fallbackItemLabel)}
                       className="h-full w-full object-cover"
                     />
 
@@ -470,7 +511,7 @@ export function PhotographerImagesManager({
         </div>
       ) : (
         <div className="rounded-lg border border-border/60 px-4 py-8 text-center text-sm text-muted-foreground">
-          No portfolio images yet.
+          {emptyGalleryLabel}
         </div>
       )}
     </div>

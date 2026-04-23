@@ -67,4 +67,4 @@ export const CITIES = [
   "Visakhapatnam",
 ] as const;
 
-export const ONBOARDING_STEPS = [1, 2, 3, 4] as const;
+export const ONBOARDING_STEPS = [1, 2, 3, 4, 5] as const;

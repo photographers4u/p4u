@@ -1,4 +1,8 @@
 import { sql } from "drizzle-orm";
+import {
+  isApprovedPhotographer,
+  isPhotographerSubmittedForReview,
+} from "@/lib/photographer-status";
 import { photographerPortfolioPinnedImageLimit } from "@/lib/photographer-upload-config";
 import db, { type DBExecutor, type DBTransaction } from "@/server/db";
 import { photographerDal } from "@/server/db/dal/photographer";
@@ -41,6 +45,24 @@ async function getOwnedPhotographerOrThrow(
 
   if (!photographer) {
     throw new ForbiddenError("Only photographers can manage portfolio images.");
+  }
+
+  const status = photographer.status ?? "draft";
+
+  if (
+    isPhotographerSubmittedForReview({ status }) ||
+    status === "rejected" ||
+    status === "on_hold"
+  ) {
+    throw new ForbiddenError(
+      "Portfolio images can't be changed while this photographer profile is locked for review.",
+    );
+  }
+
+  if (!isApprovedPhotographer({ status }) && status !== "draft") {
+    throw new ForbiddenError(
+      "Portfolio images can only be managed during onboarding or after approval.",
+    );
   }
 
   return photographer;

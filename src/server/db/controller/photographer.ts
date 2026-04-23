@@ -4,6 +4,7 @@ import {
   isApprovedPhotographer,
   isPhotographerSubmittedForReview,
 } from "@/lib/photographer-status";
+import { photographerReviewPhotoMinimum } from "@/lib/photographer-upload-config";
 import type { PublicPhotographerExploreFilters } from "@/lib/public-photographer-explore";
 import { PUBLIC_PHOTOGRAPHER_EXPLORE_PAGE_SIZE } from "@/lib/public-photographer-explore";
 import db, { type DBExecutor, type DBTransaction } from "@/server/db";
@@ -51,7 +52,8 @@ const DEFAULT_LOCATION_COUNTRY = "india";
 const PROFILE_ONBOARDING_STEP = ONBOARDING_STEPS[0];
 const AVATAR_ONBOARDING_STEP = ONBOARDING_STEPS[1];
 const SPECIALITIES_ONBOARDING_STEP = ONBOARDING_STEPS[2];
-const CONTACT_ONBOARDING_STEP = ONBOARDING_STEPS[3];
+const REVIEW_PHOTOS_ONBOARDING_STEP = ONBOARDING_STEPS[3];
+const CONTACT_ONBOARDING_STEP = ONBOARDING_STEPS[4];
 const FINAL_ONBOARDING_STEP = CONTACT_ONBOARDING_STEP;
 export const ADMIN_PHOTOGRAPHER_LIST_PAGE_SIZE = 20;
 export {
@@ -505,11 +507,11 @@ async function assertReadyForPublication(
   photographer: PhotographerRecord,
   dependencies: Pick<
     OnboardingStateDependencies,
-    "contact" | "specialities"
+    "contact" | "specialities" | "uploads"
   > = {},
   executor: DBClient = db,
 ) {
-  const [contact, specialities] = await Promise.all([
+  const [contact, specialities, uploads] = await Promise.all([
     dependencies.contact !== undefined
       ? dependencies.contact
       : photographerContactController.getPhotographerContactByPhotographerId(
@@ -522,6 +524,9 @@ async function assertReadyForPublication(
           photographer.id,
           executor,
         ),
+    dependencies.uploads !== undefined
+      ? dependencies.uploads
+      : photographerUploadDal.getByPhotographerId(photographer.id, executor),
   ]);
 
   if (!photographer.avatar) {
@@ -544,6 +549,12 @@ async function assertReadyForPublication(
   if (specialities.length === 0) {
     throw new BadRequestError(
       "Enter a price for at least one speciality before finishing onboarding",
+    );
+  }
+
+  if (uploads.length < photographerReviewPhotoMinimum) {
+    throw new BadRequestError(
+      `Upload at least ${photographerReviewPhotoMinimum} review photo before finishing onboarding`,
     );
   }
 
@@ -759,7 +770,7 @@ function assertPhotographerCanSaveOnboardingStep(
     }
 
     throw new ForbiddenError(
-      step === ONBOARDING_STEPS[3]
+      step === ONBOARDING_STEPS[4]
         ? "Contact updates for approved photographer profiles must be made from the portfolio contact form."
         : "Approved photographer profiles can't use onboarding for profile edits.",
     );
@@ -989,6 +1000,41 @@ export const photographerController = {
         }
 
         case ONBOARDING_STEPS[3]: {
+          const uploads = await photographerUploadDal.getByPhotographerId(
+            existing.id,
+            tx,
+          );
+          const uploadIdSet = new Set(uploads.map((upload) => upload.id));
+
+          if (input.uploads.some((uploadId) => !uploadIdSet.has(uploadId))) {
+            throw new BadRequestError(
+              "Review photos must be uploaded before continuing",
+            );
+          }
+
+          if (uploads.length < photographerReviewPhotoMinimum) {
+            throw new BadRequestError(
+              `Upload at least ${photographerReviewPhotoMinimum} review photo before continuing`,
+            );
+          }
+
+          const photographer = await updatePhotographerRecord(
+            existing,
+            {
+              onboardingStep: getProgressedOnboardingStep(
+                existing.onboardingStep,
+                REVIEW_PHOTOS_ONBOARDING_STEP,
+              ),
+            },
+            tx,
+          );
+
+          return buildOnboardingState(photographer, tx, {
+            uploads,
+          });
+        }
+
+        case ONBOARDING_STEPS[4]: {
           const contact =
             await photographerContactController.savePhotographerContactByPhotographerId(
               existing.id,
@@ -1020,6 +1066,7 @@ export const photographerController = {
             {
               contact,
               specialities,
+              uploads,
             },
             tx,
           );
