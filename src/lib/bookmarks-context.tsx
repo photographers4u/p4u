@@ -5,7 +5,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 import { readApiResponse } from "@/lib/api-response";
-import type { AuthClientSession } from "@/lib/auth-client";
+import { type AuthClientSession, authClient } from "@/lib/auth-client";
 import {
   type BookmarkStore,
   createEmptyBookmarkStore,
@@ -45,18 +45,29 @@ export function BookmarkProvider({
 }: {
   children: React.ReactNode;
   initialStore?: BookmarkStore;
-  session: AuthClientSession | null;
+  session?: AuthClientSession | null;
 }) {
+  const { data: clientSession, isPending: isSessionPending } =
+    authClient.useSession();
+  const resolvedSession =
+    session !== undefined ? session : (clientSession ?? null);
+  const sessionResolved = session !== undefined || !isSessionPending;
+  const userId = resolvedSession?.user?.id ?? null;
   const [bookmarks, setBookmarks] = useState<BookmarkStore>(() =>
     sanitizeBookmarkStore(initialStore),
   );
   const [isLoaded, setIsLoaded] = useState(
-    !session?.user || Boolean(initialStore),
+    () => sessionResolved && (!userId || Boolean(initialStore)),
   );
   const [pendingKeys, setPendingKeys] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!session?.user) {
+    if (!sessionResolved) {
+      setIsLoaded(false);
+      return;
+    }
+
+    if (!userId) {
       setBookmarks(createEmptyBookmarkStore());
       setIsLoaded(true);
       return;
@@ -108,7 +119,7 @@ export function BookmarkProvider({
     return () => {
       isActive = false;
     };
-  }, [initialStore, session?.user]);
+  }, [initialStore, sessionResolved, userId]);
 
   async function toggleBookmark(
     identifier: BookmarkIdentifier,
@@ -116,7 +127,7 @@ export function BookmarkProvider({
   ): Promise<boolean | null> {
     const normalizedValue = value.trim();
 
-    if (!session?.user) {
+    if (!userId) {
       return null;
     }
 
@@ -172,7 +183,7 @@ export function BookmarkProvider({
   return (
     <BookmarkContext.Provider
       value={{
-        isAuthenticated: !!session?.user,
+        isAuthenticated: !!userId,
         isLoaded,
         isBookmarked(identifier, value) {
           return bookmarks[identifier].includes(value.trim());

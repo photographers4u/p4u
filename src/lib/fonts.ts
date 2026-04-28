@@ -2,6 +2,7 @@ import {
   Geist,
   Geist_Mono,
   Inter,
+  Playfair_Display,
   Poppins,
   Space_Grotesk,
 } from "next/font/google";
@@ -27,7 +28,13 @@ export const inter = Inter({
 });
 
 export const poppins = Poppins({
-  variable: "--font-poppins",
+  variable: "--font-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+});
+
+export const playfairDisplay = Playfair_Display({
+  variable: "--font-playfair-display",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });

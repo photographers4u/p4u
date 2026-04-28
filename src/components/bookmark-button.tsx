@@ -2,6 +2,7 @@
 
 import { Heart } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { buildAuthRedirectPath } from "@/lib/auth-redirect";
@@ -9,21 +10,42 @@ import { useBookmarks } from "@/lib/bookmarks-context";
 import { cn } from "@/lib/utils";
 import type { BookmarkIdentifier } from "@/zod/schema/bookmark";
 
-export function BookmarkButton({
-  identifier,
-  value,
-  className,
-  label = "Save photographer",
-  activeLabel = "Saved photographer",
-  size = "icon",
-}: {
+type BookmarkButtonProps = {
   identifier: BookmarkIdentifier;
   value: string;
   className?: string;
   label?: string;
   activeLabel?: string;
   size?: React.ComponentProps<typeof Button>["size"];
-}) {
+};
+
+function BookmarkButtonFallback({
+  className,
+  label = "Save photographer",
+  size = "icon",
+}: Pick<BookmarkButtonProps, "className" | "label" | "size">) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size={size}
+      className={cn("rounded-full", className)}
+      disabled
+      aria-label={label}
+    >
+      <Heart />
+    </Button>
+  );
+}
+
+function BookmarkButtonContent({
+  identifier,
+  value,
+  className,
+  label = "Save photographer",
+  activeLabel = "Saved photographer",
+  size = "icon",
+}: BookmarkButtonProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,14 +53,17 @@ export function BookmarkButton({
     useBookmarks();
 
   const bookmarked = isBookmarked(identifier, value);
-  const pending =
-    isPending(identifier, value) || (isAuthenticated && !isLoaded);
+  const pending = isPending(identifier, value) || !isLoaded;
   const callbackUrl = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
   const loginHref = buildAuthRedirectPath("/login", {
     callbackUrl,
   });
 
   async function handleClick() {
+    if (!isLoaded) {
+      return;
+    }
+
     if (!isAuthenticated) {
       toast.info("Sign in to save photographers.");
       router.push(loginHref);
@@ -76,5 +101,21 @@ export function BookmarkButton({
           : label
         : null}
     </Button>
+  );
+}
+
+export function BookmarkButton(props: BookmarkButtonProps) {
+  return (
+    <Suspense
+      fallback={
+        <BookmarkButtonFallback
+          className={props.className}
+          label={props.label}
+          size={props.size}
+        />
+      }
+    >
+      <BookmarkButtonContent {...props} />
+    </Suspense>
   );
 }
