@@ -18,23 +18,18 @@ function getLocationLabel(photographer: PublicPhotographerExploreEntry) {
   return formatPhotographerCountry(photographer.locationCountry);
 }
 
-export function ExplorePhotographerCard({
+function PhotographerPortfolioGallery({
   photographer,
+  uploads,
 }: {
   photographer: PublicPhotographerExploreEntry;
+  uploads: PublicPhotographerExploreEntry["uploads"];
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const uploads = photographer.uploads;
-  const hasImages = uploads.length > 0;
-  const location = getLocationLabel(photographer);
-  const safeActiveIndex = hasImages
-    ? Math.min(activeIndex, uploads.length - 1)
-    : 0;
+  const safeActiveIndex = Math.min(activeIndex, uploads.length - 1);
 
   useEffect(() => {
-    setActiveIndex((index) =>
-      uploads.length > 0 ? Math.min(index, uploads.length - 1) : 0,
-    );
+    setActiveIndex((index) => Math.min(index, uploads.length - 1));
   }, [uploads.length]);
 
   const prev = () =>
@@ -42,84 +37,138 @@ export function ExplorePhotographerCard({
   const next = () => setActiveIndex((i) => (i + 1) % uploads.length);
 
   return (
-    <article className="relative flex h-full flex-col overflow-hidden rounded-xl border bg-white shadow-sm">
-      <div className="p-2 aspect-square">
-        <div className="relative rounded-md border overflow-hidden w-full h-full bg-slate-100">
-          {hasImages ? (
-            <>
-              {uploads.map((upload, i) => (
-                // biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host
-                <img
-                  key={upload.id}
-                  src={upload.imageUrl}
-                  alt={`${photographer.name ?? "Photographer"} portfolio work ${i + 1}`}
-                  loading="lazy"
-                  decoding="async"
-                  className={cn(
-                    "absolute inset-0 h-full w-full object-cover transition-opacity duration-500",
-                    i === safeActiveIndex ? "opacity-100" : "opacity-0",
-                  )}
-                />
-              ))}
+    <>
+      {uploads.map((upload, i) => (
+        // biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host
+        <img
+          key={upload.id}
+          src={upload.imageUrl}
+          alt={`${photographer.name ?? "Photographer"} portfolio work ${i + 1}`}
+          loading="lazy"
+          decoding="async"
+          className={cn(
+            "absolute inset-0 h-full w-full object-cover transition-opacity duration-500",
+            i === safeActiveIndex ? "opacity-100" : "opacity-0",
+          )}
+        />
+      ))}
 
-              {/* Three-zone overlay: LEFT | MID | RIGHT */}
-              <div className="absolute inset-0 flex">
-                {/* Left zone — prev button */}
-                <div className="flex w-14 shrink-0 items-center justify-start pl-3">
-                  {uploads.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={prev}
-                      className="flex size-8 items-center justify-center rounded-full bg-white/30 cursor-pointer backdrop-blur shadow-sm ring-1 ring-black/5 transition hover:bg-white"
-                      aria-label="Previous image"
-                    >
-                      <ChevronLeft className="size-4 text-slate-700" />
-                    </button>
-                  )}
-                </div>
+      <div className="absolute inset-0 flex">
+        <div className="flex w-14 shrink-0 items-center justify-start pl-3">
+          {uploads.length > 1 ? (
+            <button
+              type="button"
+              onClick={prev}
+              className="flex size-8 cursor-pointer items-center justify-center rounded-full bg-white/30 shadow-sm ring-1 ring-black/5 backdrop-blur transition hover:bg-white"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="size-4 text-slate-700" />
+            </button>
+          ) : null}
+        </div>
 
-                {/* Middle zone — link to profile */}
-                <Link
-                  href={`/p/${photographer.slug}`}
-                  className="flex-1"
-                  aria-label={`View ${photographer.name ?? "Photographer"}'s profile`}
-                  tabIndex={-1}
-                />
+        <Link
+          href={`/p/${photographer.slug}`}
+          className="flex-1"
+          aria-label={`View ${photographer.name ?? "Photographer"}'s profile`}
+          tabIndex={-1}
+        />
 
-                {/* Right zone — next button */}
-                <div className="flex w-14 shrink-0 items-center justify-end pr-3">
-                  {uploads.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={next}
-                      className="flex size-8 items-center justify-center rounded-full bg-white/30 cursor-pointer backdrop-blur shadow-sm ring-1 ring-black/5 transition hover:bg-white"
-                      aria-label="Next image"
-                    >
-                      <ChevronRight className="size-4 text-slate-700" />
-                    </button>
-                  )}
-                </div>
-              </div>
+        <div className="flex w-14 shrink-0 items-center justify-end pr-3">
+          {uploads.length > 1 ? (
+            <button
+              type="button"
+              onClick={next}
+              className="flex size-8 cursor-pointer items-center justify-center rounded-full bg-white/30 shadow-sm ring-1 ring-black/5 backdrop-blur transition hover:bg-white"
+              aria-label="Next image"
+            >
+              <ChevronRight className="size-4 text-slate-700" />
+            </button>
+          ) : null}
+        </div>
+      </div>
 
-              {/* Dot indicators */}
-              {uploads.length > 1 && (
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 pointer-events-none">
-                  {uploads.map((upload, i) => (
-                    <span
-                      key={upload.id}
-                      className={cn(
-                        "rounded-full transition-all",
-                        i === safeActiveIndex
-                          ? "w-4 h-1.5 bg-white"
-                          : "w-1.5 h-1.5 bg-white/50",
-                      )}
-                    />
-                  ))}
-                </div>
+      {uploads.length > 1 ? (
+        <div className="pointer-events-none absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
+          {uploads.map((upload, i) => (
+            <span
+              key={upload.id}
+              className={cn(
+                "rounded-full transition-all",
+                i === safeActiveIndex
+                  ? "h-1.5 w-4 bg-white"
+                  : "h-1.5 w-1.5 bg-white/50",
               )}
-            </>
+            />
+          ))}
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function PhotographerPortfolioCover({
+  photographer,
+  uploads,
+}: {
+  photographer: PublicPhotographerExploreEntry;
+  uploads: PublicPhotographerExploreEntry["uploads"];
+}) {
+  return (
+    <Link
+      href={`/p/${photographer.slug}`}
+      className="absolute inset-0"
+      aria-label={`View ${photographer.name ?? "Photographer"}'s profile`}
+    >
+      {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
+      <img
+        src={uploads[0].imageUrl}
+        alt={`${photographer.name ?? "Photographer"} portfolio cover`}
+        loading="lazy"
+        decoding="async"
+        className="h-full w-full object-cover"
+      />
+    </Link>
+  );
+}
+
+export function ExplorePhotographerCard({
+  photographer,
+  className,
+  imageMode = "gallery",
+}: {
+  photographer: PublicPhotographerExploreEntry;
+  className?: string;
+  imageMode?: "cover" | "gallery";
+}) {
+  const uploads = photographer.uploads;
+  const hasImages = uploads.length > 0;
+  const location = getLocationLabel(photographer);
+  const showGallery = imageMode === "gallery" && hasImages;
+
+  return (
+    <article
+      className={cn(
+        "relative flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white",
+        className,
+      )}
+    >
+      <div className="aspect-square">
+        <div className="relative h-full w-full overflow-hidden border-b bg-slate-100">
+          {hasImages ? (
+            showGallery ? (
+              <PhotographerPortfolioGallery
+                photographer={photographer}
+                uploads={uploads}
+              />
+            ) : (
+              <PhotographerPortfolioCover
+                photographer={photographer}
+                uploads={uploads}
+              />
+            )
           ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-2 text-center px-6">
+            <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
               {photographer.avatar ? (
                 // biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host
                 <img
@@ -138,7 +187,6 @@ export function ExplorePhotographerCard({
             </div>
           )}
 
-          {/* Bookmark — top-right, above overlay */}
           <div className="absolute right-3 top-3 z-10">
             <BookmarkButton
               identifier="photographer"
@@ -146,7 +194,7 @@ export function ExplorePhotographerCard({
               size="icon"
               label="Save photographer"
               activeLabel="Saved photographer"
-              className="border-slate-200 bg-white/75 backdrop-blur"
+              className="border-slate-200 bg-white"
             />
           </div>
         </div>
@@ -154,7 +202,7 @@ export function ExplorePhotographerCard({
 
       <Link
         href={`/p/${photographer.slug}`}
-        className="flex flex-1 flex-col gap-y-2 p-3 pt-2 group"
+        className="group flex flex-1 flex-col gap-y-3 p-4"
       >
         <div className="flex items-center gap-3">
           {photographer.avatar ? (
@@ -171,10 +219,10 @@ export function ExplorePhotographerCard({
           )}
 
           <div className="min-w-0">
-            <h2 className="truncate text-base font-semibold text-slate-950 group-hover:text-primary">
+            <h2 className="truncate text-base font-semibold text-slate-950">
               {photographer.name ?? "Photographer"}
             </h2>
-            <div className="flex flex-wrap items-center gap-x-0.5 text-[13px] text-slate-500 mt-0.5">
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-0.5 text-[13px] text-slate-500">
               <span className="inline-flex items-center gap-1">
                 <MapPin className="size-3.5" />
                 {location}
@@ -192,19 +240,19 @@ export function ExplorePhotographerCard({
             <Badge
               key={speciality}
               variant="outline"
-              className="h-6 rounded-full border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-700"
+              className="h-6 rounded-md border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-700"
             >
               {speciality}
             </Badge>
           ))}
-          {photographer.remainingSpecialitiesCount > 0 && (
+          {photographer.remainingSpecialitiesCount > 0 ? (
             <Badge
               variant="secondary"
-              className="h-6 rounded-full bg-amber-100 px-2.5 text-xs text-amber-900"
+              className="h-6 rounded-md bg-slate-100 px-2.5 text-xs text-slate-700"
             >
               +{photographer.remainingSpecialitiesCount} more
             </Badge>
-          )}
+          ) : null}
         </div>
       </Link>
     </article>

@@ -3,15 +3,17 @@
 import {
   Bookmark,
   Camera,
+  Compass,
   Fan,
   HatGlasses,
+  House,
   Images,
   Layers3,
+  ShieldCheck,
   User as UserIcon,
 } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import type * as React from "react";
 import {
   Sidebar,
@@ -26,9 +28,39 @@ import { siteConfig } from "@/config/site";
 import type { AuthClientUser } from "@/lib/auth-client";
 import { getPhotographerStatusViewModel } from "@/lib/photographer-presentation";
 import type { Photographer } from "@/zod/schema/photographer";
-import { NavMain } from "./nav-main";
+import { NavMain, SidebarCTA } from "./nav-main";
 
-const accountGroup = {
+type SidebarGroupData = {
+  label: string;
+  cta?: React.ReactNode;
+  items: React.ComponentProps<typeof NavMain>["items"];
+};
+
+const exploreGroup: SidebarGroupData = {
+  label: "Explore",
+  cta: (
+    <SidebarCTA
+      href="/photographers"
+      label="Browse photographers"
+      icon={Compass}
+      variant="outline"
+    />
+  ),
+  items: [
+    {
+      title: "Home",
+      url: "/" as Route,
+      icon: House,
+    },
+    {
+      title: "All photographers",
+      url: "/photographers" as Route,
+      icon: Compass,
+    },
+  ],
+};
+
+const accountGroup: SidebarGroupData = {
   label: "Account",
   items: [
     {
@@ -49,41 +81,53 @@ const accountGroup = {
   ],
 };
 
-function getDashboardData() {
-  return [
-    {
-      label: "Dashboard",
-      items: [
-        {
-          title: "Saved photographers",
-          url: "/dashboard/bookmarks" as Route,
-          icon: Bookmark,
-        },
-      ],
-    },
-  ];
-}
-
-const adminData = [
-  {
-    label: "Admin",
+function getDashboardData(): SidebarGroupData {
+  return {
+    label: "Dashboard",
     items: [
       {
-        title: "Photographers",
-        url: "/admin/photographers" as Route,
-        icon: Camera,
+        title: "Saved photographers",
+        url: "/dashboard/bookmarks" as Route,
+        icon: Bookmark,
       },
     ],
-  },
-];
+  };
+}
 
-function getPhotographerGroup(photographer: Photographer | null) {
+const adminGroup: SidebarGroupData = {
+  label: "Admin",
+  cta: (
+    <SidebarCTA
+      href="/admin/photographers"
+      label="Open review queue"
+      icon={ShieldCheck}
+    />
+  ),
+  items: [
+    {
+      title: "Photographers",
+      url: "/admin/photographers" as Route,
+      icon: Camera,
+    },
+  ],
+};
+
+function getPhotographerGroup(
+  photographer: Photographer | null,
+): SidebarGroupData {
   if (!photographer) {
     return {
       label: "Photographer",
+      cta: (
+        <SidebarCTA
+          href="/onboarding"
+          label="Become a photographer"
+          icon={Camera}
+        />
+      ),
       items: [
         {
-          title: "Become Photographer",
+          title: "Start onboarding",
           url: "/onboarding" as Route,
           icon: Camera,
         },
@@ -91,14 +135,20 @@ function getPhotographerGroup(photographer: Photographer | null) {
     };
   }
 
+  const photographerStatus = getPhotographerStatusViewModel(photographer);
+  const primaryPhotographerRoute = photographerStatus.shouldRedirectOnboardingToPortfolio
+    ? ("/dashboard/portfolio" as Route)
+    : ("/onboarding" as Route);
+  const primaryPhotographerLabel = photographerStatus.shouldRedirectOnboardingToPortfolio
+    ? "Manage photographer profile"
+    : "Complete onboarding";
   const items = [
     {
-      title: "Portfolio",
-      url: "/dashboard/portfolio" as Route,
+      title: primaryPhotographerLabel,
+      url: primaryPhotographerRoute,
       icon: Camera,
     },
   ];
-  const photographerStatus = getPhotographerStatusViewModel(photographer);
 
   if (photographerStatus.canManageOfferings) {
     items.push({
@@ -115,6 +165,13 @@ function getPhotographerGroup(photographer: Photographer | null) {
 
   return {
     label: "Photographer",
+    cta: (
+      <SidebarCTA
+        href={primaryPhotographerRoute}
+        label={primaryPhotographerLabel}
+        icon={Camera}
+      />
+    ),
     items,
   };
 }
@@ -127,21 +184,13 @@ export function UserSidebar({
   photographer: Photographer | null;
   user: AuthClientUser;
 }) {
-  const pathname = usePathname();
-  const isDashboardRoute = pathname.startsWith("/dashboard");
-  const isAdminRoute = pathname.startsWith("/admin") && user.role === "admin";
-  const isAccountRoute = pathname.startsWith("/account");
-  const showDashboardGroups = isDashboardRoute || isAccountRoute;
-  const showAdminGroups = isAdminRoute;
-  const groups = [
-    ...(showDashboardGroups ? getDashboardData() : []),
-    ...(showDashboardGroups ? [getPhotographerGroup(photographer)] : []),
-    ...(showAdminGroups ? adminData : []),
-    ...(showDashboardGroups || showAdminGroups ? [accountGroup] : []),
+  const groups: SidebarGroupData[] = [
+    exploreGroup,
+    getDashboardData(),
+    getPhotographerGroup(photographer),
+    ...(user.role === "admin" ? [adminGroup] : []),
+    accountGroup,
   ];
-  const showAdminFooter = user.role === "admin";
-  const footerHref = (isAdminRoute ? "/dashboard" : "/admin") as Route;
-  const footerLabel = isAdminRoute ? "Dashboard" : "Admin Dashboard";
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -162,26 +211,44 @@ export function UserSidebar({
 
       <SidebarContent>
         {groups.map((group) => (
-          <NavMain key={group.label} label={group.label} items={group.items} />
+          <NavMain
+            key={group.label}
+            label={group.label}
+            cta={group.cta}
+            items={group.items}
+          />
         ))}
       </SidebarContent>
-      {showAdminFooter && (
-        <SidebarFooter>
+      <SidebarFooter>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            tooltip="Open the public photographer directory"
+            variant="outline"
+            className="border"
+            asChild
+          >
+            <Link href="/photographers" className="flex items-center gap-2">
+              <Compass className="size-4" />
+              <span>Public directory</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        {user.role === "admin" ? (
           <SidebarMenuItem>
             <SidebarMenuButton
-              tooltip={footerLabel}
+              tooltip="Open the admin review queue"
               variant="outline"
               className="border"
               asChild
             >
-              <Link href={footerHref} className="flex items-center gap-2">
+              <Link href="/admin/photographers" className="flex items-center gap-2">
                 <HatGlasses className="size-4" />
-                <span>{footerLabel}</span>
+                <span>Admin review queue</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-        </SidebarFooter>
-      )}
+        ) : null}
+      </SidebarFooter>
     </Sidebar>
   );
 }

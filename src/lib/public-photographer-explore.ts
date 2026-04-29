@@ -1,3 +1,9 @@
+import {
+  parseAsInteger,
+  parseAsNativeArrayOf,
+  parseAsString,
+  parseAsStringLiteral,
+} from "nuqs/server";
 import { z } from "zod";
 import {
   getSearchParamFirstValue,
@@ -48,6 +54,19 @@ export const publicPhotographerExploreQuerySchema = z.object({
 
 export const DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_SORT: PublicPhotographerExploreSort =
   "newest";
+
+export const publicPhotographerExploreQueryStateParsers = {
+  experience: parseAsStringLiteral(EXPERIENCE_YEARS),
+  location: parseAsStringLiteral(CITIES),
+  page: parseAsInteger.withDefault(1),
+  q: parseAsString.withDefault(DEFAULT_QUERY),
+  sort: parseAsStringLiteral(PUBLIC_PHOTOGRAPHER_EXPLORE_SORTS).withDefault(
+    DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_SORT,
+  ),
+  speciality: parseAsNativeArrayOf(parseAsString).withDefault(
+    DEFAULT_SPECIALITIES,
+  ),
+};
 
 export const DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS: PublicPhotographerExploreFilters =
   {
@@ -102,29 +121,60 @@ function normalizeSpecialities(values: SearchParamValue) {
     .slice(0, MAX_SPECIALITY_FILTERS);
 }
 
-export function getPublicPhotographerExploreFilters(
-  params: SearchParamsRecord,
-): PublicPhotographerExploreFilters {
-  const query = normalizeQuery(getSearchParamFirstValue(params.q));
-  const sort = getSearchParamFirstValue(params.sort);
-  const experience = getSearchParamFirstValue(params.experience);
-  const location = getSearchParamFirstValue(params.location);
+function normalizeSpecialityList(values: string[]) {
+  return normalizeSpecialities(values);
+}
+
+export function normalizePublicPhotographerExploreFilters(input: {
+  experience: string | null | undefined;
+  location: string | null | undefined;
+  query: string | null | undefined;
+  sort: string | null | undefined;
+  specialities: string[];
+}): PublicPhotographerExploreFilters {
+  const experience = input.experience ?? undefined;
+  const location = input.location ?? undefined;
+  const sort = input.sort ?? undefined;
 
   return {
     experience: isExperienceValue(experience) ? experience : null,
     location: isLocationValue(location) ? location : null,
-    query,
+    query: normalizeQuery(input.query ?? undefined),
     sort: isPublicPhotographerExploreSort(sort)
       ? sort
       : DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_SORT,
-    specialities: normalizeSpecialities(params.speciality),
+    specialities: normalizeSpecialityList(input.specialities),
   };
+}
+
+export function normalizePublicPhotographerExplorePage(
+  page: number | null | undefined,
+) {
+  if (!page || page < 1 || !Number.isFinite(page)) {
+    return 1;
+  }
+
+  return Math.floor(page);
+}
+
+export function getPublicPhotographerExploreFilters(
+  params: SearchParamsRecord,
+): PublicPhotographerExploreFilters {
+  return normalizePublicPhotographerExploreFilters({
+    experience: getSearchParamFirstValue(params.experience) ?? null,
+    location: getSearchParamFirstValue(params.location) ?? null,
+    query: getSearchParamFirstValue(params.q) ?? null,
+    sort: getSearchParamFirstValue(params.sort) ?? null,
+    specialities: getSearchParamValues(params.speciality),
+  });
 }
 
 export function getPublicPhotographerExplorePageFromParams(
   params: SearchParamsRecord,
 ) {
-  return parsePositiveIntSearchParam(params.page);
+  return normalizePublicPhotographerExplorePage(
+    parsePositiveIntSearchParam(params.page),
+  );
 }
 
 export function buildPublicPhotographerExploreApiQuery(

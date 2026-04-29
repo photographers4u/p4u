@@ -21,6 +21,10 @@ function getUploadsSignature(uploads: PhotographerOnboardingUploadInput[]) {
     .join("|");
 }
 
+function pluralizePhoto(count: number) {
+  return count === 1 ? "photo" : "photos";
+}
+
 export function PhotographerOnboardingReviewPhotosStep({
   errors,
   form,
@@ -30,10 +34,39 @@ export function PhotographerOnboardingReviewPhotosStep({
 }) {
   const uploads = form.watch("uploads");
   const uploadsError = errors.uploads as { message?: string } | undefined;
-  const remainingRecommendedPhotoCount = Math.max(
-    photographerReviewPhotoRecommended - uploads.length,
+
+  const uploadCount = uploads.length;
+  const remainingMinimumCount = Math.max(
+    photographerReviewPhotoMinimum - uploadCount,
     0,
   );
+  const remainingRecommendedCount = Math.max(
+    photographerReviewPhotoRecommended - uploadCount,
+    0,
+  );
+
+  const progress = Math.min(
+    (uploadCount / photographerReviewPhotoRecommended) * 100,
+    100,
+  );
+
+  const statusMessage =
+    uploadCount < photographerReviewPhotoMinimum
+      ? `Add ${remainingMinimumCount} more ${pluralizePhoto(
+          remainingMinimumCount,
+        )} to continue.`
+      : remainingRecommendedCount > 0
+        ? `You can continue now, or add ${remainingRecommendedCount} more ${pluralizePhoto(
+            remainingRecommendedCount,
+          )} for a stronger review set.`
+        : "Great. Your recommended review set is ready.";
+
+  const statusClassName =
+    uploadCount < photographerReviewPhotoMinimum
+      ? "text-orange-700"
+      : remainingRecommendedCount > 0
+        ? "text-muted-foreground"
+        : "text-emerald-700";
 
   function syncUploads(nextUploads: PhotographerOnboardingUploadInput[]) {
     const currentUploads = form.getValues("uploads");
@@ -60,31 +93,35 @@ export function PhotographerOnboardingReviewPhotosStep({
 
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-4">
-        <p className="text-sm font-semibold text-foreground">
-          Upload {photographerReviewPhotoRecommended} review photos if you can.
-        </p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Add polished, client-ready work so admins can review your style. You
-          can continue with {photographerReviewPhotoMinimum} strong sample, but{" "}
-          {photographerReviewPhotoRecommended} gives reviewers a better sense of
-          your work.
-        </p>
-        {uploads.length < photographerReviewPhotoMinimum ? (
-          <p className="mt-3 text-xs font-medium text-orange-700">
-            Add at least {photographerReviewPhotoMinimum} photo to continue.
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 space-y-1">
+            <h3 className="text-base font-medium text-foreground">
+              Add your best work
+            </h3>
+
+            <p className="max-w-xl text-[13px] leading-6 text-muted-foreground">
+              Upload at least {photographerReviewPhotoMinimum} polished{" "}
+              {pluralizePhoto(photographerReviewPhotoMinimum)} for review.{" "}
+              {photographerReviewPhotoRecommended} is recommended.
+            </p>
+          </div>
+
+          <p className="shrink-0 text-[13px] font-medium text-muted-foreground">
+            {uploadCount}/{photographerReviewPhotoRecommended}
           </p>
-        ) : remainingRecommendedPhotoCount > 0 ? (
-          <p className="mt-3 text-xs font-medium text-orange-700">
-            You can continue now, or add {remainingRecommendedPhotoCount} more
-            photo{remainingRecommendedPhotoCount === 1 ? "" : "s"} to reach the
-            recommended set.
-          </p>
-        ) : (
-          <p className="mt-3 text-xs font-medium text-emerald-700">
-            Great, the recommended review set is ready.
-          </p>
-        )}
+        </div>
+
+        <div className="space-y-2">
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-foreground transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+
+          <p className={`text-[13px] ${statusClassName}`}>{statusMessage}</p>
+        </div>
       </div>
 
       <PhotographerImagesManager

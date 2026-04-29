@@ -4,6 +4,7 @@ import { AvatarUploadField } from "@/components/forms/avatar-upload-field";
 import {
   Field,
   FieldContent,
+  FieldDescription,
   FieldError as FieldErrorComponent,
   FieldLabel,
 } from "@/components/ui/field";
@@ -22,10 +23,26 @@ export function PhotographerOnboardingAvatarStep({
   const avatarValue = form.watch("avatar");
 
   return (
-    <div className="space-y-5">
-      <Field data-invalid={!!errors.avatar}>
-        <FieldLabel className="sr-only" htmlFor={avatarId}>Profile avatar</FieldLabel>
-        <FieldContent className="max-w-40">
+    <div className="mx-auto flex w-full flex-col items-center">
+      <Field
+        data-invalid={!!errors.avatar}
+        className="w-full items-center text-center"
+      >
+        <div className="space-y-2">
+          <FieldLabel
+            htmlFor={avatarId}
+            className="justify-center text-base font-medium text-foreground"
+          >
+            Profile avatar
+          </FieldLabel>
+
+          <FieldDescription className="max-w-xs text-sm leading-6 text-muted-foreground">
+            Upload a clear photo of yourself so clients can recognize your
+            profile easily.
+          </FieldDescription>
+        </div>
+
+        <FieldContent className="mt-6 flex w-full justify-center">
           <AvatarUploadField
             inputId={avatarId}
             value={avatarValue}

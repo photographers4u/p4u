@@ -55,7 +55,7 @@ export default async function PhotographersPage({
     <>
       <Navbar session={session} />
       <main className="min-h-screen">
-        <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-16 sm:px-6 lg:px-8">
+        <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 lg:px-8">
           <BookmarkProvider
             initialStore={initialBookmarkStore}
             session={session}

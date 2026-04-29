@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
 
@@ -7,7 +5,7 @@ type FooterLink = { label: string; href: string };
 
 const DIRECTORY: FooterLink[] = [
   { label: "Photographers", href: "/photographers" },
-  { label: "Dashboard", href: "/dashboard" },
+  { label: "Dashboard", href: "/dashboard/bookmarks" },
   { label: "Admin", href: "/admin" },
 ];
 

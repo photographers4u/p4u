@@ -3,9 +3,11 @@
 import { Menu, User } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetHeader,
@@ -18,16 +20,36 @@ import { poppins } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 
 function getNav(session: AuthClientSession | null) {
-  const baseNav = [
+  const publicNav = [
+    { label: "Home", href: "/" as Route },
     { label: "Photographers", href: "/photographers" as Route },
-    { label: "Dashboard", href: "/dashboard" as Route },
+  ];
+
+  if (!session?.user) {
+    return [
+      ...publicNav,
+      { label: "Join as Photographer", href: "/register" as Route },
+    ];
+  }
+
+  const signedInNav = [
+    ...publicNav,
+    { label: "Saved", href: "/dashboard/bookmarks" as Route },
   ];
 
   if (session?.user.role === "admin") {
-    return [...baseNav, { label: "Admin", href: "/admin" as Route }];
+    return [...signedInNav, { label: "Admin", href: "/admin" as Route }];
   }
 
-  return baseNav;
+  return signedInNav;
+}
+
+function isActivePath(pathname: string, href: Route) {
+  if (href === "/") {
+    return pathname === href;
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 function DesktopActions({ session }: { session: AuthClientSession | null }) {
@@ -35,7 +57,7 @@ function DesktopActions({ session }: { session: AuthClientSession | null }) {
     return (
       <>
         <Button asChild size="lg">
-          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/dashboard/bookmarks">Dashboard</Link>
         </Button>
         <Button asChild size="icon-lg" variant="outline">
           <Link href="/account" aria-label="Account">
@@ -60,6 +82,7 @@ function DesktopActions({ session }: { session: AuthClientSession | null }) {
 
 function MobileMenu({ session }: { session: AuthClientSession | null }) {
   const nav = getNav(session);
+  const pathname = usePathname();
 
   return (
     <Sheet>
@@ -92,16 +115,19 @@ function MobileMenu({ session }: { session: AuthClientSession | null }) {
             </p>
             <div className="grid gap-2">
               {nav.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={cn(
-                    buttonVariants({ variant: "ghost", size: "default" }),
-                    "justify-start text-sm",
-                  )}
-                >
-                  {item.label}
-                </Link>
+                <SheetClose asChild key={item.label}>
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      buttonVariants({ variant: "ghost", size: "default" }),
+                      "justify-start text-sm",
+                      isActivePath(pathname, item.href) &&
+                        "bg-muted text-foreground",
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                </SheetClose>
               ))}
             </div>
           </div>
@@ -113,45 +139,53 @@ function MobileMenu({ session }: { session: AuthClientSession | null }) {
 
             {session?.user ? (
               <div className="grid gap-2">
-                <Link
-                  href="/dashboard"
-                  className={cn(
-                    buttonVariants({ variant: "default", size: "default" }),
-                    "justify-center",
-                  )}
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  href="/account"
-                  className={cn(
-                    buttonVariants({ variant: "outline", size: "default" }),
-                    "justify-center",
-                  )}
-                >
-                  Account
-                </Link>
+                <SheetClose asChild>
+                  <Link
+                    href="/dashboard/bookmarks"
+                    className={cn(
+                      buttonVariants({ variant: "default", size: "default" }),
+                      "justify-center",
+                    )}
+                  >
+                    Dashboard
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    href="/account"
+                    className={cn(
+                      buttonVariants({ variant: "outline", size: "default" }),
+                      "justify-center",
+                    )}
+                  >
+                    Account
+                  </Link>
+                </SheetClose>
               </div>
             ) : (
               <div className="grid gap-2">
-                <Link
-                  href="/register"
-                  className={cn(
-                    buttonVariants({ variant: "default", size: "default" }),
-                    "justify-center",
-                  )}
-                >
-                  Get started
-                </Link>
-                <Link
-                  href="/login"
-                  className={cn(
-                    buttonVariants({ variant: "outline", size: "default" }),
-                    "justify-center",
-                  )}
-                >
-                  Log In
-                </Link>
+                <SheetClose asChild>
+                  <Link
+                    href="/register"
+                    className={cn(
+                      buttonVariants({ variant: "default", size: "default" }),
+                      "justify-center",
+                    )}
+                  >
+                    Get started
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    href="/login"
+                    className={cn(
+                      buttonVariants({ variant: "outline", size: "default" }),
+                      "justify-center",
+                    )}
+                  >
+                    Log In
+                  </Link>
+                </SheetClose>
               </div>
             )}
           </div>
@@ -163,12 +197,13 @@ function MobileMenu({ session }: { session: AuthClientSession | null }) {
 
 function Navbar({ session }: { session: AuthClientSession | null }) {
   const nav = getNav(session);
+  const pathname = usePathname();
+
   return (
     <header
-      className={`top-0 sticky z-50 backdrop-blur-md bg-white border-b border-zinc-200/60 ${poppins.className}`}
+      className={`sticky top-0 z-50 border-b border-zinc-200/60 bg-white/85 backdrop-blur-md ${poppins.className}`}
     >
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        {/* Logo */}
         <Link href="/" className="flex items-center gap-3">
           <div className="w-8 h-8 bg-black text-white flex items-center justify-center rounded-md text-sm font-semibold">
             {siteConfig.logo}
@@ -178,20 +213,23 @@ function Navbar({ session }: { session: AuthClientSession | null }) {
           </span>
         </Link>
 
-        {/* Nav */}
-        <div className="hidden items-center gap-6 md:flex md:absolute md:left-1/2 md:transform md:-translate-x-1/2">
+        <div className="hidden items-center gap-6 md:absolute md:left-1/2 md:flex md:-translate-x-1/2">
           {nav.map((item) => (
             <Link
               key={item.label}
               href={item.href}
-              className="flex items-center gap-2 h-12 font-medium text-sm text-zinc-600 hover:text-primary transition"
+              className={cn(
+                "flex h-12 items-center gap-2 text-sm font-medium transition",
+                isActivePath(pathname, item.href)
+                  ? "text-primary"
+                  : "text-zinc-600 hover:text-primary",
+              )}
             >
               {item.label}
             </Link>
           ))}
         </div>
 
-        {/* User */}
         <div className="flex items-center gap-2">
           <div className="hidden items-center gap-2 md:flex">
             <DesktopActions session={session} />

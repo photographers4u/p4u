@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildAuthRedirectPath } from "@/lib/auth-redirect";
 import { sanitizeBookmarkStore } from "@/lib/bookmark-store";
 import { BookmarkProvider } from "@/lib/bookmarks-context";
-import { spaceGrotesk } from "@/lib/fonts";
 import {
   formatPhotographerCountry,
   formatPhotographerExperience,
@@ -25,6 +24,7 @@ import { getAuthSession } from "@/server/auth/session";
 import { NotFoundError } from "@/server/db/helpers/errors";
 import { hasBookmarkByUserId } from "@/server/services/bookmark";
 import { getPublicPhotographerBySlug } from "@/server/services/photographer";
+import { poppins } from "@/lib/fonts";
 
 type SocialVideoEmbed = {
   aspectClassName: string;
@@ -170,7 +170,7 @@ export default async function PublicPhotographerPage({
                       <div className="min-w-0 flex-1 pt-0.5">
                         <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-start">
                           <h1
-                            className={`text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl ${spaceGrotesk.className}`}
+                            className={`text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl ${poppins.className}`}
                           >
                             {photographer.name ?? "Photographer"}
                           </h1>
@@ -323,7 +323,7 @@ export default async function PublicPhotographerPage({
                     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
                       <div className="rounded-[28px] border border-slate-200 bg-white p-5 sm:p-6">
                         <h2
-                          className={`text-xl font-semibold tracking-tight text-slate-950 ${spaceGrotesk.className}`}
+                          className={`text-xl font-semibold tracking-tight text-slate-950 ${poppins.className}`}
                         >
                           Profile
                         </h2>
@@ -398,7 +398,7 @@ export default async function PublicPhotographerPage({
                       <div className="rounded-[28px] border border-slate-200 bg-white p-5 sm:p-6">
                         <div className="mb-5">
                           <h2
-                            className={`text-xl font-semibold tracking-tight text-slate-950 ${spaceGrotesk.className}`}
+                            className={`text-xl font-semibold tracking-tight text-slate-950 ${poppins.className}`}
                           >
                             Specialities
                           </h2>

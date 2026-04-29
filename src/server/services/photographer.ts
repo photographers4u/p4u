@@ -57,6 +57,7 @@ export type PublicPhotographerExplorePage = Awaited<
 >;
 export type PublicPhotographerExploreEntry =
   PublicPhotographerExplorePage["photographers"][number];
+  
 export type PublicPhotographerListEntry = Awaited<
   ReturnType<typeof photographerController.getPublicPhotographers>
 >[number];

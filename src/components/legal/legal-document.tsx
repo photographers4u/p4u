@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
-import { spaceGrotesk } from "@/lib/fonts";
+import { poppins } from "@/lib/fonts";
 
 type LegalHighlight = {
   label: string;
@@ -31,7 +31,7 @@ export function LegalDocument({
             {eyebrow}
           </p>
           <h1
-            className={`mt-4 max-w-4xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl ${spaceGrotesk.className}`}
+            className={`mt-4 max-w-4xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl ${poppins.className}`}
           >
             {title}
           </h1>

@@ -7,6 +7,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -23,7 +24,10 @@ export function BrowserFilterDialog({
   activeCount,
   children,
   title = "Filters",
+  description = "Fine-tune the directory with a few quick filters.",
   triggerLabel = "Filters",
+  applyLabel = "Apply filters",
+  cancelLabel = "Cancel",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -32,7 +36,10 @@ export function BrowserFilterDialog({
   activeCount: number;
   children: ReactNode;
   title?: string;
+  description?: string;
   triggerLabel?: string;
+  applyLabel?: string;
+  cancelLabel?: string;
 }) {
   const hasActiveFilters = activeCount > 0;
 
@@ -60,16 +67,27 @@ export function BrowserFilterDialog({
         </button>
       </AlertDialogTrigger>
 
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
+      <AlertDialogContent className="w-[min(94vw,920px)]! max-w-[920px]! gap-0 overflow-hidden rounded-xl! border border-slate-200 bg-white p-0 shadow-[0_24px_60px_-32px_rgba(15,23,42,0.28)]">
+        <AlertDialogHeader className="place-items-start! gap-1.5 border-b border-slate-200 px-5 py-5 text-left sm:px-6 sm:py-5">
+          <AlertDialogTitle className="text-lg font-semibold text-slate-950 sm:text-xl">
+            {title}
+          </AlertDialogTitle>
+          <AlertDialogDescription className="max-w-2xl text-sm leading-6 text-slate-600">
+            {description}
+          </AlertDialogDescription>
         </AlertDialogHeader>
 
-        {children}
+        <div className="max-h-[min(72vh,760px)] overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
+          {children}
+        </div>
 
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onApply}>Done</AlertDialogAction>
+        <AlertDialogFooter className="!mx-0 !mb-0 border-t border-slate-200 bg-white px-5 py-4 sm:px-6">
+          <AlertDialogCancel className="rounded-lg border-slate-300 bg-white px-5">
+            {cancelLabel}
+          </AlertDialogCancel>
+          <AlertDialogAction className="rounded-lg px-5" onClick={onApply}>
+            {applyLabel}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

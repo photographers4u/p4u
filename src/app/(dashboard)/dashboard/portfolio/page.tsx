@@ -6,7 +6,6 @@ import { PhotographerOfferingsForm } from "@/components/forms/photographer/offer
 import { PhotographerProfileUpdateForm } from "@/components/forms/photographer/profile";
 import PageHeader from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   getPhotographerStatusViewModel,
   type PhotographerPortfolioBanner,
@@ -24,6 +23,50 @@ type PortfolioSnapshot = Awaited<
   ReturnType<typeof getPhotographerPortfolioByUserId>
 >;
 
+type OnboardingSnapshot = NonNullable<PortfolioSnapshot["onboarding"]>;
+type SubmittedReviewUpload = OnboardingSnapshot["uploads"][number];
+
+async function getPortfolioForCurrentUser() {
+  const requestHeaders = await headers();
+  const session = await getAuthSession({ headers: requestHeaders });
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  try {
+    return await getPhotographerPortfolioByUserId(session.user.id);
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      redirect("/onboarding");
+    }
+
+    throw error;
+  }
+}
+
+function SectionHeader({
+  description,
+  title,
+}: {
+  description?: string;
+  title: string;
+}) {
+  return (
+    <div className="space-y-1">
+      <h2 className="text-xl font-semibold tracking-tight text-foreground">
+        {title}
+      </h2>
+
+      {description ? (
+        <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+          {description}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function PortfolioStatusBanner({
   banner,
 }: {
@@ -32,18 +75,60 @@ function PortfolioStatusBanner({
   return (
     <div
       className={cn(
-        "absolute w-full inset-0 h-fit border-b px-4 py-3 text-sm",
+        "absolute inset-0 h-fit w-full border-b px-4 py-3 text-sm",
         banner.tone === "info" && "border-sky-300 bg-sky-50 text-sky-950",
         banner.tone === "warning" &&
           "border-orange-300 bg-orange-50 text-orange-950",
         banner.tone === "danger" && "border-red-300 bg-red-50 text-red-950",
       )}
     >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
         <p className="font-semibold">{banner.message}</p>
         <p className="mt-1 opacity-90">{banner.description}</p>
       </div>
     </div>
+  );
+}
+
+function PublicListingBanner({
+  slug,
+}: {
+  slug: string;
+}) {
+  return (
+    <div className="flex flex-col gap-4 rounded-3xl border border-emerald-200 bg-emerald-50/80 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-emerald-950">
+          Your public listing is live.
+        </p>
+
+        <p className="text-sm text-emerald-800">
+          Visitors can view your profile at{" "}
+          <span className="font-medium">{`/p/${slug}`}</span>.
+        </p>
+      </div>
+
+      <Button asChild variant="outline" className="border-emerald-300">
+        <Link href={`/p/${slug}`} target="_blank">
+          View public profile
+        </Link>
+      </Button>
+    </div>
+  );
+}
+
+function ProfileSection({
+  canSubmit,
+  photographer,
+}: {
+  canSubmit: boolean;
+  photographer: PortfolioSnapshot["photographer"];
+}) {
+  return (
+    <PhotographerProfileUpdateForm
+      canSubmit={canSubmit}
+      profile={photographer}
+    />
   );
 }
 
@@ -60,12 +145,10 @@ function ContactSection({
 
   return (
     <section className="space-y-6">
-      <div className="space-y-1">
-        <h2 className="text-xl font-bold">Contact Information</h2>
-        <p className="text-sm text-muted-foreground">
-          Update the details clients will use to reach you.
-        </p>
-      </div>
+      <SectionHeader
+        title="Contact Information"
+        description="Update the details clients will use to reach you."
+      />
 
       <PhotographerContactUpdateForm canSubmit={canSubmit} contact={contact} />
     </section>
@@ -87,13 +170,10 @@ function OfferingsSection({
 
   return (
     <section className="space-y-6">
-      <div className="space-y-1">
-        <h2 className="text-xl font-bold">Offerings</h2>
-        <p className="text-sm text-muted-foreground">
-          Manage the specialities and starting prices shown on your photographer
-          profile.
-        </p>
-      </div>
+      <SectionHeader
+        title="Offerings"
+        description="Manage the specialities and starting prices shown on your profile."
+      />
 
       <PhotographerOfferingsForm
         availableSpecialities={availableSpecialities}
@@ -104,68 +184,92 @@ function OfferingsSection({
   );
 }
 
+function SubmittedReviewPhoto({
+  index,
+  upload,
+}: {
+  index: number;
+  upload: SubmittedReviewUpload;
+}) {
+  return (
+    <div className="group overflow-hidden rounded-2xl border bg-muted/10">
+      <div className="aspect-square overflow-hidden bg-muted/15">
+        {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
+        <img
+          src={upload.imageUrl}
+          alt={`Submitted review sample ${index + 1}`}
+          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+        />
+      </div>
+    </div>
+  );
+}
+
 function SubmittedReviewPhotosSection({
   uploads,
 }: {
-  uploads: PortfolioSnapshot["onboarding"]["uploads"];
+  uploads: SubmittedReviewUpload[];
 }) {
   if (uploads.length === 0) {
     return null;
   }
 
   return (
-    <section className="space-y-5">
-      <div className="space-y-1">
-        <h2 className="text-xl font-bold">Submitted review photos</h2>
-        <p className="text-sm text-muted-foreground">
-          These are the photos currently waiting for admin review. Once your
-          profile is approved, you can manage them from Images.
-        </p>
-      </div>
+    <section className="space-y-4">
+      <SectionHeader
+        title="Submitted review photos"
+        description="These are the photos currently waiting for admin review."
+      />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {uploads.map((upload, index) => (
-          <Card
+          <SubmittedReviewPhoto
             key={upload.id}
-            className="overflow-hidden border border-border/70 p-0 shadow-sm"
-          >
-            <CardContent className="p-0">
-              <div className="aspect-square overflow-hidden bg-muted/15">
-                {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
-                <img
-                  src={upload.imageUrl}
-                  alt={`Submitted review sample ${index + 1}`}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            </CardContent>
-          </Card>
+            upload={upload}
+            index={index}
+          />
         ))}
       </div>
     </section>
   );
 }
 
+function EditablePortfolioSections({
+  availableSpecialities,
+  canEditProfile,
+  contact,
+  photographer,
+  shouldShowOfferings,
+  onboarding,
+}: {
+  availableSpecialities: SpecialityFormOption[];
+  canEditProfile: boolean;
+  contact: PortfolioSnapshot["contact"];
+  photographer: PortfolioSnapshot["photographer"];
+  shouldShowOfferings: boolean;
+  onboarding: PortfolioSnapshot["onboarding"];
+}) {
+  return (
+    <div className="max-w-3xl space-y-12">
+      <ProfileSection canSubmit={canEditProfile} photographer={photographer} />
+
+      <ContactSection canSubmit={canEditProfile} contact={contact} />
+
+      {shouldShowOfferings ? (
+        <OfferingsSection
+          availableSpecialities={availableSpecialities}
+          canSubmit={canEditProfile}
+          onboarding={onboarding}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 export default async function PortfolioPage() {
-  const requestHeaders = await headers();
-  const session = await getAuthSession({ headers: requestHeaders });
+  const portfolio = await getPortfolioForCurrentUser();
 
-  if (!session?.user) {
-    redirect("/login");
-  }
-
-  let portfolio: PortfolioSnapshot;
-  try {
-    portfolio = await getPhotographerPortfolioByUserId(session.user.id);
-  } catch (error) {
-    if (error instanceof NotFoundError) {
-      redirect("/onboarding");
-    }
-
-    throw error;
-  }
-
-  const { photographer, onboarding, contact } = portfolio;
+  const { contact, onboarding, photographer } = portfolio;
   const photographerStatus = getPhotographerStatusViewModel(photographer);
 
   if (photographerStatus.shouldRedirectPortfolioToOnboarding) {
@@ -176,13 +280,20 @@ export default async function PortfolioPage() {
     redirect("/onboarding");
   }
 
-  const availableSpecialities = !photographerStatus.canEditApprovedProfile
-    ? await getSpecialityFormOptions()
-    : [];
   const canEditProfile = photographerStatus.canEditApprovedProfile;
   const shouldShowForms = photographerStatus.shouldShowPortfolioForms;
-  const shouldShowSubmittedPhotos =
-    photographerStatus.isSubmittedForReview && onboarding.uploads.length > 0;
+  const shouldShowOfferings = shouldShowForms && !canEditProfile && !!onboarding;
+  const shouldShowPublicListing =
+    photographerStatus.isApproved && photographer.isPublished && photographer.slug;
+
+  const submittedReviewUploads =
+    photographerStatus.isSubmittedForReview && onboarding
+      ? onboarding.uploads
+      : [];
+
+  const availableSpecialities = shouldShowOfferings
+    ? await getSpecialityFormOptions()
+    : [];
 
   return (
     <div className="space-y-8">
@@ -196,47 +307,22 @@ export default async function PortfolioPage() {
         subtitle="Control how you appear to visitors."
       />
 
-      {photographerStatus.isApproved &&
-      photographer.isPublished &&
-      photographer.slug ? (
-        <div className="flex flex-col gap-4 rounded-3xl border border-emerald-200 bg-emerald-50/80 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <p className="text-sm font-semibold text-emerald-950">
-              Your public listing is live.
-            </p>
-            <p className="text-sm text-emerald-800">
-              Visitors can view your profile at{" "}
-              <span className="font-medium">{`/p/${photographer.slug}`}</span>.
-            </p>
-          </div>
-          <Button asChild variant="outline" className="border-emerald-300">
-            <Link href={`/p/${photographer.slug}`} target="_blank">
-              View public profile
-            </Link>
-          </Button>
-        </div>
-      ) : null}
-
-      {shouldShowSubmittedPhotos ? (
-        <SubmittedReviewPhotosSection uploads={onboarding.uploads} />
+      {shouldShowPublicListing ? (
+        <PublicListingBanner slug={photographer.slug as string} />
       ) : null}
 
       {shouldShowForms ? (
-        <div className="max-w-3xl space-y-12">
-          <PhotographerProfileUpdateForm
-            canSubmit={canEditProfile}
-            profile={photographer}
-          />
-          <ContactSection canSubmit={canEditProfile} contact={contact} />
-          {!photographerStatus.canEditApprovedProfile ? (
-            <OfferingsSection
-              availableSpecialities={availableSpecialities}
-              canSubmit={canEditProfile}
-              onboarding={onboarding}
-            />
-          ) : null}
-        </div>
+        <EditablePortfolioSections
+          availableSpecialities={availableSpecialities}
+          canEditProfile={canEditProfile}
+          contact={contact}
+          photographer={photographer}
+          shouldShowOfferings={shouldShowOfferings}
+          onboarding={onboarding}
+        />
       ) : null}
+
+      <SubmittedReviewPhotosSection uploads={submittedReviewUploads} />
     </div>
   );
 }

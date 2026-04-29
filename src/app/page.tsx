@@ -1,12 +1,15 @@
+import { headers } from "next/headers";
 import Link from "next/link";
 import CircularGallery from "@/components/circular-gallery";
 import { Footer } from "@/components/footer";
+import Navbar from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import FeaturedPhotographersCarousel from "@/components/featured-photographers";
 import { playfairDisplay } from "@/lib/fonts";
 import { DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS } from "@/lib/public-photographer-explore";
 import SectionContainer from "@/components/section-ui";
 import { cn } from "@/lib/utils";
+import { getAuthSession } from "@/server/auth/session";
 import { getPublicPhotographerExplorePage } from "@/server/services/photographer";
 import { Marquee } from "@/components/ui/marquee";
 import { photographers } from "@/data/feature-photographers";
@@ -28,16 +31,21 @@ const images = [
 ];
 
 export default async function HomePage() {
-  const featuredPhotographers = await getPublicPhotographerExplorePage(
-    DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS,
-    {
-      page: 1,
-      pageSize: 8,
-    },
-  );
+  const requestHeaders = await headers();
+  const [session, featuredPhotographers] = await Promise.all([
+    getAuthSession({ headers: requestHeaders }),
+    getPublicPhotographerExplorePage(
+      DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS,
+      {
+        page: 1,
+        pageSize: 8,
+      },
+    ),
+  ]);
 
   return (
     <>
+      <Navbar session={session} />
       <main className="min-h-screen relative text-slate-900">
         <div className="min-h-screen w-full absolute flex items-center justify-center">
           <CircularGallery

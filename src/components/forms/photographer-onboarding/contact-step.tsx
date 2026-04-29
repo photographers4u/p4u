@@ -27,10 +27,12 @@ export function PhotographerOnboardingContactStep({
   const contactPublicId = useId();
 
   return (
-    <div className="space-y-5">
-      <div className="grid gap-5 sm:grid-cols-2">
+    <div className="space-y-6">
+      <div className="grid gap-6 sm:grid-cols-2">
         <Field data-invalid={!!errors.contact?.phone}>
           <FieldLabel htmlFor={contactPhoneId}>Phone</FieldLabel>
+          <FieldDescription>For calls or booking updates.</FieldDescription>
+
           <FieldContent>
             <Input
               id={contactPhoneId}
@@ -38,9 +40,11 @@ export function PhotographerOnboardingContactStep({
               autoComplete="tel"
               aria-invalid={!!errors.contact?.phone}
               disabled={isSaving}
+              className="h-fit px-3.5 py-3 text-[15px]!"
               {...form.register("contact.phone")}
             />
           </FieldContent>
+
           <FieldErrorComponent
             errors={errors.contact?.phone ? [errors.contact.phone] : []}
           />
@@ -48,6 +52,8 @@ export function PhotographerOnboardingContactStep({
 
         <Field data-invalid={!!errors.contact?.email}>
           <FieldLabel htmlFor={contactEmailId}>Email</FieldLabel>
+          <FieldDescription>For booking and profile updates.</FieldDescription>
+
           <FieldContent>
             <Input
               id={contactEmailId}
@@ -55,14 +61,17 @@ export function PhotographerOnboardingContactStep({
               autoComplete="email"
               aria-invalid={!!errors.contact?.email}
               disabled={isSaving}
+              className="h-fit px-3.5 py-3 text-[15px]!"
               {...form.register("contact.email")}
             />
+
             {contactEmailVerified ? (
-              <FieldDescription>
-                This email is already marked as verified.
-              </FieldDescription>
+              <p className="text-sm font-medium text-emerald-700">
+                This email is already verified.
+              </p>
             ) : null}
           </FieldContent>
+
           <FieldErrorComponent
             errors={errors.contact?.email ? [errors.contact.email] : []}
           />
@@ -72,26 +81,28 @@ export function PhotographerOnboardingContactStep({
       <label
         htmlFor={contactPublicId}
         className={cn(
-          "flex cursor-pointer items-start gap-3 pt-1 transition-colors",
+          "flex cursor-pointer items-start gap-3 rounded-2xl border border-border/70 bg-muted/20 px-4 py-4 transition-colors hover:bg-muted/30",
           isSaving && "pointer-events-none opacity-60",
         )}
       >
         <input
           id={contactPublicId}
           type="checkbox"
-          className="mt-1 size-4 rounded border-slate-300"
+          className="mt-1 size-4 rounded border-border accent-primary"
           disabled={isSaving}
           {...form.register("contact.isPublic")}
         />
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-slate-950">
+
+        <span className="space-y-1">
+          <span className="block text-sm font-medium text-foreground">
             Show this contact publicly
-          </p>
-          <p className="text-sm text-slate-500">
-            Turn this on if clients should see your saved contact details on the
-            public profile.
-          </p>
-        </div>
+          </span>
+
+          <span className="block text-sm leading-6 text-muted-foreground">
+            Turn this on if clients should see your saved contact details on
+            your public profile.
+          </span>
+        </span>
       </label>
     </div>
   );

@@ -181,22 +181,28 @@ export function CreatePhotographerForm({
   initialData: PhotographerOnboardingState;
 }) {
   const router = useRouter();
+
   const defaultValues = toFormValues(
     initialData,
     defaultEmail,
     availableSpecialities,
   );
+
   const [savingStep, setSavingStep] = useState<StepNumber | null>(null);
   const [isRoutingToPortfolio, startRoutingToPortfolio] = useTransition();
+
   const [activeStep, setActiveStep] = useState<StepNumber>(() =>
     getFirstIncompleteStep(defaultValues),
   );
+
   const [contactEmailVerified, setContactEmailVerified] = useState(
     initialData.contact?.emailVerified ?? false,
   );
+
   const [isSubmittedForReview, setIsSubmittedForReview] = useState(
     isPhotographerSubmittedForReview(initialData),
   );
+
   const [isEditingApprovedProfile, setIsEditingApprovedProfile] = useState(
     isApprovedPhotographer(initialData),
   );
@@ -210,14 +216,20 @@ export function CreatePhotographerForm({
   const {
     formState: { errors },
   } = form;
+
   const watchedValues = form.watch();
   const isSaving = savingStep !== null;
   const isBusy = isSaving || isRoutingToPortfolio;
   const firstIncompleteStep = getFirstIncompleteStep(watchedValues);
-  const activeStepMeta = onboardingStepMeta.find(
-    (step) => step.step === activeStep,
-  );
   const previousStep = getPreviousStep(activeStep);
+
+  const activeStepIndex = Math.max(
+    onboardingStepMeta.findIndex((step) => step.step === activeStep),
+    0,
+  );
+
+  const progressPercentage =
+    ((activeStepIndex + 1) / onboardingStepMeta.length) * 100;
 
   function isStepComplete(step: StepNumber) {
     return savePhotographerOnboardingStepSchema.safeParse(
@@ -273,10 +285,12 @@ export function CreatePhotographerForm({
 
   async function saveStep(step: StepNumber) {
     form.clearErrors(stepFieldPaths[step]);
+
     const wasPendingReview = isSubmittedForReview;
     const wasApprovedProfile = isEditingApprovedProfile;
     const values = form.getValues();
     const payload = buildStepPayload(step, values);
+
     const parsedPayload =
       savePhotographerOnboardingStepSchema.safeParse(payload);
 
@@ -291,6 +305,7 @@ export function CreatePhotographerForm({
       const response = await apiClient.photographer.onboarding.$patch({
         json: parsedPayload.data,
       });
+
       const { payload: responsePayload } =
         await readApiResponse<PhotographerOnboardingState>(response);
 
@@ -303,6 +318,7 @@ export function CreatePhotographerForm({
       }
 
       const nextState = responsePayload as PhotographerOnboardingState;
+
       const shouldOpenPortfolio =
         isPhotographerSubmittedForReview(nextState) ||
         isApprovedPhotographer(nextState);
@@ -311,9 +327,11 @@ export function CreatePhotographerForm({
         toast.success(
           getStepSuccessMessage(step, wasPendingReview, wasApprovedProfile),
         );
+
         startRoutingToPortfolio(() => {
           router.replace("/dashboard/portfolio");
         });
+
         return;
       }
 
@@ -322,6 +340,7 @@ export function CreatePhotographerForm({
         defaultEmail,
         availableSpecialities,
       );
+
       const nextResumeStep = getFirstIncompleteStep(nextValues);
 
       form.reset(nextValues);
@@ -339,89 +358,44 @@ export function CreatePhotographerForm({
   }
 
   return (
-    <div className="space-y-8">
-      <div className="rounded-2xl border border-border/70 bg-muted/20 px-5 py-4 text-sm text-muted-foreground">
-        Your progress is saved after each step, so you can leave and come back
-        anytime.
+    <div className="relative min-h-screen w-full bg-background">
+      <div className="fixed inset-x-0 top-0 z-50 h-[3px] bg-border/70">
+        <div
+          className="h-full bg-primary transition-all duration-500 ease-out"
+          style={{ width: `${progressPercentage}%` }}
+        />
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-        {onboardingStepMeta.map((step, index) => {
-          const isCurrent = step.step === activeStep;
-          const isComplete = isStepComplete(step.step);
-          const isUnlocked = step.step <= firstIncompleteStep;
+      <main className="mx-auto flex w-full max-w-3xl flex-col px-5 pb-20 sm:px-6">
+        <div className="w-full">{renderActiveStep()}</div>
 
-          return (
-            <button
-              key={step.step}
+        <div className="mt-12 flex items-center justify-between gap-4">
+          {previousStep ? (
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => {
-                if (isUnlocked) {
-                  setActiveStep(step.step);
-                }
-              }}
-              disabled={isBusy || !isUnlocked}
-              className={cn(
-                "rounded-2xl border px-4 py-4 text-left transition",
-                isCurrent && "border-primary bg-primary/5 shadow-sm",
-                !isCurrent &&
-                  isUnlocked &&
-                  "border-border/70 hover:border-border hover:bg-muted/20",
-                !isUnlocked &&
-                  "cursor-not-allowed border-border/40 bg-muted/10 opacity-60",
-              )}
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                Step {index + 1}
-              </p>
-              <p className="mt-2 font-semibold text-foreground">{step.title}</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {isCurrent
-                  ? "Current step"
-                  : isComplete
-                    ? "Saved"
-                    : isUnlocked
-                      ? "Ready"
-                      : "Complete the earlier steps first"}
-              </p>
-            </button>
-          );
-        })}
-      </div>
-
-      <section className="space-y-6 rounded-3xl border border-border/70 bg-background p-6 shadow-sm">
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold tracking-tight">
-            {activeStepMeta?.title}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {activeStep === ONBOARDING_STEPS[4] && isEditingApprovedProfile
-              ? "Save the best email and phone number for your photographer profile."
-              : activeStepMeta?.description}
-          </p>
-        </div>
-
-        {renderActiveStep()}
-
-        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              if (previousStep) {
                 setActiveStep(previousStep);
-              }
-            }}
-            disabled={!previousStep || isBusy}
-          >
-            Back
-          </Button>
+              }}
+              disabled={isBusy}
+              className="px-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
+            >
+              Back
+            </Button>
+          ) : (
+            <span />
+          )}
 
           <Button
             type="button"
             size="lg"
             onClick={() => void saveStep(activeStep)}
             disabled={isBusy || !isStepComplete(activeStep)}
+            className={cn(
+              "min-w-40 rounded-full px-7 h-fit py-2.5 text-base",
+              activeStep !== firstIncompleteStep &&
+                "bg-foreground text-background hover:bg-foreground/90",
+            )}
           >
             {isRoutingToPortfolio
               ? "Opening portfolio..."
@@ -434,7 +408,7 @@ export function CreatePhotographerForm({
                   )}
           </Button>
         </div>
-      </section>
+      </main>
     </div>
   );
 }

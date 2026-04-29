@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { siteConfig } from "@/config/site";
-import { inter } from "@/lib/fonts";
-import "./globals.css";
-import { cn } from "@/lib/utils";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import ClientProvider from "@/components/client-provider";
+import { siteConfig } from "@/config/site";
+import { poppins } from "@/lib/fonts";
+import { cn } from "@/lib/utils";
+import "./globals.css";
 
 export const metadata: Metadata = siteConfig.metadata;
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -18,13 +19,15 @@ export default async function RootLayout({
       className={cn(
         "h-full",
         "antialiased",
-        inter.className,
+        poppins.className,
         "font-sans",
-        inter.variable,
+        poppins.variable,
       )}
     >
       <body className="min-h-full flex flex-col">
-        <ClientProvider>{children}</ClientProvider>
+        <NuqsAdapter>
+          <ClientProvider>{children}</ClientProvider>
+        </NuqsAdapter>
       </body>
     </html>
   );
