@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import { Redis } from "@upstash/redis";
+import { revalidateTag } from "next/cache";
 import { env } from "@/lib/env";
 
 const API_CACHE_KEY_PREFIX = "api-cache";
@@ -117,7 +118,7 @@ function parseApiCacheEnvelope<T>(value: unknown): ApiCacheEnvelope<T> | null {
 }
 
 function logApiCacheError(
-  action: "get" | "set" | "invalidate",
+  action: "get" | "set" | "invalidate" | "revalidate-tag",
   namespace: string,
   error: unknown,
 ) {
@@ -200,17 +201,24 @@ export async function invalidateApiCacheNamespaces(
     uniqueNamespaces.forEach((namespace) => {
       bypassApiCacheNamespace(namespace, bypassSeconds);
     });
-    return;
+  } else {
+    await Promise.all(
+      uniqueNamespaces.map(async (namespace) => {
+        try {
+          await redis.incr(buildApiCacheVersionKey(namespace));
+        } catch (error) {
+          bypassApiCacheNamespace(namespace, bypassSeconds);
+          logApiCacheError("invalidate", namespace, error);
+        }
+      }),
+    );
   }
 
-  await Promise.all(
-    uniqueNamespaces.map(async (namespace) => {
-      try {
-        await redis.incr(buildApiCacheVersionKey(namespace));
-      } catch (error) {
-        bypassApiCacheNamespace(namespace, bypassSeconds);
-        logApiCacheError("invalidate", namespace, error);
-      }
-    }),
-  );
+  uniqueNamespaces.forEach((namespace) => {
+    try {
+      revalidateTag(namespace, "max");
+    } catch (error) {
+      logApiCacheError("revalidate-tag", namespace, error);
+    }
+  });
 }

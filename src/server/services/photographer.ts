@@ -1,7 +1,9 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
 import type { PublicPhotographerExploreFilters } from "@/lib/public-photographer-explore";
 import { getAuthSession } from "@/server/auth/session";
+import { API_CACHE_NAMESPACES } from "@/server/api/lib/response-cache";
 import { photographerController } from "@/server/db/controller/photographer";
 import { photographerContactController } from "@/server/db/controller/photographer-contact";
 import { NotFoundError } from "@/server/db/helpers/errors";
@@ -62,6 +64,9 @@ export type PublicPhotographerListEntry = Awaited<
   ReturnType<typeof photographerController.getPublicPhotographers>
 >[number];
 
+const PUBLIC_PHOTOGRAPHER_DIRECTORY_CACHE_TTL_SECONDS = 300;
+const PUBLIC_PHOTOGRAPHER_DETAIL_CACHE_TTL_SECONDS = 300;
+
 function toPhotographer(
   photographer: Awaited<
     ReturnType<typeof photographerController.getPhotographerByUserId>
@@ -118,13 +123,16 @@ export async function getPublicPhotographerBySlug(
     includeContactDetails?: boolean;
   },
 ): Promise<PublicPhotographerDetail> {
-  return photographerController.getPublicPhotographerBySlug(slug, options);
+  return getCachedPublicPhotographerBySlug(
+    slug,
+    options?.includeContactDetails ?? false,
+  );
 }
 
 export async function getPublicPhotographers(): Promise<
   PublicPhotographerListEntry[]
 > {
-  return photographerController.getPublicPhotographers();
+  return getCachedPublicPhotographers();
 }
 
 export async function getPublicPhotographerExplorePage(
@@ -134,9 +142,10 @@ export async function getPublicPhotographerExplorePage(
     pageSize?: number;
   },
 ): Promise<PublicPhotographerExplorePage> {
-  return photographerController.getPublicPhotographerExplorePage(
+  return getCachedPublicPhotographerExplorePage(
     filters,
-    options,
+    options?.page ?? 1,
+    options?.pageSize,
   );
 }
 
@@ -145,6 +154,44 @@ export async function getPublicPhotographersByIds(
 ): Promise<PublicPhotographerListEntry[]> {
   return photographerController.getPublicPhotographersByIds(ids);
 }
+
+const getCachedPublicPhotographerBySlug = unstable_cache(
+  async (slug: string, includeContactDetails: boolean) =>
+    photographerController.getPublicPhotographerBySlug(slug, {
+      includeContactDetails,
+    }),
+  ["public-photographer-by-slug"],
+  {
+    revalidate: PUBLIC_PHOTOGRAPHER_DETAIL_CACHE_TTL_SECONDS,
+    tags: [API_CACHE_NAMESPACES.publicPhotographerDetails],
+  },
+);
+
+const getCachedPublicPhotographers = unstable_cache(
+  async () => photographerController.getPublicPhotographers(),
+  ["public-photographers-list"],
+  {
+    revalidate: PUBLIC_PHOTOGRAPHER_DIRECTORY_CACHE_TTL_SECONDS,
+    tags: [API_CACHE_NAMESPACES.publicPhotographerDirectory],
+  },
+);
+
+const getCachedPublicPhotographerExplorePage = unstable_cache(
+  async (
+    filters: PublicPhotographerExploreFilters,
+    page: number,
+    pageSize?: number,
+  ) =>
+    photographerController.getPublicPhotographerExplorePage(filters, {
+      page,
+      pageSize,
+    }),
+  ["public-photographers-explore"],
+  {
+    revalidate: PUBLIC_PHOTOGRAPHER_DIRECTORY_CACHE_TTL_SECONDS,
+    tags: [API_CACHE_NAMESPACES.publicPhotographerDirectory],
+  },
+);
 
 export async function getAdminPhotographerEntriesPage(filters?: {
   page?: number;
