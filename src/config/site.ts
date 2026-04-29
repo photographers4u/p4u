@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const siteConfig = {
   name: "Photographers4U",
-  shortName: "P4U",
+  shortName: "Photographers4U",
   handle: "@photographers4u",
   logo: "P",
   description:

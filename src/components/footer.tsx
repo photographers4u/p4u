@@ -6,7 +6,12 @@ type FooterLink = { label: string; href: string };
 const DIRECTORY: FooterLink[] = [
   { label: "Photographers", href: "/photographers" },
   { label: "Dashboard", href: "/dashboard/bookmarks" },
-  { label: "Admin", href: "/admin" },
+];
+
+const COMPANY: FooterLink[] = [
+  { label: "About Us", href: "/about-us" },
+  { label: "Contact", href: "/contact" },
+  { label: "Join Us", href: "/join-us" },
 ];
 
 const ECOSYSTEM: FooterLink[] = [
@@ -120,8 +125,9 @@ export function Footer() {
           </div>
 
           {/* Nav */}
-          <div className="md:col-span-7 grid grid-cols-2 md:grid-cols-3 gap-10">
+          <div className="md:col-span-7 grid grid-cols-2 md:grid-cols-4 gap-10">
             <NavColumn heading="Explore" links={DIRECTORY} />
+            <NavColumn heading="Company" links={COMPANY} />
             <NavColumn heading="Ecosystem" links={ECOSYSTEM} />
 
             <div className="space-y-5">

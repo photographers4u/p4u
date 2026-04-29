@@ -13,6 +13,7 @@ import { getAuthSession } from "@/server/auth/session";
 import { getPublicPhotographerExplorePage } from "@/server/services/photographer";
 import { Marquee } from "@/components/ui/marquee";
 import { photographers } from "@/data/feature-photographers";
+import FAQSection from "@/components/faq-section";
 
 const images = [
   "https://i.pinimg.com/736x/c7/2a/ff/c72affc2be6258e2fd0c98484c6ee6ab.jpg",
@@ -55,7 +56,7 @@ export default async function HomePage() {
             items={images}
           />
           <div className="h-24 absolute bottom-0 w-full bg-linear-to-t from-white via-white/75 to-transparent" />
-          <section className="absolute bottom-0 isolate overflow-hidden pb-28">
+          <section className="absolute bottom-0 isolate overflow-hidden pb-36">
             <div className="relative mx-auto flex  w-full max-w-4xl text-center flex-col justify-center px-6 sm:px-8 lg:px-10">
               <h1
                 className={`mt-6 text-5xl font-semibold text-balance leading-tight text-slate-950 sm:text-6xl lg:text-7xl $`}
@@ -97,6 +98,8 @@ export default async function HomePage() {
             photographers={featuredPhotographers.photographers}
           />
         </SectionContainer>
+
+        <FAQSection />
 
         <div
           className={cn(
@@ -178,6 +181,7 @@ export default async function HomePage() {
           </div>
         </div>
       </main>
+      <div className="py-16" />
       <Footer />
     </>
   );

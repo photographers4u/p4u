@@ -23,23 +23,19 @@ function getNav(session: AuthClientSession | null) {
   const publicNav = [
     { label: "Home", href: "/" as Route },
     { label: "Photographers", href: "/photographers" as Route },
+    { label: "About", href: "/about-us" as Route },
+    { label: "Contact", href: "/contact" as Route },
+    { label: "Join Us", href: "/join-us" as Route },
   ];
 
   if (!session?.user) {
-    return [
-      ...publicNav,
-      { label: "Join as Photographer", href: "/register" as Route },
-    ];
+    return publicNav;
   }
 
   const signedInNav = [
     ...publicNav,
     { label: "Saved", href: "/dashboard/bookmarks" as Route },
   ];
-
-  if (session?.user.role === "admin") {
-    return [...signedInNav, { label: "Admin", href: "/admin" as Route }];
-  }
 
   return signedInNav;
 }

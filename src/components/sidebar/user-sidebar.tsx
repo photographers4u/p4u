@@ -5,11 +5,9 @@ import {
   Camera,
   Compass,
   Fan,
-  HatGlasses,
   House,
   Images,
   Layers3,
-  ShieldCheck,
   User as UserIcon,
 } from "lucide-react";
 import type { Route } from "next";
@@ -18,7 +16,6 @@ import type * as React from "react";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -28,7 +25,7 @@ import { siteConfig } from "@/config/site";
 import type { AuthClientUser } from "@/lib/auth-client";
 import { getPhotographerStatusViewModel } from "@/lib/photographer-presentation";
 import type { Photographer } from "@/zod/schema/photographer";
-import { NavMain, SidebarCTA } from "./nav-main";
+import { NavMain } from "./nav-main";
 
 type SidebarGroupData = {
   label: string;
@@ -38,14 +35,6 @@ type SidebarGroupData = {
 
 const exploreGroup: SidebarGroupData = {
   label: "Explore",
-  cta: (
-    <SidebarCTA
-      href="/photographers"
-      label="Browse photographers"
-      icon={Compass}
-      variant="outline"
-    />
-  ),
   items: [
     {
       title: "Home",
@@ -53,7 +42,7 @@ const exploreGroup: SidebarGroupData = {
       icon: House,
     },
     {
-      title: "All photographers",
+      title: "Explore photographers",
       url: "/photographers" as Route,
       icon: Compass,
     },
@@ -96,13 +85,6 @@ function getDashboardData(): SidebarGroupData {
 
 const adminGroup: SidebarGroupData = {
   label: "Admin",
-  cta: (
-    <SidebarCTA
-      href="/admin/photographers"
-      label="Open review queue"
-      icon={ShieldCheck}
-    />
-  ),
   items: [
     {
       title: "Photographers",
@@ -118,13 +100,6 @@ function getPhotographerGroup(
   if (!photographer) {
     return {
       label: "Photographer",
-      cta: (
-        <SidebarCTA
-          href="/onboarding"
-          label="Become a photographer"
-          icon={Camera}
-        />
-      ),
       items: [
         {
           title: "Start onboarding",
@@ -136,12 +111,14 @@ function getPhotographerGroup(
   }
 
   const photographerStatus = getPhotographerStatusViewModel(photographer);
-  const primaryPhotographerRoute = photographerStatus.shouldRedirectOnboardingToPortfolio
-    ? ("/dashboard/portfolio" as Route)
-    : ("/onboarding" as Route);
-  const primaryPhotographerLabel = photographerStatus.shouldRedirectOnboardingToPortfolio
-    ? "Manage photographer profile"
-    : "Complete onboarding";
+  const primaryPhotographerRoute =
+    photographerStatus.shouldRedirectOnboardingToPortfolio
+      ? ("/dashboard/portfolio" as Route)
+      : ("/onboarding" as Route);
+  const primaryPhotographerLabel =
+    photographerStatus.shouldRedirectOnboardingToPortfolio
+      ? "Manage photographer profile"
+      : "Complete onboarding";
   const items = [
     {
       title: primaryPhotographerLabel,
@@ -165,13 +142,6 @@ function getPhotographerGroup(
 
   return {
     label: "Photographer",
-    cta: (
-      <SidebarCTA
-        href={primaryPhotographerRoute}
-        label={primaryPhotographerLabel}
-        icon={Camera}
-      />
-    ),
     items,
   };
 }
@@ -219,36 +189,6 @@ export function UserSidebar({
           />
         ))}
       </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenuItem>
-          <SidebarMenuButton
-            tooltip="Open the public photographer directory"
-            variant="outline"
-            className="border"
-            asChild
-          >
-            <Link href="/photographers" className="flex items-center gap-2">
-              <Compass className="size-4" />
-              <span>Public directory</span>
-            </Link>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-        {user.role === "admin" ? (
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              tooltip="Open the admin review queue"
-              variant="outline"
-              className="border"
-              asChild
-            >
-              <Link href="/admin/photographers" className="flex items-center gap-2">
-                <HatGlasses className="size-4" />
-                <span>Admin review queue</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        ) : null}
-      </SidebarFooter>
     </Sidebar>
   );
 }
