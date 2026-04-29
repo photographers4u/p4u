@@ -20,6 +20,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { siteConfig } from "@/config/site";
 import type { AuthClientUser } from "@/lib/auth-client";
@@ -154,6 +155,7 @@ export function UserSidebar({
   photographer: Photographer | null;
   user: AuthClientUser;
 }) {
+  const { isMobile, setOpenMobile } = useSidebar();
   const groups: SidebarGroupData[] = [
     exploreGroup,
     getDashboardData(),
@@ -162,13 +164,23 @@ export function UserSidebar({
     accountGroup,
   ];
 
+  const handleNavigate = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="p-1.5">
-              <Link href="/" className="flex items-center gap-2">
+              <Link
+                href="/"
+                onClick={handleNavigate}
+                className="flex items-center gap-2"
+              >
                 <Fan className="size-5 animate-spin" />
                 <span className="text-base font-semibold">
                   {siteConfig.name}

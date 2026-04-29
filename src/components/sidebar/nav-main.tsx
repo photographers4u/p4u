@@ -20,6 +20,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 function isActivePath(pathname: string, url: Route) {
@@ -49,6 +50,13 @@ export function NavMain({
   }[];
 }) {
   const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const handleNavigate = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   return (
     <SidebarGroup>
@@ -93,7 +101,7 @@ export function NavMain({
                               asChild
                               isActive={isActivePath(pathname, sub.url)}
                             >
-                              <Link href={sub.url}>
+                              <Link href={sub.url} onClick={handleNavigate}>
                                 <span>{sub.title}</span>
                               </Link>
                             </SidebarMenuSubButton>
@@ -117,7 +125,11 @@ export function NavMain({
                   isActive={isActiveItem}
                   asChild
                 >
-                  <Link href={item.url} className="flex items-center gap-2">
+                  <Link
+                    href={item.url}
+                    onClick={handleNavigate}
+                    className="flex items-center gap-2"
+                  >
                     {Icon && (
                       <Icon className={`size-4 ${item.iconClassName ?? ""}`} />
                     )}
@@ -146,6 +158,14 @@ export const SidebarCTA = ({
   tooltip?: string;
   variant?: "default" | "outline";
 }) => {
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const handleNavigate = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -159,7 +179,11 @@ export const SidebarCTA = ({
           variant={variant}
           asChild
         >
-          <Link href={href} className="flex items-center gap-2">
+          <Link
+            href={href}
+            onClick={handleNavigate}
+            className="flex items-center gap-2"
+          >
             <Icon className="size-4" />
             <span>{label}</span>
           </Link>
