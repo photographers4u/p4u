@@ -43,10 +43,10 @@ type PublicPhotographerPageProps = {
 function SocialVideoEmbedCard({ embed }: { embed: SocialVideoEmbed }) {
   return (
     <div
-      className={`overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-sm ${embed.containerClassName}`}
+      className={`overflow-hidden rounded-md border border-slate-200 bg-slate-950 ${embed.containerClassName}`}
     >
-      <div className="border-b border-white/10 bg-white px-4 py-3">
-        <p className="text-sm font-medium text-slate-900">{embed.label}</p>
+      <div className="border-b border-slate-200 bg-white px-3 py-2">
+        <p className="text-[13px] font-medium text-slate-700">{embed.label}</p>
       </div>
       <div className={embed.aspectClassName}>
         <iframe
@@ -139,6 +139,20 @@ export default async function PublicPhotographerPage({
 
       return "Custom pricing";
     };
+
+    const youtubeEmbeds = socialVideoEmbeds.filter((embed) =>
+      embed.label.toLowerCase().includes("youtube"),
+    );
+
+    const instagramEmbeds = socialVideoEmbeds.filter((embed) =>
+      embed.label.toLowerCase().includes("instagram"),
+    );
+
+    const otherEmbeds = socialVideoEmbeds.filter((embed) => {
+      const label = embed.label.toLowerCase();
+
+      return !label.includes("youtube") && !label.includes("instagram");
+    });
 
     return (
       <>
@@ -259,7 +273,7 @@ export default async function PublicPhotographerPage({
                       value="images"
                       className="px-4 w-full py-3.5 text-sm data-[state=active]:bg-primary rounded data-[state=active]:text-white"
                     >
-                      Images
+                      Work
                     </TabsTrigger>
                     <TabsTrigger
                       value="about"
@@ -279,148 +293,145 @@ export default async function PublicPhotographerPage({
                         </div>
                       ) : (
                         <ResponsiveMasonryGrid uploads={photographer.uploads} />
-
-                        // <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        //   {photographer.uploads.map((upload, index) => (
-                        //     <div
-                        //       key={upload.id}
-                        //       className={`group relative overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 ${
-                        //         index === 0 ? "sm:col-span-2 lg:col-span-2" : ""
-                        //       }`}
-                        //     >
-                        //       <div
-                        //         className={`relative overflow-hidden ${
-                        //           index === 0
-                        //             ? "aspect-[16/10]"
-                        //             : "aspect-[4/3]"
-                        //         }`}
-                        //       >
-                        //         {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
-                        //         <img
-                        //           src={upload.imageUrl}
-                        //           alt={`${photographer.name ?? "Photographer"} portfolio ${
-                        //             index + 1
-                        //           }`}
-                        //           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                        //         />
-                        //       </div>
-
-                        //       {upload.pinnedAt && (
-                        //         <div className="absolute left-3 top-3">
-                        //           <span className="rounded-full border border-slate-200 bg-white/90 px-2.5 py-1 text-[11px] font-medium text-slate-700 backdrop-blur">
-                        //             Pinned
-                        //           </span>
-                        //         </div>
-                        //       )}
-                        //     </div>
-                        //   ))}
-                        // </div>
                       )}
                     </div>
                   </TabsContent>
 
                   <TabsContent value="about" className="mt-0">
-                    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-                      <div className="rounded-[28px] border border-slate-200 bg-white p-5 sm:p-6">
-                        <h2
-                          className={`text-xl font-semibold tracking-tight text-slate-950 ${poppins.className}`}
-                        >
-                          Profile
-                        </h2>
-
-                        <div className="mt-6 grid gap-5 sm:grid-cols-2">
-                          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                              Location
-                            </p>
-                            <p className="mt-2 text-sm font-medium text-slate-800">
-                              {location}
+                    <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px]">
+                      <div className="space-y-10">
+                        <section>
+                          <div className="border-b border-slate-200 pb-5">
+                            <h2
+                              className={`text-xl font-semibold tracking-tight text-slate-950 ${poppins.className}`}
+                            >
+                              Profile
+                            </h2>
+                            <p className="mt-1 text-sm text-slate-500">
+                              A quick overview of the photographer and their
+                              work.
                             </p>
                           </div>
 
-                          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                              Experience
-                            </p>
-                            <p className="mt-2 text-sm font-medium text-slate-800">
-                              {formatPhotographerExperience(
-                                photographer.experienceYears,
-                              )}
-                            </p>
-                          </div>
+                          <div className="grid gap-6 border-b border-slate-200 py-6 sm:grid-cols-3">
+                            <div>
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                                Location
+                              </p>
+                              <p className="mt-2 text-sm font-medium text-slate-800">
+                                {location}
+                              </p>
+                            </div>
 
-                          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                              Public profile
-                            </p>
-                            <p className="mt-2 text-sm font-medium text-slate-800">
-                              /p/{photographer.slug}
-                            </p>
+                            <div>
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                                Experience
+                              </p>
+                              <p className="mt-2 text-sm font-medium text-slate-800">
+                                {formatPhotographerExperience(
+                                  photographer.experienceYears,
+                                )}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                                Public profile
+                              </p>
+                              <p className="mt-2 break-all text-sm font-medium text-slate-800">
+                                /p/{photographer.slug}
+                              </p>
+                            </div>
                           </div>
-                        </div>
+                        </section>
 
                         {photographer.bio?.trim() && (
-                          <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          <section>
+                            <p className="text-sm font-semibold text-slate-950">
                               About
                             </p>
                             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-[15px]">
                               {photographer.bio}
                             </p>
-                          </div>
+                          </section>
                         )}
 
                         {socialVideoEmbeds.length > 0 ? (
-                          <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                              {socialVideoEmbeds.length > 1
-                                ? "Featured videos"
-                                : "Featured video"}
-                            </p>
-                            <div
-                              className={`mt-4 grid gap-4 ${
-                                socialVideoEmbeds.length > 1
-                                  ? "sm:grid-cols-2"
-                                  : ""
-                              }`}
-                            >
-                              {socialVideoEmbeds.map((embed) => (
+                          <section className="border-t border-slate-200 pt-7">
+                            <div className="mb-5">
+                              <p className="text-sm font-semibold text-slate-950">
+                                {socialVideoEmbeds.length > 1
+                                  ? "Featured videos"
+                                  : "Featured video"}
+                              </p>
+                              <p className="mt-1 text-sm text-slate-500">
+                                Recent work shared across social platforms.
+                              </p>
+                            </div>
+
+                            <div className="space-y-5">
+                              {youtubeEmbeds.map((embed) => (
+                                <SocialVideoEmbedCard
+                                  key={embed.embedUrl}
+                                  embed={{
+                                    ...embed,
+                                    aspectClassName: "aspect-video",
+                                    containerClassName: "",
+                                  }}
+                                />
+                              ))}
+
+                              {instagramEmbeds.length > 0 && (
+                                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                  {instagramEmbeds.map((embed) => (
+                                    <SocialVideoEmbedCard
+                                      key={embed.embedUrl}
+                                      embed={{
+                                        ...embed,
+                                        aspectClassName: "aspect-[9/16]",
+                                        containerClassName: "max-w-[320px]",
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+
+                              {otherEmbeds.map((embed) => (
                                 <SocialVideoEmbedCard
                                   key={embed.embedUrl}
                                   embed={embed}
                                 />
                               ))}
                             </div>
-                          </div>
+                          </section>
                         ) : null}
                       </div>
 
-                      <div className="rounded-[28px] border border-slate-200 bg-white p-5 sm:p-6">
-                        <div className="mb-5">
+                      <aside>
+                        <div className="border-b border-slate-200 pb-5">
                           <h2
                             className={`text-xl font-semibold tracking-tight text-slate-950 ${poppins.className}`}
                           >
                             Specialities
                           </h2>
                           <p className="mt-1 text-sm text-slate-500">
-                            Detailed service offerings and starting prices.
+                            Services and starting prices.
                           </p>
                         </div>
 
                         {photographer.specialities.length === 0 ? (
-                          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-sm text-slate-400">
-                            No specialities listed yet.
+                          <div className="border-b border-slate-200 py-8">
+                            <p className="text-sm text-slate-400">
+                              No specialities listed yet.
+                            </p>
                           </div>
                         ) : (
-                          <div className="space-y-3">
+                          <div className="divide-y divide-slate-200">
                             {photographer.specialities.map((speciality) => (
-                              <div
-                                key={speciality.id}
-                                className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-                              >
-                                <div className="flex items-start justify-between gap-3">
+                              <div key={speciality.id} className="py-4">
+                                <div className="flex items-start justify-between gap-4">
                                   <div className="min-w-0">
-                                    <p className="text-sm font-medium text-slate-900">
+                                    <p className="text-sm font-medium text-slate-950">
                                       {speciality.name}
                                     </p>
                                     <p className="mt-1 text-xs text-slate-500">
@@ -428,26 +439,26 @@ export default async function PublicPhotographerPage({
                                     </p>
                                   </div>
 
-                                  <div className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-medium text-slate-700">
+                                  <p className="shrink-0 text-sm font-medium text-slate-800">
                                     {formatStartingPrice(
                                       speciality.startingPrice,
                                     )}
-                                  </div>
+                                  </p>
                                 </div>
                               </div>
                             ))}
                           </div>
                         )}
 
-                        <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 text-xs text-slate-500">
-                          <p className="font-medium text-slate-700">
+                        <div className="mt-6 border-t border-slate-200 pt-5">
+                          <p className="text-sm font-medium text-slate-800">
                             Reviewed &amp; live
                           </p>
-                          <p className="mt-1">
+                          <p className="mt-1 break-all text-sm text-slate-500">
                             Listed as /p/{photographer.slug}
                           </p>
                         </div>
-                      </div>
+                      </aside>
                     </div>
                   </TabsContent>
                 </div>

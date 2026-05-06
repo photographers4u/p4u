@@ -74,13 +74,13 @@ export default async function HomePage() {
               <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
                 <Button
                   asChild
-                  className="rounded-full text-lg tracking-[0.5px] font-normal px-8 py-2 h-fit"
+                  className="rounded-md text-lg tracking-[0.5px] font-normal px-8 py-2 h-fit"
                 >
                   <Link href="/photographers">Explore</Link>
                 </Button>
                 <Button
                   asChild
-                  className="rounded-full text-lg font-normal px-8 py-2 h-fit bg-neutral-50"
+                  className="rounded-md text-lg font-normal px-8 py-2 h-fit bg-neutral-50"
                   variant="outline"
                 >
                   <Link href="/register">Join Us</Link>
