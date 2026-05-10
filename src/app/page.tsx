@@ -56,7 +56,7 @@ export default async function HomePage() {
             items={images}
           />
           <div className="h-24 absolute bottom-0 w-full bg-linear-to-t from-white via-white/75 to-transparent" />
-          <section className="absolute bottom-0 isolate overflow-hidden pb-36">
+          <section className="absolute bottom-0 isolate overflow-hidden pb-36 drop-shadow-2xl drop-shadow-white">
             <div className="relative mx-auto flex  w-full max-w-4xl text-center flex-col justify-center px-6 sm:px-8 lg:px-10">
               <h1
                 className={`mt-6 text-5xl font-semibold text-balance leading-tight text-slate-950 sm:text-6xl lg:text-7xl $`}

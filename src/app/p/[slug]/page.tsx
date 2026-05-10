@@ -1,8 +1,10 @@
 import { Mail, MapPin, Phone } from "lucide-react";
 import { headers } from "next/headers";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BookmarkButton } from "@/components/bookmark-button";
+import { CopyLinkButton } from "@/components/copy-link-button";
 import { Footer } from "@/components/footer";
 import { ResponsiveMasonryGrid } from "@/components/masonary";
 import Navbar from "@/components/navbar";
@@ -11,20 +13,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildAuthRedirectPath } from "@/lib/auth-redirect";
 import { sanitizeBookmarkStore } from "@/lib/bookmark-store";
 import { BookmarkProvider } from "@/lib/bookmarks-context";
+import { poppins } from "@/lib/fonts";
 import {
   formatPhotographerCountry,
   formatPhotographerExperience,
   getProfileInitials,
 } from "@/lib/photographer-presentation";
-import {
-  getInstagramReelEmbedUrl,
-  getYouTubeVideoEmbedUrl,
-} from "@/lib/video-embeds";
+import { getYouTubeVideoEmbedUrl } from "@/lib/video-embeds";
 import { getAuthSession } from "@/server/auth/session";
 import { NotFoundError } from "@/server/db/helpers/errors";
 import { hasBookmarkByUserId } from "@/server/services/bookmark";
 import { getPublicPhotographerBySlug } from "@/server/services/photographer";
-import { poppins } from "@/lib/fonts";
 
 type SocialVideoEmbed = {
   aspectClassName: string;
@@ -40,14 +39,32 @@ type PublicPhotographerPageProps = {
   }>;
 };
 
+function formatStartingPrice(price: number | string | null | undefined) {
+  if (typeof price === "number") {
+    return `\u20B9${price.toLocaleString("en-IN")}`;
+  }
+
+  if (typeof price === "string" && price.trim()) {
+    return `\u20B9${price}`;
+  }
+
+  return "Custom pricing";
+}
+
+function formatAverageCharge(price: number | null) {
+  if (price === null) {
+    return "Custom pricing";
+  }
+
+  const roundedPrice = Math.round(price / 500) * 500;
+  return `\u20B9${roundedPrice.toLocaleString("en-IN")}`;
+}
+
 function SocialVideoEmbedCard({ embed }: { embed: SocialVideoEmbed }) {
   return (
     <div
       className={`overflow-hidden rounded-md border border-slate-200 bg-slate-950 ${embed.containerClassName}`}
     >
-      <div className="border-b border-slate-200 bg-white px-3 py-2">
-        <p className="text-[13px] font-medium text-slate-700">{embed.label}</p>
-      </div>
       <div className={embed.aspectClassName}>
         <iframe
           src={embed.embedUrl}
@@ -68,6 +85,9 @@ export default async function PublicPhotographerPage({
 }: PublicPhotographerPageProps) {
   const { slug } = await params;
   const requestHeaders = await headers();
+  const forwardedProto = requestHeaders.get("x-forwarded-proto") ?? "https";
+  const forwardedHost =
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
   const session = await getAuthSession({ headers: requestHeaders });
 
   try {
@@ -100,23 +120,23 @@ export default async function PublicPhotographerPage({
     const phoneHref = photographer.contact?.phone.replace(/[^\d+]/g, "") ?? "";
     const initials = getProfileInitials(photographer.name);
     const profileName = photographer.name ?? "Photographer";
-    const instagramReelEmbedUrl = getInstagramReelEmbedUrl(
-      photographer.instagramReelUrl,
-    );
     const youtubeVideoEmbedUrl = getYouTubeVideoEmbedUrl(
       photographer.youtubeVideoUrl,
     );
     const socialVideoEmbeds: SocialVideoEmbed[] = [];
-
-    if (instagramReelEmbedUrl) {
-      socialVideoEmbeds.push({
-        aspectClassName: "aspect-[9/16]",
-        containerClassName: "max-w-sm",
-        embedUrl: instagramReelEmbedUrl,
-        label: "Instagram Reel",
-        title: `${profileName} Instagram Reel`,
-      });
-    }
+    const averageStartingPrice =
+      photographer.specialities.length > 0
+        ? Math.round(
+            photographer.specialities.reduce(
+              (total, speciality) => total + speciality.startingPrice,
+              0,
+            ) / photographer.specialities.length,
+          )
+        : null;
+    const instagramHref = photographer.instagramReelUrl?.trim() || null;
+    const publicPageUrl = forwardedHost
+      ? `${forwardedProto}://${forwardedHost}/p/${slug}`
+      : `/p/${slug}`;
 
     if (youtubeVideoEmbedUrl) {
       socialVideoEmbeds.push({
@@ -128,30 +148,14 @@ export default async function PublicPhotographerPage({
       });
     }
 
-    const formatStartingPrice = (price: number | string | null | undefined) => {
-      if (typeof price === "number") {
-        return `₹${price.toLocaleString("en-IN")}`;
-      }
-
-      if (typeof price === "string" && price.trim()) {
-        return `₹${price}`;
-      }
-
-      return "Custom pricing";
-    };
-
     const youtubeEmbeds = socialVideoEmbeds.filter((embed) =>
       embed.label.toLowerCase().includes("youtube"),
-    );
-
-    const instagramEmbeds = socialVideoEmbeds.filter((embed) =>
-      embed.label.toLowerCase().includes("instagram"),
     );
 
     const otherEmbeds = socialVideoEmbeds.filter((embed) => {
       const label = embed.label.toLowerCase();
 
-      return !label.includes("youtube") && !label.includes("instagram");
+      return !label.includes("youtube");
     });
 
     return (
@@ -160,7 +164,6 @@ export default async function PublicPhotographerPage({
 
         <BookmarkProvider initialStore={initialBookmarkStore} session={session}>
           <main className="min-h-screen text-slate-900">
-            {/* Header */}
             <section className="border-b border-slate-200 bg-white">
               <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
                 <div className="flex flex-col items-center gap-6 text-center lg:flex-row lg:items-start lg:justify-between lg:text-left">
@@ -195,12 +198,20 @@ export default async function PublicPhotographerPage({
                             <MapPin className="size-3.5 text-slate-400" />
                             {location}
                           </span>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-300">&bull;</span>
                           <span>
                             {formatPhotographerExperience(
                               photographer.experienceYears,
                             )}
                           </span>
+                          {averageStartingPrice !== null ? (
+                            <>
+                              <span className="text-slate-300">&bull;</span>
+                              <span className="font-medium text-slate-700">
+                                Avg. charge {formatAverageCharge(averageStartingPrice)}
+                              </span>
+                            </>
+                          ) : null}
                         </div>
 
                         {photographer.specialities.length > 0 && (
@@ -219,14 +230,12 @@ export default async function PublicPhotographerPage({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 flex-row lg:flex-wrap lg:justify-end">
+                  <div className="flex flex-row items-center gap-3 lg:flex-wrap lg:justify-end">
                     {(photographer.contact?.phone ||
                       (!isAuthenticated && photographer.hasPublicContact)) && (
                       <Button asChild className="rounded-full px-5">
                         <Link
-                          href={
-                            isAuthenticated ? `tel:${phoneHref}` : loginHref
-                          }
+                          href={isAuthenticated ? `tel:${phoneHref}` : loginHref}
                         >
                           <Phone className="size-3.5" />
                           Call
@@ -254,6 +263,12 @@ export default async function PublicPhotographerPage({
                       </Button>
                     )}
 
+                    <CopyLinkButton
+                      url={publicPageUrl}
+                      showLabel
+                      className="px-5"
+                    />
+
                     <BookmarkButton
                       identifier="photographer"
                       value={photographer.id}
@@ -264,27 +279,26 @@ export default async function PublicPhotographerPage({
               </div>
             </section>
 
-            {/* Content Tabs */}
-            <section className="">
+            <section>
               <Tabs defaultValue="images" className="space-y-6">
                 <div className="border-b p-1">
-                  <TabsList className="mx-auto max-w-6xl px-4 pb-10 sm:px-10 lg:px-12 p-0 bg-transparent w-full rounded-none flex">
+                  <TabsList className="mx-auto w-full flex max-w-6xl rounded-none bg-transparent px-4 pb-10 p-0 sm:px-10 lg:px-12">
                     <TabsTrigger
                       value="images"
-                      className="px-4 w-full py-3.5 text-sm data-[state=active]:bg-primary rounded data-[state=active]:text-white"
+                      className="w-full rounded px-4 py-3.5 text-sm data-[state=active]:bg-primary data-[state=active]:text-white"
                     >
                       Work
                     </TabsTrigger>
                     <TabsTrigger
                       value="about"
-                      className="px-4 w-full py-3.5 text-sm data-[state=active]:bg-primary rounded data-[state=active]:text-white"
+                      className="w-full rounded px-4 py-3.5 text-sm data-[state=active]:bg-primary data-[state=active]:text-white"
                     >
                       About
                     </TabsTrigger>
                   </TabsList>
                 </div>
 
-                <div className="mt-0 mx-auto max-w-6xl px-4 pb-10 sm:px-10 lg:px-12">
+                <div className="mx-auto mt-0 max-w-6xl px-4 pb-10 sm:px-10 lg:px-12">
                   <TabsContent value="images" className="mt-0">
                     <div>
                       {photographer.uploads.length === 0 ? (
@@ -313,9 +327,9 @@ export default async function PublicPhotographerPage({
                             </p>
                           </div>
 
-                          <div className="grid gap-6 border-b border-slate-200 py-6 sm:grid-cols-3">
+                          <div className="grid gap-6 border-b border-slate-200 py-6 sm:grid-cols-2">
                             <div>
-                              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                              <p className="text-xs font-medium text-slate-500">
                                 Location
                               </p>
                               <p className="mt-2 text-sm font-medium text-slate-800">
@@ -324,22 +338,13 @@ export default async function PublicPhotographerPage({
                             </div>
 
                             <div>
-                              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                              <p className="text-xs font-medium text-slate-500">
                                 Experience
                               </p>
                               <p className="mt-2 text-sm font-medium text-slate-800">
                                 {formatPhotographerExperience(
                                   photographer.experienceYears,
                                 )}
-                              </p>
-                            </div>
-
-                            <div>
-                              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                                Public profile
-                              </p>
-                              <p className="mt-2 break-all text-sm font-medium text-slate-800">
-                                /p/{photographer.slug}
                               </p>
                             </div>
                           </div>
@@ -355,6 +360,55 @@ export default async function PublicPhotographerPage({
                             </p>
                           </section>
                         )}
+
+                        {instagramHref ? (
+                          <section className="border-t border-slate-200 pt-7">
+                            <div className="mb-5">
+                              <p className="text-sm font-semibold text-slate-950">
+                                Instagram
+                              </p>
+                              <p className="mt-1 text-sm text-slate-500">
+                                Check more on Instagram.
+                              </p>
+                            </div>
+
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-slate-900">
+                                    More reels and recent updates
+                                  </p>
+                                  <p className="mt-1 text-sm text-slate-500">
+                                    Open Instagram to explore more from this
+                                    photographer.
+                                  </p>
+                                </div>
+
+                                <Button
+                                  asChild
+                                  variant="outline"
+                                  className="rounded-full px-4 h-fit py-2"
+                                >
+                                  <Link
+                                    href={instagramHref}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    <Image
+                                      src="/instagram-colored.svg"
+                                      alt=""
+                                      width={16}
+                                      height={16}
+                                      className="size-4"
+                                      aria-hidden="true"
+                                    />
+                                    Check more on Instagram
+                                  </Link>
+                                </Button>
+                              </div>
+                            </div>
+                          </section>
+                        ) : null}
 
                         {socialVideoEmbeds.length > 0 ? (
                           <section className="border-t border-slate-200 pt-7">
@@ -380,21 +434,6 @@ export default async function PublicPhotographerPage({
                                   }}
                                 />
                               ))}
-
-                              {instagramEmbeds.length > 0 && (
-                                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                  {instagramEmbeds.map((embed) => (
-                                    <SocialVideoEmbedCard
-                                      key={embed.embedUrl}
-                                      embed={{
-                                        ...embed,
-                                        aspectClassName: "aspect-[9/16]",
-                                        containerClassName: "max-w-[320px]",
-                                      }}
-                                    />
-                                  ))}
-                                </div>
-                              )}
 
                               {otherEmbeds.map((embed) => (
                                 <SocialVideoEmbedCard
@@ -450,14 +489,6 @@ export default async function PublicPhotographerPage({
                           </div>
                         )}
 
-                        <div className="mt-6 border-t border-slate-200 pt-5">
-                          <p className="text-sm font-medium text-slate-800">
-                            Reviewed &amp; live
-                          </p>
-                          <p className="mt-1 break-all text-sm text-slate-500">
-                            Listed as /p/{photographer.slug}
-                          </p>
-                        </div>
                       </aside>
                     </div>
                   </TabsContent>
