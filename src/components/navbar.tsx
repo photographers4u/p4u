@@ -201,8 +201,12 @@ function Navbar({ session }: { session: AuthClientSession | null }) {
     >
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-3">
-          <div className="size-10 aspect-square overflow-hidden bg-black text-white flex relative items-center justify-center rounded-md text-sm font-semibold">
-            <img src="/logo-192.png" alt={siteConfig.name} className="h-10! w-10! aspect-square absolute" />
+          <div className="size-10 border bg-blue-50/50 aspect-square overflow-hidden text-white flex relative items-center justify-center rounded-md text-sm font-semibold">
+            <img
+              src="/logo-192.png"
+              alt={siteConfig.name}
+              className="h-8! w-8! aspect-square absolute"
+            />
           </div>
           <span className="text-sm font-semibold tracking-tight">
             {siteConfig.shortName}

@@ -92,19 +92,18 @@ export function Footer() {
         <div className="py-16 grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-16">
           {/* Brand */}
           <div className="md:col-span-5 space-y-5">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-stone-900 dark:bg-amber-200/90 flex items-center justify-center">
-                <span
-                  className="text-white dark:text-stone-900 font-semibold text-sm italic"
-                  style={{ fontFamily: "Georgia, serif" }}
-                >
-                  {siteConfig.logo}
-                </span>
+            <Link href="/" className="flex items-center gap-3">
+              <div className="size-10 border bg-blue-50/50 aspect-square overflow-hidden text-white flex relative items-center justify-center rounded-md text-sm font-semibold">
+                <img
+                  src="/logo-192.png"
+                  alt={siteConfig.name} 
+                  className="h-8! w-8! aspect-square absolute"
+                />
               </div>
-              <span className="font-medium text-stone-900 dark:text-stone-100 tracking-tight">
-                {siteConfig.name}
+              <span className="text-base font-semibold tracking-tight">
+                {siteConfig.shortName}
               </span>
-            </div>
+            </Link>
 
             <p className="text-sm text-stone-500 dark:text-stone-500 leading-relaxed max-w-xs">
               {siteConfig.description}
