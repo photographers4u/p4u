@@ -15,20 +15,21 @@ import { Marquee } from "@/components/ui/marquee";
 import { photographers } from "@/data/feature-photographers";
 import FAQSection from "@/components/faq-section";
 
+
 const images = [
-  "https://i.pinimg.com/736x/c7/2a/ff/c72affc2be6258e2fd0c98484c6ee6ab.jpg",
-  "https://i.pinimg.com/736x/98/dd/7b/98dd7ba105bc1bbd561fa30e4775bef9.jpg",
-  "https://i.pinimg.com/736x/26/a2/79/26a279d03312e7600fe895e06ed2b83f.jpg",
-  "https://i.pinimg.com/1200x/dc/a4/c3/dca4c3b887336b3015ec25d8405f4c9f.jpg",
-  "https://i.pinimg.com/736x/b5/90/1a/b5901aa520415057fb918d5329ce4a57.jpg",
-  "https://i.pinimg.com/736x/22/bc/0b/22bc0b13d0d782fca9f7b95bfef7d320.jpg",
-  "https://i.pinimg.com/736x/2f/2b/71/2f2b71ceda2f440beda6c8f3560feb28.jpg",
-  "https://i.pinimg.com/1200x/9c/6a/e6/9c6ae6b5178a136217a3debadf71cb65.jpg",
-  "https://i.pinimg.com/1200x/d4/31/cc/d431cc8d405b07f7571c23ce2fd6caaf.jpg",
-  "https://i.pinimg.com/1200x/39/64/74/39647441becc0bb961ddc7c332eacfea.jpg",
-  "https://i.pinimg.com/736x/61/0b/65/610b65f596002ecf37a961c554214f33.jpg",
-  "https://i.pinimg.com/1200x/8f/1e/6c/8f1e6c733e46f76c5a032abb87a42190.jpg",
-  "https://i.pinimg.com/736x/ba/fd/39/bafd39fcd675b653969bd4a805d4a366.jpg",
+  "/hero-images/10002.jpeg",
+  "/hero-images/10039.jpg",
+  "/hero-images/10005.jpeg",
+  "/hero-images/10007.jpeg",
+  "/hero-images/10008.jpeg",
+  "/hero-images/10009.jpeg",
+  "/hero-images/10012.jpeg",
+  "/hero-images/10013.jpeg",
+  "/hero-images/10016.jpeg",
+  "/hero-images/10018.jpeg",
+  "/hero-images/10024.jpg",
+  "/hero-images/10025.jpg",
+  "/hero-images/10036.jpg",
 ];
 
 export default async function HomePage() {
