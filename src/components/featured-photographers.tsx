@@ -22,7 +22,7 @@ const FeaturedPhotographersCarousel = ({
     <BookmarkProvider>
       <Marquee pauseOnHover repeat={2} speed={7}>
         {photographers.map((elem) => (
-          <div className="px-3 max-w-sm lg:max-w-lg w-full" key={elem.id}>
+          <div className="px-3 max-w-sm w-full" key={elem.id}>
             <ExplorePhotographerCard photographer={elem} imageMode="cover" />
           </div>
         ))}
