@@ -8,6 +8,7 @@ import { CopyLinkButton } from "@/components/copy-link-button";
 import { Footer } from "@/components/footer";
 import { ResponsiveMasonryGrid } from "@/components/masonary";
 import Navbar from "@/components/navbar";
+import { PhotographerVerificationBadge } from "@/components/photographer-verification-badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildAuthRedirectPath } from "@/lib/auth-redirect";
@@ -191,6 +192,9 @@ export default async function PublicPhotographerPage({
                           >
                             {photographer.name ?? "Photographer"}
                           </h1>
+                          <PhotographerVerificationBadge
+                            status={photographer.status}
+                          />
                         </div>
 
                         <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[15px] text-slate-500 lg:justify-start">
@@ -208,7 +212,8 @@ export default async function PublicPhotographerPage({
                             <>
                               <span className="text-slate-300">&bull;</span>
                               <span className="font-medium text-slate-700">
-                                Avg. charge {formatAverageCharge(averageStartingPrice)}
+                                Avg. charge{" "}
+                                {formatAverageCharge(averageStartingPrice)}
                               </span>
                             </>
                           ) : null}
@@ -233,14 +238,24 @@ export default async function PublicPhotographerPage({
                   <div className="flex flex-row items-center gap-3 lg:flex-wrap lg:justify-end">
                     {(photographer.contact?.phone ||
                       (!isAuthenticated && photographer.hasPublicContact)) && (
-                      <Button asChild className="rounded-full px-5">
-                        <Link
-                          href={isAuthenticated ? `tel:${phoneHref}` : loginHref}
-                        >
-                          <Phone className="size-3.5" />
-                          Call
-                        </Link>
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button asChild className="rounded-full px-5">
+                          <Link
+                            href={
+                              isAuthenticated ? `tel:${phoneHref}` : loginHref
+                            }
+                          >
+                            <Phone className="size-3.5" />
+                            Call
+                          </Link>
+                        </Button>
+
+                        {isAuthenticated && photographer.contact?.phone ? (
+                          <span className="text-sm font-medium text-slate-700">
+                            {photographer.contact.phone}
+                          </span>
+                        ) : null}
+                      </div>
                     )}
 
                     {(photographer.contact?.email ||
@@ -488,7 +503,6 @@ export default async function PublicPhotographerPage({
                             ))}
                           </div>
                         )}
-
                       </aside>
                     </div>
                   </TabsContent>

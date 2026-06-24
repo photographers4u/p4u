@@ -91,6 +91,7 @@ export const photographerWorkflowStatusValues = [
   "approved",
   "rejected",
   "on_hold",
+  "pending_verification",
 ] as const;
 export const photographerWorkflowStatusSchema = z.enum(
   photographerWorkflowStatusValues,
@@ -103,6 +104,7 @@ export const adminPhotographerListStatusFilterValues = [
   "approved",
   "rejected",
   "on_hold",
+  "pending_verification",
 ] as const;
 export const adminPhotographerListStatusFilterSchema = z.enum(
   adminPhotographerListStatusFilterValues,
@@ -156,6 +158,7 @@ const photographerEntityShape = {
   experienceYears: z.enum(EXPERIENCE_YEARS).nullable(),
   onboardingStep: onboardingStepSchema.default(1),
   isPublished: z.boolean().default(false),
+  isFeatured: z.boolean().default(false),
 };
 
 const photographerProfileInputShape = {
@@ -370,6 +373,10 @@ export const reviewPhotographerSchema = reviewDecisionSchema({
     "A hold reason is required when putting this photographer on hold.",
 });
 
+export const setPhotographerFeaturedSchema = z.object({
+  isFeatured: z.boolean(),
+});
+
 export type Photographer = z.infer<typeof photographerSchema>;
 export type CreatePhotographerInput = z.infer<typeof createPhotographerSchema>;
 export type UpdatePhotographerInput = z.infer<typeof updatePhotographerSchema>;
@@ -408,3 +415,6 @@ export type UpdatePhotographerProfileInput = z.infer<
   typeof updatePhotographerProfileSchema
 >;
 export type ReviewPhotographerInput = z.infer<typeof reviewPhotographerSchema>;
+export type SetPhotographerFeaturedInput = z.infer<
+  typeof setPhotographerFeaturedSchema
+>;

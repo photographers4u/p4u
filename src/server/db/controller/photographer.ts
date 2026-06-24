@@ -77,6 +77,7 @@ export type AdminPhotographerReviewEntry = {
   experienceYears: PhotographerRecord["experienceYears"];
   onboardingStep: PhotographerOnboardingState["onboardingStep"];
   isPublished: boolean;
+  isFeatured: boolean;
   status: PhotographerOnboardingState["status"];
   rejectionReason: string | null;
   reviewedAt: Date | null;
@@ -108,6 +109,7 @@ export type AdminPhotographerListEntry = {
   avatar: string | null;
   onboardingStep: PhotographerOnboardingState["onboardingStep"];
   isPublished: boolean;
+  isFeatured: boolean;
   status: PhotographerOnboardingState["status"];
   rejectionReason: string | null;
   reviewedAt: Date | null;
@@ -140,6 +142,7 @@ export type PublicPhotographerListEntry = {
   locationCountry: string;
   name: string | null;
   slug: string;
+  status: PhotographerRecord["status"];
   updatedAt: Date;
 };
 export type PublicPhotographerExploreEntry = {
@@ -152,6 +155,7 @@ export type PublicPhotographerExploreEntry = {
   remainingSpecialitiesCount: number;
   slug: string;
   specialities: string[];
+  status: PhotographerRecord["status"];
   uploads: Array<{
     id: string;
     imageUrl: string;
@@ -232,6 +236,7 @@ function toPublicPhotographerListEntry(
     locationCity: photographer.locationCity,
     locationCountry: photographer.locationCountry,
     experienceYears: photographer.experienceYears,
+    status: photographer.status,
     createdAt: photographer.createdAt,
     updatedAt: photographer.updatedAt,
   };
@@ -268,6 +273,7 @@ function toPublicPhotographerExploreEntry(
       specialities.length - visibleSpecialities.length,
       0,
     ),
+    status: photographer.status,
     uploads: uploads.slice(0, 3),
   };
 }
@@ -729,6 +735,7 @@ function buildAdminPhotographerListEntry(
     avatar: row.avatar,
     onboardingStep: normalizeOnboardingStep(row.onboardingStep),
     isPublished: row.isPublished,
+    isFeatured: row.isFeatured,
     status: row.status ?? "draft",
     rejectionReason: row.rejectionReason,
     reviewedAt: row.reviewedAt,
@@ -811,6 +818,10 @@ function getInvalidReviewTransitionMessage(state: PhotographerModerationState) {
     return "Only submitted photographer profiles can be moderated.";
   }
 
+  if (state.status === "pending_verification") {
+    return "Imported photographer profiles can only be approved or rejected after the verification call.";
+  }
+
   if (isApprovedPhotographer(state)) {
     return "Approved photographer profiles can only be put on hold.";
   }
@@ -865,6 +876,7 @@ async function buildAdminPhotographerReviewEntry(
     experienceYears: photographer.experienceYears,
     onboardingStep: normalizeOnboardingStep(photographer.onboardingStep),
     isPublished: photographer.isPublished,
+    isFeatured: photographer.isFeatured,
     status: photographer.status ?? "draft",
     rejectionReason: photographer.rejectionReason,
     reviewedAt: photographer.reviewedAt,
@@ -1257,6 +1269,53 @@ export const photographerController = {
       pageSize,
       totalCount,
     };
+  },
+
+  async getPublicFeaturedPhotographers() {
+    const photographers = await photographerDal.getFeaturedPublished();
+    const photographerIds = photographers.map(
+      (photographer) => photographer.id,
+    );
+    const [specialities, uploads] = await Promise.all([
+      photographerSpecialityDal.getByPhotographerIds(photographerIds),
+      photographerUploadDal.getPreviewByPhotographerIds(photographerIds, 3),
+    ]);
+    const specialitiesByPhotographerId =
+      groupRecordsByPhotographerId(specialities);
+    const uploadsByPhotographerId = groupRecordsByPhotographerId(uploads);
+
+    return photographers.flatMap((photographer) => {
+      const entry = toPublicPhotographerExploreEntry(
+        photographer,
+        (specialitiesByPhotographerId.get(photographer.id) ?? []).map(
+          (speciality) => ({
+            name: speciality.name,
+          }),
+        ),
+        (uploadsByPhotographerId.get(photographer.id) ?? []).map((upload) => ({
+          id: upload.id,
+          imageUrl: upload.imageUrl,
+        })),
+      );
+
+      return entry ? [entry] : [];
+    });
+  },
+
+  async setPhotographerFeatured(id: string, isFeatured: boolean) {
+    const photographer = await photographerDal.getById(id);
+
+    if (!photographer) {
+      throw new NotFoundError("Photographer not found");
+    }
+
+    const updated = await photographerDal.updateById(id, { isFeatured });
+
+    if (!updated) {
+      throw new InternalError("Failed to update photographer");
+    }
+
+    return buildAdminPhotographerReviewEntry(updated);
   },
 
   async getPublicPhotographersByIds(ids: string[]) {

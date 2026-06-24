@@ -15,7 +15,13 @@ export function AdminPhotographerReviewActions({
 }: {
   allowedTransitions: PhotographerReviewDecisionStatus[];
   photographerId: string;
-  currentStatus: "draft" | "submitted" | "approved" | "rejected" | "on_hold";
+  currentStatus:
+    | "draft"
+    | "submitted"
+    | "approved"
+    | "rejected"
+    | "on_hold"
+    | "pending_verification";
   returnTo?: string;
 }) {
   const successHref = returnTo

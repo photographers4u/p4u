@@ -27,7 +27,13 @@ export function ReviewDecisionActions({
   approvingLabel: string;
   rejectingLabel: string;
   successHref: Route;
-  currentStatus?: "draft" | "submitted" | "approved" | "rejected" | "on_hold";
+  currentStatus?:
+    | "draft"
+    | "submitted"
+    | "approved"
+    | "rejected"
+    | "on_hold"
+    | "pending_verification";
   submitReview: (input: {
     id: string;
     data:

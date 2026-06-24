@@ -2,8 +2,8 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 import type { PublicPhotographerExploreFilters } from "@/lib/public-photographer-explore";
-import { getAuthSession } from "@/server/auth/session";
 import { API_CACHE_NAMESPACES } from "@/server/api/lib/response-cache";
+import { getAuthSession } from "@/server/auth/session";
 import { photographerController } from "@/server/db/controller/photographer";
 import { photographerContactController } from "@/server/db/controller/photographer-contact";
 import { NotFoundError } from "@/server/db/helpers/errors";
@@ -59,7 +59,7 @@ export type PublicPhotographerExplorePage = Awaited<
 >;
 export type PublicPhotographerExploreEntry =
   PublicPhotographerExplorePage["photographers"][number];
-  
+
 export type PublicPhotographerListEntry = Awaited<
   ReturnType<typeof photographerController.getPublicPhotographers>
 >[number];
@@ -192,6 +192,28 @@ const getCachedPublicPhotographerExplorePage = unstable_cache(
     tags: [API_CACHE_NAMESPACES.publicPhotographerDirectory],
   },
 );
+
+const getCachedPublicFeaturedPhotographers = unstable_cache(
+  async () => photographerController.getPublicFeaturedPhotographers(),
+  ["public-photographers-featured"],
+  {
+    revalidate: PUBLIC_PHOTOGRAPHER_DIRECTORY_CACHE_TTL_SECONDS,
+    tags: [API_CACHE_NAMESPACES.publicPhotographerDirectory],
+  },
+);
+
+export async function getPublicFeaturedPhotographers(): Promise<
+  PublicPhotographerExploreEntry[]
+> {
+  return getCachedPublicFeaturedPhotographers();
+}
+
+export async function setPhotographerFeaturedById(
+  id: string,
+  isFeatured: boolean,
+) {
+  return photographerController.setPhotographerFeatured(id, isFeatured);
+}
 
 export async function getAdminPhotographerEntriesPage(filters?: {
   page?: number;

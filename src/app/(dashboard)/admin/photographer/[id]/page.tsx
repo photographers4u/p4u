@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AdminPhotographerFeatureToggle } from "@/components/review-workflow/admin-photographer-feature-toggle";
 import { AdminPhotographerReviewActions } from "@/components/review-workflow/admin-photographer-review-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -398,6 +399,18 @@ export default async function AdminPhotographerDetailPage({
                   </p>
                 )}
               </div>
+            </SectionCard>
+
+            <SectionCard
+              title="Homepage featured"
+              description="Featured photographers show up in the Featured Photographers carousel on the homepage."
+            >
+              <AdminPhotographerFeatureToggle
+                photographerId={entry.id}
+                isFeatured={entry.isFeatured}
+                size="default"
+                className="w-full"
+              />
             </SectionCard>
 
             <SectionCard

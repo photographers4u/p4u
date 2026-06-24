@@ -38,6 +38,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# generated credentials, never commit
+/scripts/data/output/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

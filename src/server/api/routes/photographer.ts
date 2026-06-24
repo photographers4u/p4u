@@ -18,6 +18,7 @@ import {
   reviewPhotographerById,
   savePhotographerAvatarByUserId,
   savePhotographerOnboardingStepByUserId,
+  setPhotographerFeaturedById,
   updatePhotographerProfileByUserId,
 } from "@/server/services/photographer";
 import {
@@ -25,6 +26,7 @@ import {
   reviewPhotographerSchema,
   savePhotographerAvatarStepSchema,
   savePhotographerOnboardingStepRequestSchema,
+  setPhotographerFeaturedSchema,
   updatePhotographerProfileSchema,
 } from "@/zod/schema/photographer";
 
@@ -151,6 +153,38 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
           c.req.valid("param").id,
           adminUserResult.user.id,
           c.req.valid("json"),
+        );
+        await invalidateApiCacheNamespaces(
+          [...PHOTOGRAPHER_MUTATION_CACHE_NAMESPACES],
+          {
+            bypassSeconds:
+              PUBLIC_PHOTOGRAPHER_CACHE_INVALIDATION_BYPASS_SECONDS,
+          },
+        );
+
+        return c.json(photographer, 200);
+      } catch (error) {
+        const [status, message] = mapError(error);
+        return c.json({ message }, status);
+      }
+    },
+  )
+  .patch(
+    "/:id/feature",
+    requireAuth,
+    zValidator("param", photographerIdParamsSchema),
+    zValidator("json", setPhotographerFeaturedSchema),
+    async (c) => {
+      const adminUserResult = getAdminUserOrResponse(c);
+
+      if (!adminUserResult.ok) {
+        return adminUserResult.response;
+      }
+
+      try {
+        const photographer = await setPhotographerFeaturedById(
+          c.req.valid("param").id,
+          c.req.valid("json").isFeatured,
         );
         await invalidateApiCacheNamespaces(
           [...PHOTOGRAPHER_MUTATION_CACHE_NAMESPACES],

@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
 import Link from "next/link";
+import { AdminPhotographerFeatureToggle } from "@/components/review-workflow/admin-photographer-feature-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -188,6 +189,9 @@ export default async function AdminPhotographersPage({
                   <th className="px-5 py-3 font-medium text-foreground">
                     Visibility
                   </th>
+                  <th className="px-5 py-3 font-medium text-foreground">
+                    Featured
+                  </th>
                   <th className="px-5 py-3 text-right font-medium text-foreground sm:px-6">
                     Action
                   </th>
@@ -280,6 +284,12 @@ export default async function AdminPhotographersPage({
                         >
                           {entry.isPublished ? "Live" : "Hidden"}
                         </Badge>
+                      </td>
+                      <td className="px-5 py-4 align-top">
+                        <AdminPhotographerFeatureToggle
+                          photographerId={entry.id}
+                          isFeatured={entry.isFeatured}
+                        />
                       </td>
                       <td className="px-5 py-4 text-right align-top sm:px-6">
                         <Button asChild variant="ghost" size="sm">

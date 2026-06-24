@@ -1,0 +1,1 @@
+ALTER TYPE "public"."photographer_workflow_status" ADD VALUE 'pending_verification';

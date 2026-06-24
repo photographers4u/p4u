@@ -21,9 +21,19 @@ export function isPhotographerSubmittedForReview(
 
 type PhotographerModerationState = PhotographerWorkflowState;
 
+export function isPendingVerificationPhotographer(
+  state: PhotographerWorkflowState,
+) {
+  return state.status === "pending_verification";
+}
+
 export function getAllowedPhotographerReviewStatuses(
   state: PhotographerModerationState,
 ): PhotographerReviewDecisionStatus[] {
+  if (isPendingVerificationPhotographer(state)) {
+    return ["approved", "rejected"];
+  }
+
   if (isPhotographerSubmittedForReview(state)) {
     return ["approved", "rejected"];
   }

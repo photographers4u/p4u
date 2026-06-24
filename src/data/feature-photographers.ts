@@ -16,6 +16,7 @@ export const photographers = [
       "Engagement Shoots",
     ],
     remainingSpecialitiesCount: 1,
+    status: "approved",
     uploads: [
       {
         id: "upload_01",
@@ -35,6 +36,7 @@ export const photographers = [
     locationCountry: "india",
     specialities: ["Fashion Photography", "Wedding Photography"],
     remainingSpecialitiesCount: 2,
+    status: "approved",
     uploads: [
       {
         id: "upload_01",
@@ -58,6 +60,7 @@ export const photographers = [
       "Wedding Photography",
     ],
     remainingSpecialitiesCount: 1,
+    status: "approved",
     uploads: [
       {
         id: "upload_01",
@@ -86,6 +89,7 @@ export const photographers = [
       "Bridal Portraits",
     ],
     remainingSpecialitiesCount: 2,
+    status: "approved",
     uploads: [
       {
         id: "upload_02",
@@ -103,7 +107,8 @@ export const photographers = [
     id: "5e6f7g8h-5555-4e9b-8f7f-eeee5555ffff",
     slug: "vikram-singh-visuals",
     name: "Vikram Singh",
-    avatar: "https://i.pinimg.com/736x/d5/07/49/d50749f9c34b1ba48297e5a724577392.jpg",
+    avatar:
+      "https://i.pinimg.com/736x/d5/07/49/d50749f9c34b1ba48297e5a724577392.jpg",
     experienceYears: "8",
     locationCity: "Jaipur",
     locationCountry: "india",
@@ -113,6 +118,7 @@ export const photographers = [
       "Candid Photography",
     ],
     remainingSpecialitiesCount: 3,
+    status: "approved",
     uploads: [
       {
         id: "upload_01",
@@ -136,6 +142,7 @@ export const photographers = [
       "Couple Shoots",
     ],
     remainingSpecialitiesCount: 1,
+    status: "approved",
     uploads: [
       {
         id: "upload_01",
@@ -153,7 +160,8 @@ export const photographers = [
     id: "7g8h9i0j-7777-4e9b-8f7f-aaaa7777bbbb",
     slug: "rohan-das-studio",
     name: "Rohan Das",
-    avatar: "https://i.pinimg.com/1200x/0b/59/a3/0b59a39c96b9b9999109799e94bb964c.jpg",
+    avatar:
+      "https://i.pinimg.com/1200x/0b/59/a3/0b59a39c96b9b9999109799e94bb964c.jpg",
     experienceYears: "3",
     locationCity: "Kolkata",
     locationCountry: "india",
@@ -163,6 +171,7 @@ export const photographers = [
       "Candid Photography",
     ],
     remainingSpecialitiesCount: 2,
+    status: "approved",
     uploads: [
       {
         id: "upload_01",
@@ -191,6 +200,7 @@ export const photographers = [
       "Candid Photography",
     ],
     remainingSpecialitiesCount: 2,
+    status: "approved",
     uploads: [
       {
         id: "upload_01",

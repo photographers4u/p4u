@@ -1,13 +1,15 @@
 import { Clock3, MapPin } from "lucide-react";
 import Link from "next/link";
 import { BookmarkButton } from "@/components/bookmark-button";
+import { PhotographerVerificationBadge } from "@/components/photographer-verification-badge";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import {
   formatPhotographerCountry,
   formatPhotographerExperience,
   getProfileInitials,
 } from "@/lib/photographer-presentation";
+import { cn } from "@/lib/utils";
 import type { PublicPhotographerListEntry } from "@/server/services/photographer";
 
 function getLocationLabel(photographer: PublicPhotographerListEntry) {
@@ -30,10 +32,20 @@ export function PhotographerCard({
   const location = getLocationLabel(photographer);
 
   return (
-    <article className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 bg-[linear-gradient(135deg,#fff7ed_0%,#f8fafc_60%,#ffffff_100%)] p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-3">
+    <article className="relative overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm">
+      <div className="absolute right-5 top-5 z-10">
+        <BookmarkButton
+          identifier="photographer"
+          value={photographer.id}
+          size="icon-sm"
+          label="Save photographer"
+          activeLabel="Saved photographer"
+        />
+      </div>
+
+      <Link href={`/p/${photographer.slug}`} className="block">
+        <div className="border-b border-slate-200 bg-[linear-gradient(135deg,#fff7ed_0%,#f8fafc_60%,#ffffff_100%)] p-5">
+          <div className="space-y-3 pr-12">
             <Badge variant="secondary" className="w-fit">
               {eyebrow}
             </Badge>
@@ -52,47 +64,37 @@ export function PhotographerCard({
               )}
               <div className="space-y-1">
                 <h2 className="text-xl font-semibold text-slate-950">
-                  <Link
-                    href={`/p/${photographer.slug}`}
-                    className="hover:underline underline-offset-4"
-                  >
-                    {photographer.name ?? "Photographer"}
-                  </Link>
+                  {photographer.name ?? "Photographer"}
                 </h2>
                 <p className="flex items-center gap-1.5 text-sm text-slate-600">
                   <MapPin className="size-3.5" />
                   {location}
                 </p>
+                <PhotographerVerificationBadge status={photographer.status} />
               </div>
             </div>
           </div>
-
-          <BookmarkButton
-            identifier="photographer"
-            value={photographer.id}
-            size="icon-sm"
-            label="Save photographer"
-            activeLabel="Saved photographer"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-5 p-5">
-        <p className="line-clamp-3 min-h-[4.5rem] text-sm leading-7 text-slate-600">
-          {photographer.bio?.trim()
-            ? photographer.bio
-            : "Reviewed photographer profile on Photographers4U."}
-        </p>
-
-        <div className="flex items-center gap-2 text-sm text-slate-600">
-          <Clock3 className="size-4" />
-          {formatPhotographerExperience(photographer.experienceYears)}
         </div>
 
-        <Button asChild variant="outline" className="w-full">
-          <Link href={`/p/${photographer.slug}`}>View profile</Link>
-        </Button>
-      </div>
+        <div className="space-y-5 p-5">
+          <p className="line-clamp-3 min-h-[4.5rem] text-sm leading-7 text-slate-600">
+            {photographer.bio?.trim()
+              ? photographer.bio
+              : "Reviewed photographer profile on Photographers4U."}
+          </p>
+
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <Clock3 className="size-4" />
+            {formatPhotographerExperience(photographer.experienceYears)}
+          </div>
+
+          <span
+            className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+          >
+            View profile
+          </span>
+        </div>
+      </Link>
     </article>
   );
 }

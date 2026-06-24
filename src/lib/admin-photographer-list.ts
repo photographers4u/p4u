@@ -63,6 +63,8 @@ export function getAdminPhotographerStatusFilterLabel(
       return "Rejected";
     case "on_hold":
       return "On hold";
+    case "pending_verification":
+      return "Pending Verification";
     default:
       return "All statuses";
   }

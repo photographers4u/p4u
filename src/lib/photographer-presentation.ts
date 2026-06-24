@@ -1,5 +1,6 @@
 import {
   isApprovedPhotographer,
+  isPendingVerificationPhotographer,
   isPhotographerSubmittedForReview,
 } from "@/lib/photographer-status";
 import type { PhotographerWorkflowStatus } from "@/zod/schema/photographer";
@@ -30,6 +31,7 @@ export type PhotographerStatusViewModel = {
   isApproved: boolean;
   isDraft: boolean;
   isOnHold: boolean;
+  isPendingVerification: boolean;
   isRejected: boolean;
   isSubmittedForReview: boolean;
   label: string;
@@ -54,31 +56,39 @@ export function getPhotographerStatusViewModel(
   const isRejected = status === "rejected";
   const isOnHold = status === "on_hold";
   const isDraft = status === "draft";
+  const isPendingVerification = isPendingVerificationPhotographer({ status });
   const isPublished = state?.isPublished ?? false;
   const rejectionReason = state?.rejectionReason?.trim() ?? "";
-  const portfolioBanner = isSubmittedForReview
+  const portfolioBanner = isPendingVerification
     ? {
         tone: "info" as const,
-        message: "Your profile has been submitted for review.",
+        message: "Your profile is live with a pending verification badge.",
         description:
-          "It is hidden from visitors right now and will go live after approval.",
+          "Our team will call you to confirm permission before switching it to a verified badge.",
       }
-    : isRejected
+    : isSubmittedForReview
       ? {
-          tone: "danger" as const,
-          message: "Your profile has been rejected.",
+          tone: "info" as const,
+          message: "Your profile has been submitted for review.",
           description:
-            rejectionReason || "It is not visible to visitors right now.",
+            "It is hidden from visitors right now and will go live after approval.",
         }
-      : isOnHold
+      : isRejected
         ? {
-            tone: "warning" as const,
-            message: "Your profile is on hold.",
+            tone: "danger" as const,
+            message: "Your profile has been rejected.",
             description:
-              rejectionReason ||
-              "It is currently hidden from visitors on the public page.",
+              rejectionReason || "It is not visible to visitors right now.",
           }
-        : null;
+        : isOnHold
+          ? {
+              tone: "warning" as const,
+              message: "Your profile is on hold.",
+              description:
+                rejectionReason ||
+                "It is currently hidden from visitors on the public page.",
+            }
+          : null;
 
   if (isApproved) {
     return {
@@ -91,6 +101,7 @@ export function getPhotographerStatusViewModel(
       isApproved,
       isDraft,
       isOnHold,
+      isPendingVerification,
       isRejected,
       isSubmittedForReview,
       label: "Approved",
@@ -111,6 +122,7 @@ export function getPhotographerStatusViewModel(
       isApproved,
       isDraft,
       isOnHold,
+      isPendingVerification,
       isRejected,
       isSubmittedForReview,
       label: "On hold",
@@ -131,6 +143,7 @@ export function getPhotographerStatusViewModel(
       isApproved,
       isDraft,
       isOnHold,
+      isPendingVerification,
       isRejected,
       isSubmittedForReview,
       label: "Rejected",
@@ -151,9 +164,31 @@ export function getPhotographerStatusViewModel(
       isApproved,
       isDraft,
       isOnHold,
+      isPendingVerification,
       isRejected,
       isSubmittedForReview,
       label: "Submitted",
+      portfolioBanner,
+      shouldRedirectOnboardingToPortfolio: true,
+      shouldRedirectPortfolioToOnboarding: false,
+      shouldShowPortfolioForms: true,
+    };
+  }
+
+  if (isPendingVerification) {
+    return {
+      adminDescription:
+        "Imported photographer profile, live publicly, awaiting a verification call before approval.",
+      badgeVariant: "secondary",
+      canEditApprovedProfile: false,
+      canManageOfferings: false,
+      isApproved,
+      isDraft,
+      isOnHold,
+      isPendingVerification,
+      isRejected,
+      isSubmittedForReview,
+      label: "Pending Verification & Permission",
       portfolioBanner,
       shouldRedirectOnboardingToPortfolio: true,
       shouldRedirectPortfolioToOnboarding: false,
@@ -169,6 +204,7 @@ export function getPhotographerStatusViewModel(
     isApproved,
     isDraft,
     isOnHold,
+    isPendingVerification,
     isRejected,
     isSubmittedForReview,
     label: "Draft",

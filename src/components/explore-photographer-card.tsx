@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Dot, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BookmarkButton } from "@/components/bookmark-button";
+import { PhotographerVerificationBadge } from "@/components/photographer-verification-badge";
 import { Badge } from "@/components/ui/badge";
 import {
   formatPhotographerCountry,
@@ -168,7 +169,11 @@ export function ExplorePhotographerCard({
               />
             )
           ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+            <Link
+              href={`/p/${photographer.slug}`}
+              className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center"
+              aria-label={`View ${photographer.name ?? "Photographer"}'s profile`}
+            >
               {photographer.avatar ? (
                 // biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host
                 <img
@@ -184,7 +189,7 @@ export function ExplorePhotographerCard({
               <p className="text-sm font-medium text-slate-500">
                 No portfolio images yet
               </p>
-            </div>
+            </Link>
           )}
 
           <div className="absolute right-3 top-3 z-10">
@@ -222,6 +227,10 @@ export function ExplorePhotographerCard({
             <h2 className="truncate text-base font-semibold text-slate-950">
               {photographer.name ?? "Photographer"}
             </h2>
+            <PhotographerVerificationBadge
+              status={photographer.status}
+              className="mt-1"
+            />
             <div className="mt-0.5 flex flex-wrap items-center gap-x-0.5 text-[13px] text-slate-500">
               <span className="inline-flex items-center gap-1">
                 <MapPin className="size-3.5" />

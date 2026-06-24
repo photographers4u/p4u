@@ -57,6 +57,7 @@ export type AdminPhotographerListRow = {
   avatar: string | null;
   onboardingStep: PhotographerRecord["onboardingStep"];
   isPublished: boolean;
+  isFeatured: boolean;
   status: PhotographerRecord["status"];
   rejectionReason: string | null;
   reviewedAt: Date | null;
@@ -197,6 +198,21 @@ export const photographerDal = {
       .orderBy(desc(photographer.createdAt));
   },
 
+  async getFeaturedPublished(
+    executor: DBClient = db,
+  ): Promise<PhotographerRecord[]> {
+    return executor
+      .select()
+      .from(photographer)
+      .where(
+        and(
+          eq(photographer.isPublished, true),
+          eq(photographer.isFeatured, true),
+        ),
+      )
+      .orderBy(desc(photographer.updatedAt));
+  },
+
   async countPublishedExploreList(
     filters: PublicPhotographerExploreListFilters = {},
     executor: DBClient = db,
@@ -330,6 +346,7 @@ export const photographerDal = {
       status,
     });
     const reviewPriority = sql<number>`case
+      when coalesce(${photographer.status}, 'draft') = 'pending_verification' then 0
       when coalesce(${photographer.status}, 'draft') = 'submitted' then 0
       when coalesce(${photographer.status}, 'draft') = 'draft' then 1
       when coalesce(${photographer.status}, 'draft') = 'on_hold' then 2
@@ -345,6 +362,7 @@ export const photographerDal = {
         avatar: photographer.avatar,
         onboardingStep: photographer.onboardingStep,
         isPublished: photographer.isPublished,
+        isFeatured: photographer.isFeatured,
         status: photographer.status,
         rejectionReason: photographer.rejectionReason,
         reviewedAt: photographer.reviewedAt,

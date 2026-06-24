@@ -1,20 +1,18 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import CircularGallery from "@/components/circular-gallery";
+import FAQSection from "@/components/faq-section";
+import FeaturedPhotographersCarousel from "@/components/featured-photographers";
 import { Footer } from "@/components/footer";
 import Navbar from "@/components/navbar";
-import { Button } from "@/components/ui/button";
-import FeaturedPhotographersCarousel from "@/components/featured-photographers";
-import { playfairDisplay } from "@/lib/fonts";
-import { DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS } from "@/lib/public-photographer-explore";
 import SectionContainer from "@/components/section-ui";
-import { cn } from "@/lib/utils";
-import { getAuthSession } from "@/server/auth/session";
-import { getPublicPhotographerExplorePage } from "@/server/services/photographer";
+import { Button } from "@/components/ui/button";
 import { Marquee } from "@/components/ui/marquee";
 import { photographers } from "@/data/feature-photographers";
-import FAQSection from "@/components/faq-section";
-
+import { playfairDisplay } from "@/lib/fonts";
+import { cn } from "@/lib/utils";
+import { getAuthSession } from "@/server/auth/session";
+import { getPublicFeaturedPhotographers } from "@/server/services/photographer";
 
 const images = [
   "/hero-images/10002.jpeg",
@@ -36,13 +34,7 @@ export default async function HomePage() {
   const requestHeaders = await headers();
   const [session, featuredPhotographers] = await Promise.all([
     getAuthSession({ headers: requestHeaders }),
-    getPublicPhotographerExplorePage(
-      DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS,
-      {
-        page: 1,
-        pageSize: 8,
-      },
-    ),
+    getPublicFeaturedPhotographers(),
   ]);
 
   return (
@@ -96,7 +88,7 @@ export default async function HomePage() {
           subtitle="A selection of photographers we currently recommend."
         >
           <FeaturedPhotographersCarousel
-            photographers={featuredPhotographers.photographers}
+            photographers={featuredPhotographers}
           />
         </SectionContainer>
 

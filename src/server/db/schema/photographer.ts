@@ -16,7 +16,14 @@ export const experienceYearsEnum = pgEnum("experience_years", EXPERIENCE_YEARS);
 export const photographerCityEnum = pgEnum("photographer_city", CITIES);
 export const photographerWorkflowStatusEnum = pgEnum(
   "photographer_workflow_status",
-  ["draft", "submitted", "approved", "rejected", "on_hold"],
+  [
+    "draft",
+    "submitted",
+    "approved",
+    "rejected",
+    "on_hold",
+    "pending_verification",
+  ],
 );
 type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
 
@@ -41,6 +48,7 @@ export const photographer = createTable("photographer", {
     .notNull()
     .default(1),
   isPublished: boolean("is_published").notNull().default(false),
+  isFeatured: boolean("is_featured").notNull().default(false),
   ...reviewColumns(),
   status: photographerWorkflowStatusEnum("status").default("draft"),
 });
