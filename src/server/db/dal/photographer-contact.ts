@@ -39,6 +39,18 @@ export const photographerContactDal = {
     return record ?? null;
   },
 
+  async getByPhone(
+    phone: string,
+    executor: DBClient = db,
+  ): Promise<PhotographerContactRecord | null> {
+    const [record] = await executor
+      .select()
+      .from(photographerContact)
+      .where(eq(photographerContact.phone, phone));
+
+    return record ?? null;
+  },
+
   async getByPhotographerId(
     photographerId: string,
     executor: DBClient = db,

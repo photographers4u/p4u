@@ -14,11 +14,13 @@ import {
   type PhotographerRecord,
   photographerDal,
 } from "@/server/db/dal/photographer";
+import { photographerContactDal } from "@/server/db/dal/photographer-contact";
 import { photographerSpecialityDal } from "@/server/db/dal/photographer-speciality";
 import { photographerUploadDal } from "@/server/db/dal/photographer-upload";
 import { specialityDal } from "@/server/db/dal/speciality";
 import {
   BadRequestError,
+  ConflictError,
   ForbiddenError,
   InternalError,
   NotFoundError,
@@ -32,6 +34,7 @@ import {
 import type {
   AdminPhotographerListSort,
   AdminPhotographerListStatusFilter,
+  CreateAdminPhotographerInput,
   PhotographerOnboardingSpecialityInput,
   PhotographerOnboardingState,
   ReviewPhotographerInput,
@@ -101,6 +104,9 @@ export type AdminPhotographerReviewEntry = {
   }>;
   uploadsCount: number;
   portfolioPreview: string | null;
+};
+export type AdminPhotographerCreateResult = AdminPhotographerReviewEntry & {
+  generatedPassword: string;
 };
 export type AdminPhotographerListEntry = {
   id: string;
@@ -905,6 +911,58 @@ async function buildAdminPhotographerReviewEntry(
   };
 }
 
+async function applyPhotographerProfileUpdate(
+  existing: PhotographerRecord,
+  input: UpdatePhotographerProfileInput,
+  executor: DBClient = db,
+) {
+  const photographerWithSlug = await ensurePhotographerSlug(
+    existing,
+    executor,
+    input.name,
+  );
+  const onboardingStep = getProgressedOnboardingStep(
+    photographerWithSlug.onboardingStep,
+    PROFILE_ONBOARDING_STEP,
+  );
+  const data = {
+    ...input,
+    bio: input.bio?.trim() ? input.bio : null,
+    instagramReelUrl: normalizeProfileVideoUrl(
+      input.instagramReelUrl,
+      photographerWithSlug.instagramReelUrl,
+    ),
+    onboardingStep,
+    youtubeVideoUrl: normalizeProfileVideoUrl(
+      input.youtubeVideoUrl,
+      photographerWithSlug.youtubeVideoUrl,
+    ),
+  };
+
+  if (
+    Object.keys(input).length === 0 &&
+    photographerWithSlug.onboardingStep === onboardingStep
+  ) {
+    return photographerWithSlug;
+  }
+
+  if (!hasChanges(photographerWithSlug, data)) {
+    return photographerWithSlug;
+  }
+
+  const photographer = await photographerDal.updateById(
+    photographerWithSlug.id,
+    data,
+    executor,
+  );
+
+  if (!photographer) {
+    throw new InternalError("Failed to update photographer");
+  }
+
+  return photographer;
+}
+
 async function sendPhotographerReviewNotification(
   notification: PhotographerReviewNotification,
 ) {
@@ -1466,50 +1524,106 @@ export const photographerController = {
   ) {
     const existing = await getPhotographerByUserIdOrThrow(userId);
     assertApprovedPhotographerEditPermission(existing, "profile");
-    const photographerWithSlug = await ensurePhotographerSlug(
-      existing,
-      db,
-      input.name,
-    );
-    const onboardingStep = getProgressedOnboardingStep(
-      photographerWithSlug.onboardingStep,
-      PROFILE_ONBOARDING_STEP,
-    );
-    const data = {
-      ...input,
-      bio: input.bio?.trim() ? input.bio : null,
-      instagramReelUrl: normalizeProfileVideoUrl(
-        input.instagramReelUrl,
-        photographerWithSlug.instagramReelUrl,
-      ),
-      onboardingStep,
-      youtubeVideoUrl: normalizeProfileVideoUrl(
-        input.youtubeVideoUrl,
-        photographerWithSlug.youtubeVideoUrl,
-      ),
-    };
 
-    if (
-      Object.keys(input).length === 0 &&
-      photographerWithSlug.onboardingStep === onboardingStep
-    ) {
-      return photographerWithSlug;
+    return applyPhotographerProfileUpdate(existing, input);
+  },
+
+  async assertPhotographerPhoneAvailable(phone: string) {
+    const existingContact = await photographerContactDal.getByPhone(phone);
+
+    if (existingContact) {
+      throw new ConflictError(
+        "A photographer with this phone number already exists",
+      );
+    }
+  },
+
+  async createAdminPhotographerProfile(
+    userId: string,
+    email: string,
+    input: CreateAdminPhotographerInput,
+  ): Promise<AdminPhotographerReviewEntry> {
+    const photographer = await db.transaction(async (tx) => {
+      const created = await photographerDal.create(
+        {
+          userId,
+          name: input.name,
+          bio: input.bio ?? null,
+          locationCity: input.locationCity ?? null,
+          locationCountry: DEFAULT_LOCATION_COUNTRY,
+          experienceYears: input.experienceYears ?? null,
+          instagramReelUrl: input.instagramReelUrl ?? null,
+          status: "pending_verification",
+          isPublished: false,
+        },
+        tx,
+      );
+
+      if (!created) {
+        throw new InternalError("Failed to create photographer");
+      }
+
+      const withSlug = await ensurePhotographerSlug(created, tx, input.name);
+
+      await photographerContactController.savePhotographerContactByPhotographerId(
+        withSlug.id,
+        {
+          phone: input.phone,
+          email,
+          isPublic: input.isPublic,
+        },
+        tx,
+      );
+
+      return withSlug;
+    });
+
+    return buildAdminPhotographerReviewEntry(photographer);
+  },
+
+  async updateAdminPhotographerProfile(
+    photographerId: string,
+    input: UpdatePhotographerProfileInput,
+  ): Promise<AdminPhotographerReviewEntry> {
+    const existing = await photographerDal.getById(photographerId);
+
+    if (!existing) {
+      throw new NotFoundError("Photographer not found");
     }
 
-    if (!hasChanges(photographerWithSlug, data)) {
-      return photographerWithSlug;
+    const photographer = await applyPhotographerProfileUpdate(existing, input);
+
+    return buildAdminPhotographerReviewEntry(photographer);
+  },
+
+  async updateAdminPhotographerAvatar(
+    photographerId: string,
+    avatar: string,
+  ): Promise<AdminPhotographerReviewEntry> {
+    const existing = await photographerDal.getById(photographerId);
+
+    if (!existing) {
+      throw new NotFoundError("Photographer not found");
     }
 
-    const photographer = await photographerDal.updateById(
-      photographerWithSlug.id,
-      data,
-    );
+    const photographer = await updatePhotographerRecord(existing, { avatar });
 
-    if (!photographer) {
-      throw new InternalError("Failed to update photographer");
+    return buildAdminPhotographerReviewEntry(photographer);
+  },
+
+  async syncAdminPhotographerSpecialities(
+    photographerId: string,
+    specialities: PhotographerOnboardingSpecialityInput[],
+  ): Promise<AdminPhotographerReviewEntry> {
+    const existing = await photographerDal.getById(photographerId);
+
+    if (!existing) {
+      throw new NotFoundError("Photographer not found");
     }
 
-    return photographer;
+    await syncPhotographerSpecialities(photographerId, specialities);
+
+    return buildAdminPhotographerReviewEntry(existing);
   },
 
   async deletePhotographer(userId: string) {

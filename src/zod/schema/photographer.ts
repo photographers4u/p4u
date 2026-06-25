@@ -4,6 +4,7 @@ import { isInstagramReelUrl, isYouTubeVideoUrl } from "@/lib/video-embeds";
 import {
   CITIES,
   EXPERIENCE_YEARS,
+  emailSchema,
   entitySchema,
   eventTimestamp,
   idValueSchema,
@@ -377,6 +378,24 @@ export const setPhotographerFeaturedSchema = z.object({
   isFeatured: z.boolean(),
 });
 
+export const createAdminPhotographerSchema = z.object({
+  name: requiredTextSchema("Name").max(
+    NAME_MAX_LENGTH,
+    `Name must be at most ${NAME_MAX_LENGTH} characters`,
+  ),
+  phone: requiredTextSchema("Phone"),
+  email: emailSchema.optional(),
+  bio: photographerProfileBioInputSchema.optional(),
+  locationCity: z.enum(CITIES).optional(),
+  experienceYears: z.enum(EXPERIENCE_YEARS).optional(),
+  instagramReelUrl: instagramReelUrlSchema.optional(),
+  isPublic: z.boolean().default(false),
+});
+
+export const syncAdminPhotographerSpecialitiesSchema = z.object({
+  specialities: z.array(photographerOnboardingSpecialityInputSchema),
+});
+
 export type Photographer = z.infer<typeof photographerSchema>;
 export type CreatePhotographerInput = z.infer<typeof createPhotographerSchema>;
 export type UpdatePhotographerInput = z.infer<typeof updatePhotographerSchema>;
@@ -417,4 +436,10 @@ export type UpdatePhotographerProfileInput = z.infer<
 export type ReviewPhotographerInput = z.infer<typeof reviewPhotographerSchema>;
 export type SetPhotographerFeaturedInput = z.infer<
   typeof setPhotographerFeaturedSchema
+>;
+export type CreateAdminPhotographerInput = z.infer<
+  typeof createAdminPhotographerSchema
+>;
+export type SyncAdminPhotographerSpecialitiesInput = z.infer<
+  typeof syncAdminPhotographerSpecialitiesSchema
 >;

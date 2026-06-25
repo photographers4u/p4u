@@ -127,6 +127,180 @@ async function createPortfolioUploadByPhotographerId(
   });
 }
 
+async function setPortfolioUploadPinnedByPhotographerId(
+  photographerId: string,
+  uploadId: string,
+  input: SetPhotographerUploadPinnedInput,
+) {
+  return db.transaction(async (tx) => {
+    await lockOwnedPhotographerUploads(photographerId, tx);
+    const existingUpload = await photographerUploadDal.getById(uploadId, tx);
+
+    if (!existingUpload || existingUpload.photographerId !== photographerId) {
+      throw new NotFoundError("Portfolio image not found.");
+    }
+
+    if (input.isPinned) {
+      if (!existingUpload.pinnedAt) {
+        const pinnedUploads =
+          await photographerUploadDal.getPinnedByPhotographerId(
+            photographerId,
+            tx,
+          );
+        const uploadsToUnpin = pinnedUploads.slice(
+          0,
+          Math.max(
+            0,
+            pinnedUploads.length - photographerPortfolioPinnedImageLimit + 1,
+          ),
+        );
+
+        for (const uploadToUnpin of uploadsToUnpin) {
+          const updatedUpload = await photographerUploadDal.updateById(
+            uploadToUnpin.id,
+            {
+              pinnedAt: null,
+            },
+            tx,
+          );
+
+          if (!updatedUpload) {
+            throw new InternalError("Failed to update the pinned images.");
+          }
+        }
+
+        const updatedUpload = await photographerUploadDal.updateById(
+          uploadId,
+          {
+            pinnedAt: new Date(),
+          },
+          tx,
+        );
+
+        if (!updatedUpload) {
+          throw new InternalError("Failed to pin the portfolio image.");
+        }
+      }
+    } else if (existingUpload.pinnedAt) {
+      const updatedUpload = await photographerUploadDal.updateById(
+        uploadId,
+        {
+          pinnedAt: null,
+        },
+        tx,
+      );
+
+      if (!updatedUpload) {
+        throw new InternalError("Failed to unpin the portfolio image.");
+      }
+    }
+
+    const uploads = await photographerUploadDal.getByPhotographerId(
+      photographerId,
+      tx,
+    );
+
+    return uploads.map(toPhotographerUploadEntry);
+  });
+}
+
+async function reorderPortfolioUploadsByPhotographerId(
+  photographerId: string,
+  input: ReorderPhotographerUploadsInput,
+) {
+  return db.transaction(async (tx) => {
+    await lockOwnedPhotographerUploads(photographerId, tx);
+    const existingUploads = await photographerUploadDal.getByPhotographerId(
+      photographerId,
+      tx,
+    );
+    const existingUploadIds = existingUploads.map((upload) => upload.id);
+    const existingUploadIdSet = new Set(existingUploadIds);
+    const requestedUploadIdSet = new Set(input.orderedUploadIds);
+
+    if (input.orderedUploadIds.length !== existingUploads.length) {
+      throw new BadRequestError(
+        "Send the full portfolio image order when reordering.",
+      );
+    }
+
+    if (requestedUploadIdSet.size !== existingUploads.length) {
+      throw new BadRequestError(
+        "Send each portfolio image id only once when reordering.",
+      );
+    }
+
+    if (
+      input.orderedUploadIds.some(
+        (uploadId) => !existingUploadIdSet.has(uploadId),
+      )
+    ) {
+      throw new BadRequestError(
+        "Only the current photographer's portfolio image ids can be reordered.",
+      );
+    }
+
+    await syncPhotographerUploadOrder(input.orderedUploadIds, tx);
+
+    const orderedUploads = await photographerUploadDal.getByPhotographerId(
+      photographerId,
+      tx,
+    );
+
+    return orderedUploads.map(toPhotographerUploadEntry);
+  });
+}
+
+async function deletePortfolioUploadByPhotographerId(
+  photographerId: string,
+  uploadId: string,
+) {
+  const deletedUpload = await db.transaction(async (tx) => {
+    await lockOwnedPhotographerUploads(photographerId, tx);
+    const existingUpload = await photographerUploadDal.getById(uploadId, tx);
+
+    if (!existingUpload || existingUpload.photographerId !== photographerId) {
+      throw new NotFoundError("Portfolio image not found.");
+    }
+
+    const deletedUpload = await photographerUploadDal.deleteById(uploadId, tx);
+
+    if (!deletedUpload) {
+      throw new InternalError("Failed to delete the portfolio image.");
+    }
+
+    const remainingUploads =
+      await photographerUploadDal.getByPhotographerIdInDisplayOrder(
+        photographerId,
+        tx,
+      );
+
+    await syncPhotographerUploadOrder(
+      remainingUploads.map((upload) => upload.id),
+      tx,
+    );
+
+    return deletedUpload;
+  });
+
+  if (deletedUpload?.storageFileId) {
+    try {
+      await deleteProviderFile(deletedUpload.storageFileId);
+    } catch (error) {
+      console.error("Failed to delete photographer portfolio image asset", {
+        error,
+        fileId: deletedUpload.storageFileId,
+        photographerId,
+        uploadId,
+      });
+    }
+  }
+
+  return {
+    id: uploadId,
+  };
+}
+
 export const photographerUploadController = {
   async createPortfolioUploadByPhotographerId(
     photographerId: string,
@@ -148,58 +322,17 @@ export const photographerUploadController = {
     return createPortfolioUploadByPhotographerId(photographer.id, input);
   },
 
+  async deletePortfolioUploadByPhotographerId(
+    photographerId: string,
+    uploadId: string,
+  ) {
+    return deletePortfolioUploadByPhotographerId(photographerId, uploadId);
+  },
+
   async deletePortfolioUploadByUserId(userId: string, uploadId: string) {
-    const deletedUpload = await db.transaction(async (tx) => {
-      const photographer = await getOwnedPhotographerOrThrow(userId, tx);
-      await lockOwnedPhotographerUploads(photographer.id, tx);
-      const existingUpload = await photographerUploadDal.getById(uploadId, tx);
+    const photographer = await getOwnedPhotographerOrThrow(userId);
 
-      if (
-        !existingUpload ||
-        existingUpload.photographerId !== photographer.id
-      ) {
-        throw new NotFoundError("Portfolio image not found.");
-      }
-
-      const deletedUpload = await photographerUploadDal.deleteById(
-        uploadId,
-        tx,
-      );
-
-      if (!deletedUpload) {
-        throw new InternalError("Failed to delete the portfolio image.");
-      }
-
-      const remainingUploads =
-        await photographerUploadDal.getByPhotographerIdInDisplayOrder(
-          photographer.id,
-          tx,
-        );
-
-      await syncPhotographerUploadOrder(
-        remainingUploads.map((upload) => upload.id),
-        tx,
-      );
-
-      return deletedUpload;
-    });
-
-    if (deletedUpload?.storageFileId) {
-      try {
-        await deleteProviderFile(deletedUpload.storageFileId);
-      } catch (error) {
-        console.error("Failed to delete photographer portfolio image asset", {
-          error,
-          fileId: deletedUpload.storageFileId,
-          uploadId,
-          userId,
-        });
-      }
-    }
-
-    return {
-      id: uploadId,
-    };
+    return deletePortfolioUploadByPhotographerId(photographer.id, uploadId);
   },
 
   async getPortfolioUploadsByUserId(userId: string) {
@@ -211,132 +344,45 @@ export const photographerUploadController = {
     return uploads.map(toPhotographerUploadEntry);
   },
 
+  async setPortfolioUploadPinnedByPhotographerId(
+    photographerId: string,
+    uploadId: string,
+    input: SetPhotographerUploadPinnedInput,
+  ) {
+    return setPortfolioUploadPinnedByPhotographerId(
+      photographerId,
+      uploadId,
+      input,
+    );
+  },
+
   async setPortfolioUploadPinnedByUserId(
     userId: string,
     uploadId: string,
     input: SetPhotographerUploadPinnedInput,
   ) {
-    return db.transaction(async (tx) => {
-      const photographer = await getOwnedPhotographerOrThrow(userId, tx);
-      await lockOwnedPhotographerUploads(photographer.id, tx);
-      const existingUpload = await photographerUploadDal.getById(uploadId, tx);
+    const photographer = await getOwnedPhotographerOrThrow(userId);
 
-      if (
-        !existingUpload ||
-        existingUpload.photographerId !== photographer.id
-      ) {
-        throw new NotFoundError("Portfolio image not found.");
-      }
+    return setPortfolioUploadPinnedByPhotographerId(
+      photographer.id,
+      uploadId,
+      input,
+    );
+  },
 
-      if (input.isPinned) {
-        if (!existingUpload.pinnedAt) {
-          const pinnedUploads =
-            await photographerUploadDal.getPinnedByPhotographerId(
-              photographer.id,
-              tx,
-            );
-          const uploadsToUnpin = pinnedUploads.slice(
-            0,
-            Math.max(
-              0,
-              pinnedUploads.length - photographerPortfolioPinnedImageLimit + 1,
-            ),
-          );
-
-          for (const uploadToUnpin of uploadsToUnpin) {
-            const updatedUpload = await photographerUploadDal.updateById(
-              uploadToUnpin.id,
-              {
-                pinnedAt: null,
-              },
-              tx,
-            );
-
-            if (!updatedUpload) {
-              throw new InternalError("Failed to update the pinned images.");
-            }
-          }
-
-          const updatedUpload = await photographerUploadDal.updateById(
-            uploadId,
-            {
-              pinnedAt: new Date(),
-            },
-            tx,
-          );
-
-          if (!updatedUpload) {
-            throw new InternalError("Failed to pin the portfolio image.");
-          }
-        }
-      } else if (existingUpload.pinnedAt) {
-        const updatedUpload = await photographerUploadDal.updateById(
-          uploadId,
-          {
-            pinnedAt: null,
-          },
-          tx,
-        );
-
-        if (!updatedUpload) {
-          throw new InternalError("Failed to unpin the portfolio image.");
-        }
-      }
-
-      const uploads = await photographerUploadDal.getByPhotographerId(
-        photographer.id,
-        tx,
-      );
-
-      return uploads.map(toPhotographerUploadEntry);
-    });
+  async reorderPortfolioUploadsByPhotographerId(
+    photographerId: string,
+    input: ReorderPhotographerUploadsInput,
+  ) {
+    return reorderPortfolioUploadsByPhotographerId(photographerId, input);
   },
 
   async reorderPortfolioUploadsByUserId(
     userId: string,
     input: ReorderPhotographerUploadsInput,
   ) {
-    return db.transaction(async (tx) => {
-      const photographer = await getOwnedPhotographerOrThrow(userId, tx);
-      await lockOwnedPhotographerUploads(photographer.id, tx);
-      const existingUploads = await photographerUploadDal.getByPhotographerId(
-        photographer.id,
-        tx,
-      );
-      const existingUploadIds = existingUploads.map((upload) => upload.id);
-      const existingUploadIdSet = new Set(existingUploadIds);
-      const requestedUploadIdSet = new Set(input.orderedUploadIds);
+    const photographer = await getOwnedPhotographerOrThrow(userId);
 
-      if (input.orderedUploadIds.length !== existingUploads.length) {
-        throw new BadRequestError(
-          "Send the full portfolio image order when reordering.",
-        );
-      }
-
-      if (requestedUploadIdSet.size !== existingUploads.length) {
-        throw new BadRequestError(
-          "Send each portfolio image id only once when reordering.",
-        );
-      }
-
-      if (
-        input.orderedUploadIds.some(
-          (uploadId) => !existingUploadIdSet.has(uploadId),
-        )
-      ) {
-        throw new BadRequestError(
-          "Only the current photographer's portfolio image ids can be reordered.",
-        );
-      }
-
-      await syncPhotographerUploadOrder(input.orderedUploadIds, tx);
-
-      const orderedUploads = await photographerUploadDal.getByPhotographerId(
-        photographer.id,
-        tx,
-      );
-
-      return orderedUploads.map(toPhotographerUploadEntry);
-    });
+    return reorderPortfolioUploadsByPhotographerId(photographer.id, input);
   },
 };

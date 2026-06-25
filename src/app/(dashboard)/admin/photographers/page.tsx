@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
 import Link from "next/link";
+import { AdminCreatePhotographerDialog } from "@/components/admin/admin-create-photographer-dialog";
 import { AdminPhotographerFeatureToggle } from "@/components/review-workflow/admin-photographer-feature-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,11 @@ export default async function AdminPhotographersPage({
 
   return (
     <div className="space-y-8">
+      <section className="flex items-center justify-between gap-4 pb-2">
+        <h1 className="text-xl font-semibold text-foreground">Photographers</h1>
+        <AdminCreatePhotographerDialog />
+      </section>
+
       <section className="pb-6">
         <form
           method="get"

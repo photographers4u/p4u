@@ -145,3 +145,96 @@ export async function deletePortfolioUploadByUserId(
     uploadId,
   );
 }
+
+async function getAdminPhotographerOrThrow(photographerId: string) {
+  const photographer = await photographerDal.getById(photographerId);
+
+  if (!photographer) {
+    throw new ForbiddenError("Photographer not found.");
+  }
+
+  return photographer.id;
+}
+
+export async function createAdminPhotographerPortfolioUploadFromFile(
+  photographerId: string,
+  file: File,
+) {
+  await getAdminPhotographerOrThrow(photographerId);
+  let uploadedAsset: Awaited<ReturnType<typeof uploadProviderImage>> | null =
+    null;
+
+  try {
+    uploadedAsset = await uploadProviderImage({
+      file,
+      tags: [
+        imageUploadTagNamespace,
+        "photographerPortfolio",
+        `photographer:${photographerId}`,
+        "admin",
+      ],
+      uploadKind: "photographerPortfolio",
+    });
+
+    return await photographerUploadController.createPortfolioUploadByPhotographerId(
+      photographerId,
+      {
+        imageUrl: uploadedAsset.url,
+        storageFileId: uploadedAsset.fileId,
+      },
+    );
+  } catch (error) {
+    if (uploadedAsset) {
+      try {
+        await deleteProviderFile(uploadedAsset.fileId);
+      } catch (cleanupError) {
+        console.error(
+          "Failed to clean up admin photographer portfolio upload after a save error",
+          {
+            cleanupError,
+            fileId: uploadedAsset.fileId,
+            photographerId,
+          },
+        );
+      }
+    }
+
+    throw error;
+  }
+}
+
+export async function setPortfolioUploadPinnedByPhotographerId(
+  photographerId: string,
+  uploadId: string,
+  input: Parameters<
+    typeof photographerUploadController.setPortfolioUploadPinnedByPhotographerId
+  >[2],
+) {
+  return photographerUploadController.setPortfolioUploadPinnedByPhotographerId(
+    photographerId,
+    uploadId,
+    input,
+  );
+}
+
+export async function reorderPortfolioUploadsByPhotographerId(
+  photographerId: string,
+  input: Parameters<
+    typeof photographerUploadController.reorderPortfolioUploadsByPhotographerId
+  >[1],
+) {
+  return photographerUploadController.reorderPortfolioUploadsByPhotographerId(
+    photographerId,
+    input,
+  );
+}
+
+export async function deletePortfolioUploadByPhotographerId(
+  photographerId: string,
+  uploadId: string,
+) {
+  return photographerUploadController.deletePortfolioUploadByPhotographerId(
+    photographerId,
+    uploadId,
+  );
+}

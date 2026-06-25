@@ -4,6 +4,17 @@ import { SLUG_LENGTH } from "./common";
 const alphabet = "0123456789abcdefghijklmnopqrstuvwxyz";
 const nanoid6 = customAlphabet(alphabet, 6);
 const photographerSlugNanoid8 = customAlphabet(alphabet, 8);
+const passwordAlphabet =
+  "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+const passwordNanoid16 = customAlphabet(passwordAlphabet, 16);
+
+/**
+ * Generates a random password for admin-created photographer accounts.
+ * Excludes visually ambiguous characters (0/O, 1/l/I).
+ */
+export function generateRandomPassword() {
+  return passwordNanoid16();
+}
 
 export const slugNanoid = () => {
   return customAlphabet(alphabet, SLUG_LENGTH)();
