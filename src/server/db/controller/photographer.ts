@@ -70,6 +70,7 @@ export type { AdminPhotographerListSort, AdminPhotographerListStatusFilter };
 export type AdminPhotographerReviewEntry = {
   id: string;
   userId: string;
+  slug: string | null;
   name: string | null;
   avatar: string | null;
   bio: string | null;
@@ -872,6 +873,7 @@ async function buildAdminPhotographerReviewEntry(
   return {
     id: photographer.id,
     userId: photographer.userId,
+    slug: photographer.slug,
     name: photographer.name,
     avatar: photographer.avatar,
     bio: photographer.bio,
@@ -1209,11 +1211,15 @@ export const photographerController = {
     slug: string,
     options?: {
       includeContactDetails?: boolean;
+      allowUnpublishedPreview?: boolean;
     },
   ) {
     const photographer = await photographerDal.getBySlug(slug);
 
-    if (!photographer || !photographer.isPublished) {
+    if (
+      !photographer ||
+      (!photographer.isPublished && !options?.allowUnpublishedPreview)
+    ) {
       throw new NotFoundError("Photographer not found");
     }
 

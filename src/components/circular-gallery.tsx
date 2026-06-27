@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 type CircularGalleryProps = {
   items: string[];
   radius?: number;
@@ -20,6 +24,10 @@ function toDeg(value: number) {
   return `${formatCssNumber(value)}deg`;
 }
 
+const MIN_SCALE = 0.32;
+const MAX_SCALE = 1;
+const FALLBACK_SCALE = 1;
+
 export default function CircularGallery({
   items,
   radius = 260,
@@ -34,6 +42,21 @@ export default function CircularGallery({
   const size = radius * 2 + Math.max(imageWidth, imageHeight) * 2;
   const center = size / 2;
 
+  const [scale, setScale] = useState(FALLBACK_SCALE);
+
+  useEffect(() => {
+    function updateScale() {
+      const nextScale = (window.innerWidth * 0.94) / size;
+
+      setScale(Math.min(MAX_SCALE, Math.max(MIN_SCALE, nextScale)));
+    }
+
+    updateScale();
+    window.addEventListener("resize", updateScale);
+
+    return () => window.removeEventListener("resize", updateScale);
+  }, [size]);
+
   return (
     <div className={`absolute w-full overflow-hidden h-full ${className}`}>
       <div
@@ -44,45 +67,50 @@ export default function CircularGallery({
         }}
       >
         <div
-          className="relative h-full w-full animate-[spin_linear_infinite]"
-          style={{
-            animationDuration: `${duration}s`,
-            animationDirection: "reverse",
-          }}
+          className="h-full w-full origin-top"
+          style={{ transform: `scale(${formatCssNumber(scale)})` }}
         >
-          {items.map((item, index) => {
-            const angle = (360 / items.length) * index;
-            const radians = (angle * Math.PI) / 180;
+          <div
+            className="relative h-full w-full animate-[spin_linear_infinite]"
+            style={{
+              animationDuration: `${duration}s`,
+              animationDirection: "reverse",
+            }}
+          >
+            {items.map((item, index) => {
+              const angle = (360 / items.length) * index;
+              const radians = (angle * Math.PI) / 180;
 
-            const x = center + Math.cos(radians) * radius - imageWidth / 2;
-            const y = center + Math.sin(radians) * radius - imageHeight / 2;
+              const x = center + Math.cos(radians) * radius - imageWidth / 2;
+              const y = center + Math.sin(radians) * radius - imageHeight / 2;
 
-            return (
-              <div
-                key={item}
-                className="absolute"
-                style={{
-                  width: toPx(imageWidth),
-                  height: toPx(imageHeight),
-                  left: toPx(x),
-                  top: toPx(y),
-                  transform: `rotate(${toDeg(angle + 90)})`,
-                  transformOrigin: "center center",
-                }}
-              >
-                <div className="h-full w-full overflow-hidden rounded-2xl bg-neutral-900 shadow-lg">
-                  {/** biome-ignore lint/performance/noImgElement: <-> */}
-                  <img
-                    src={item}
-                    // biome-ignore lint/a11y/noRedundantAlt: <->
-                    alt={`Gallery image ${index + 1}`}
-                    className="h-full w-full object-cover pointer-events-none select-none"
-                    draggable={false}
-                  />
+              return (
+                <div
+                  key={item}
+                  className="absolute"
+                  style={{
+                    width: toPx(imageWidth),
+                    height: toPx(imageHeight),
+                    left: toPx(x),
+                    top: toPx(y),
+                    transform: `rotate(${toDeg(angle + 90)})`,
+                    transformOrigin: "center center",
+                  }}
+                >
+                  <div className="h-full w-full overflow-hidden rounded-2xl bg-neutral-900 shadow-lg">
+                    {/** biome-ignore lint/performance/noImgElement: <-> */}
+                    <img
+                      src={item}
+                      // biome-ignore lint/a11y/noRedundantAlt: <->
+                      alt={`Gallery image ${index + 1}`}
+                      className="h-full w-full object-cover pointer-events-none select-none"
+                      draggable={false}
+                    />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

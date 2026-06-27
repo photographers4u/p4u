@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Footer } from "@/components/footer";
 import Navbar from "@/components/navbar";
+import { siteConfig } from "@/config/site";
 import { sanitizeBookmarkStore } from "@/lib/bookmark-store";
 import { BookmarkProvider } from "@/lib/bookmarks-context";
 import {
@@ -16,6 +18,19 @@ import { PhotographersBrowser } from "./photographers-browser";
 
 type PhotographersPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export const metadata: Metadata = {
+  title: "Hire Photographers in India",
+  description:
+    "Browse verified wedding, portrait, and event photographers across India. Filter by city, speciality, and experience to find and book the right photographer.",
+  alternates: { canonical: "/photographers" },
+  openGraph: {
+    title: `Hire Photographers in India | ${siteConfig.name}`,
+    description:
+      "Browse verified wedding, portrait, and event photographers across India.",
+    url: "/photographers",
+  },
 };
 
 export default async function PhotographersPage({

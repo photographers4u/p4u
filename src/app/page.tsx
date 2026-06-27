@@ -4,6 +4,7 @@ import CircularGallery from "@/components/circular-gallery";
 import FAQSection from "@/components/faq-section";
 import FeaturedPhotographersCarousel from "@/components/featured-photographers";
 import { Footer } from "@/components/footer";
+import { MobileHero } from "@/components/mobile-hero";
 import Navbar from "@/components/navbar";
 import SectionContainer from "@/components/section-ui";
 import { Button } from "@/components/ui/button";
@@ -41,7 +42,9 @@ export default async function HomePage() {
     <>
       <Navbar session={session} />
       <main className="min-h-screen relative text-slate-900">
-        <div className="min-h-screen w-full absolute flex items-center justify-center">
+        <MobileHero images={[images[4] ?? images[0], images[1], images[2]]} />
+
+        <div className="hidden min-h-screen w-full absolute sm:flex items-center justify-center">
           <CircularGallery
             radius={580}
             duration={100}
@@ -83,7 +86,7 @@ export default async function HomePage() {
           </section>
         </div>
         <SectionContainer
-          className="mt-[110vh]"
+          className="sm:mt-[110vh]"
           title="Featured Photographers"
           subtitle="A selection of photographers we currently recommend."
         >

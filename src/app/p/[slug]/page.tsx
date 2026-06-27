@@ -1,4 +1,5 @@
 import { Mail, MapPin, Phone } from "lucide-react";
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
@@ -6,11 +7,12 @@ import { notFound } from "next/navigation";
 import { BookmarkButton } from "@/components/bookmark-button";
 import { CopyLinkButton } from "@/components/copy-link-button";
 import { Footer } from "@/components/footer";
-import { ResponsiveMasonryGrid } from "@/components/masonary";
 import Navbar from "@/components/navbar";
 import { PhotographerVerificationBadge } from "@/components/photographer-verification-badge";
+import { PhotographerWorkGallery } from "@/components/photographer-work-gallery";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { siteConfig } from "@/config/site";
 import { buildAuthRedirectPath } from "@/lib/auth-redirect";
 import { sanitizeBookmarkStore } from "@/lib/bookmark-store";
 import { BookmarkProvider } from "@/lib/bookmarks-context";
@@ -24,7 +26,56 @@ import { getYouTubeVideoEmbedUrl } from "@/lib/video-embeds";
 import { getAuthSession } from "@/server/auth/session";
 import { NotFoundError } from "@/server/db/helpers/errors";
 import { hasBookmarkByUserId } from "@/server/services/bookmark";
-import { getPublicPhotographerBySlug } from "@/server/services/photographer";
+import {
+  getPreviewPhotographerBySlug,
+  getPublicPhotographerBySlug,
+} from "@/server/services/photographer";
+
+type PhotographerMetadataParams = {
+  params: Promise<{ slug: string }>;
+};
+
+export async function generateMetadata({
+  params,
+}: PhotographerMetadataParams): Promise<Metadata> {
+  const { slug } = await params;
+
+  try {
+    const photographer = await getPublicPhotographerBySlug(slug);
+    const name = photographer.name ?? "Photographer";
+    const city = photographer.locationCity;
+    const locationLabel = city
+      ? `${city}, ${formatPhotographerCountry(photographer.locationCountry)}`
+      : formatPhotographerCountry(photographer.locationCountry);
+    const title = city ? `${name} - Photographer in ${city}` : name;
+    const socialTitle = `${title} | ${siteConfig.name}`;
+    const description = photographer.bio?.trim()
+      ? photographer.bio.trim().slice(0, 155)
+      : `Hire ${name}, a verified photographer in ${locationLabel}, on ${siteConfig.name}. View portfolio, specialities, and starting prices.`;
+    const image = photographer.avatar ?? photographer.uploads[0]?.imageUrl;
+
+    return {
+      title,
+      description,
+      alternates: { canonical: `/p/${slug}` },
+      openGraph: {
+        title: socialTitle,
+        description,
+        url: `/p/${slug}`,
+        type: "profile",
+        images: image ? [{ url: image }] : undefined,
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: socialTitle,
+        description,
+        images: image ? [image] : undefined,
+      },
+    };
+  } catch {
+    return {};
+  }
+}
 
 type SocialVideoEmbed = {
   aspectClassName: string;
@@ -37,6 +88,9 @@ type SocialVideoEmbed = {
 type PublicPhotographerPageProps = {
   params: Promise<{
     slug: string;
+  }>;
+  searchParams: Promise<{
+    preview?: string;
   }>;
 };
 
@@ -83,8 +137,11 @@ function SocialVideoEmbedCard({ embed }: { embed: SocialVideoEmbed }) {
 
 export default async function PublicPhotographerPage({
   params,
+  searchParams,
 }: PublicPhotographerPageProps) {
   const { slug } = await params;
+  const { preview } = await searchParams;
+  const isPreview = preview === "1";
   const requestHeaders = await headers();
   const forwardedProto = requestHeaders.get("x-forwarded-proto") ?? "https";
   const forwardedHost =
@@ -92,11 +149,13 @@ export default async function PublicPhotographerPage({
   const session = await getAuthSession({ headers: requestHeaders });
 
   try {
-    const isAuthenticated = Boolean(session?.user);
+    const isAuthenticated = Boolean(session?.user) || isPreview;
 
-    const photographer = await getPublicPhotographerBySlug(slug, {
-      includeContactDetails: isAuthenticated,
-    });
+    const photographer = isPreview
+      ? await getPreviewPhotographerBySlug(slug)
+      : await getPublicPhotographerBySlug(slug, {
+          includeContactDetails: isAuthenticated,
+        });
 
     const isBookmarked = session?.user
       ? await hasBookmarkByUserId(
@@ -139,6 +198,35 @@ export default async function PublicPhotographerPage({
       ? `${forwardedProto}://${forwardedHost}/p/${slug}`
       : `/p/${slug}`;
 
+    const photographerJsonLd = {
+      "@context": "https://schema.org",
+      "@type": "ProfessionalService",
+      name: profileName,
+      url: `${siteConfig.url}/p/${slug}`,
+      image: photographer.avatar ?? photographer.uploads[0]?.imageUrl,
+      description: photographer.bio?.trim() || undefined,
+      address: photographer.locationCity
+        ? {
+            "@type": "PostalAddress",
+            addressLocality: photographer.locationCity,
+            addressCountry: formatPhotographerCountry(
+              photographer.locationCountry,
+            ),
+          }
+        : undefined,
+      sameAs: instagramHref ? [instagramHref] : undefined,
+      priceRange:
+        averageStartingPrice !== null
+          ? `From Rs. ${averageStartingPrice}`
+          : undefined,
+      makesOffer: photographer.specialities.map((speciality) => ({
+        "@type": "Offer",
+        itemOffered: { "@type": "Service", name: speciality.name },
+        priceCurrency: "INR",
+        price: speciality.startingPrice,
+      })),
+    };
+
     if (youtubeVideoEmbedUrl) {
       socialVideoEmbeds.push({
         aspectClassName: "aspect-video",
@@ -165,6 +253,20 @@ export default async function PublicPhotographerPage({
 
         <BookmarkProvider initialStore={initialBookmarkStore} session={session}>
           <main className="min-h-screen text-slate-900">
+            {!isPreview ? (
+              <script
+                type="application/ld+json"
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: static JSON-LD, no user input
+                dangerouslySetInnerHTML={{
+                  __html: JSON.stringify(photographerJsonLd),
+                }}
+              />
+            ) : null}
+            {isPreview ? (
+              <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-medium text-amber-800">
+                Preview only — this profile is not live on Photographers4U yet.
+              </div>
+            ) : null}
             <section className="border-b border-slate-200 bg-white">
               <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
                 <div className="flex flex-col items-center gap-6 text-center lg:flex-row lg:items-start lg:justify-between lg:text-left">
@@ -321,7 +423,10 @@ export default async function PublicPhotographerPage({
                           Portfolio images will appear here soon.
                         </div>
                       ) : (
-                        <ResponsiveMasonryGrid uploads={photographer.uploads} />
+                        <PhotographerWorkGallery
+                          uploads={photographer.uploads}
+                          photographerName={profileName}
+                        />
                       )}
                     </div>
                   </TabsContent>

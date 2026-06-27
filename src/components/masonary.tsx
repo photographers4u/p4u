@@ -37,7 +37,7 @@ type MasonryColumn = {
   items: Array<{ upload: Upload; index: number }>;
 };
 
-function sortUploads(uploads: Upload[]) {
+export function sortUploads(uploads: Upload[]) {
   const copy = [...uploads];
 
   copy.sort((a, b) => {

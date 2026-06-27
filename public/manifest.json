@@ -1,0 +1,16 @@
+{
+  "name": "Photographers4U",
+  "short_name": "Photographers4U",
+  "description": "Hire verified wedding, portrait, and event photographers across India.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

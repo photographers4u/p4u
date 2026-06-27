@@ -129,6 +129,17 @@ export async function getPublicPhotographerBySlug(
   );
 }
 
+// Bypasses isPublished and the response cache so an admin can share a
+// not-yet-approved profile with the photographer for confirmation.
+export async function getPreviewPhotographerBySlug(
+  slug: string,
+): Promise<PublicPhotographerDetail> {
+  return photographerController.getPublicPhotographerBySlug(slug, {
+    includeContactDetails: true,
+    allowUnpublishedPreview: true,
+  });
+}
+
 export async function getPublicPhotographers(): Promise<
   PublicPhotographerListEntry[]
 > {

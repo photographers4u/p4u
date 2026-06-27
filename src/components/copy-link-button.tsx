@@ -9,10 +9,12 @@ export function CopyLinkButton({
   url,
   showLabel = false,
   className,
+  label = "Copy link",
 }: {
   url: string;
   showLabel?: boolean;
   className?: string;
+  label?: string;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -35,7 +37,7 @@ export function CopyLinkButton({
       aria-label={copied ? "Link copied" : "Copy link"}
     >
       {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-      {showLabel ? (copied ? "Copied" : "Copy link") : null}
+      {showLabel ? (copied ? "Copied" : label) : null}
     </Button>
   );
 }

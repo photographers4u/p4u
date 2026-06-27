@@ -7,12 +7,14 @@ import {
   ShieldCheck,
   Video,
 } from "lucide-react";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminPhotographerAvatarSection } from "@/components/admin/admin-photographer-avatar-section";
 import { AdminPhotographerContactSection } from "@/components/admin/admin-photographer-contact-section";
 import { AdminPhotographerEditModeProvider } from "@/components/admin/admin-photographer-edit-mode";
 import { AdminPhotographerPortfolioSection } from "@/components/admin/admin-photographer-portfolio-section";
+import { CopyLinkButton } from "@/components/copy-link-button";
 import { AdminPhotographerProfileSection } from "@/components/admin/admin-photographer-profile-section";
 import { AdminPhotographerSpecialitiesSection } from "@/components/admin/admin-photographer-specialities-section";
 import { AdminPhotographerFeatureToggle } from "@/components/review-workflow/admin-photographer-feature-toggle";
@@ -102,6 +104,10 @@ export default async function AdminPhotographerDetailPage({
   const returnTo = getAdminPhotographersReturnToPath(
     (await searchParams).returnTo,
   );
+  const requestHeaders = await headers();
+  const forwardedProto = requestHeaders.get("x-forwarded-proto") ?? "https";
+  const forwardedHost =
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
 
   try {
     const [entry, availableSpecialities] = await Promise.all([
@@ -114,6 +120,10 @@ export default async function AdminPhotographerDetailPage({
     const location = entry.locationCity
       ? `${entry.locationCity}, ${formatPhotographerCountry(entry.locationCountry)}`
       : formatPhotographerCountry(entry.locationCountry);
+    const previewUrl =
+      entry.slug && forwardedHost
+        ? `${forwardedProto}://${forwardedHost}/p/${entry.slug}?preview=1`
+        : null;
 
     return (
       <AdminPhotographerEditModeProvider>
@@ -127,6 +137,14 @@ export default async function AdminPhotographerDetailPage({
               <Badge variant={entry.isPublished ? "secondary" : "outline"}>
                 {entry.isPublished ? "Visible publicly" : "Hidden from public"}
               </Badge>
+              {!entry.isPublished && previewUrl ? (
+                <CopyLinkButton
+                  url={previewUrl}
+                  showLabel
+                  label="Copy preview link"
+                  className="ml-auto"
+                />
+              ) : null}
             </div>
 
             <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)] xl:items-end">
