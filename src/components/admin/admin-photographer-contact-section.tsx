@@ -127,7 +127,9 @@ export function AdminPhotographerContactSection({
     >
       <div className="grid gap-5 sm:grid-cols-2">
         <Field data-invalid={!!errors.phone}>
-          <FieldLabel htmlFor={phoneId}>Phone</FieldLabel>
+          <FieldLabel htmlFor={phoneId}>
+            Phone <span className="text-destructive">*</span>
+          </FieldLabel>
           <FieldContent>
             <Input
               id={phoneId}
@@ -140,7 +142,9 @@ export function AdminPhotographerContactSection({
         </Field>
 
         <Field data-invalid={!!errors.email}>
-          <FieldLabel htmlFor={emailId}>Email</FieldLabel>
+          <FieldLabel htmlFor={emailId}>
+            Email <span className="text-destructive">*</span>
+          </FieldLabel>
           <FieldContent>
             <Input
               id={emailId}

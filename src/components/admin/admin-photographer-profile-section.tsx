@@ -190,7 +190,9 @@ export function AdminPhotographerProfileSection({
       noValidate
     >
       <Field data-invalid={!!errors.name}>
-        <FieldLabel htmlFor={nameId}>Name</FieldLabel>
+        <FieldLabel htmlFor={nameId}>
+          Name <span className="text-destructive">*</span>
+        </FieldLabel>
         <FieldContent>
           <Input
             id={nameId}
@@ -218,7 +220,9 @@ export function AdminPhotographerProfileSection({
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field data-invalid={!!errors.locationCity}>
-          <FieldLabel htmlFor={cityId}>City</FieldLabel>
+          <FieldLabel htmlFor={cityId}>
+            City <span className="text-destructive">*</span>
+          </FieldLabel>
           <FieldContent>
             <Select
               value={locationCity || undefined}
@@ -250,7 +254,9 @@ export function AdminPhotographerProfileSection({
         </Field>
 
         <Field data-invalid={!!errors.experienceYears}>
-          <FieldLabel htmlFor={experienceId}>Experience years</FieldLabel>
+          <FieldLabel htmlFor={experienceId}>
+            Experience years <span className="text-destructive">*</span>
+          </FieldLabel>
           <FieldContent>
             <Select
               value={experienceYears || undefined}

@@ -38,12 +38,17 @@ export function AdminPhotographerAvatarSection({
 
   if (isEditing) {
     return (
-      <AvatarUploadField
-        value={avatar ?? ""}
-        previewAlt={name ?? "Photographer avatar"}
-        uploadKind="photographerAvatar"
-        onChange={handleAvatarChange}
-      />
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-foreground">
+          Avatar <span className="text-destructive">*</span>
+        </p>
+        <AvatarUploadField
+          value={avatar ?? ""}
+          previewAlt={name ?? "Photographer avatar"}
+          uploadKind="photographerAvatar"
+          onChange={handleAvatarChange}
+        />
+      </div>
     );
   }
 

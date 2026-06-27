@@ -111,6 +111,12 @@ export function AdminPhotographerSpecialitiesSection({
 
   return (
     <div className="space-y-5">
+      <p className="text-sm font-medium text-foreground">
+        Specialities <span className="text-destructive">*</span>
+        <span className="ml-1 font-normal text-muted-foreground">
+          (at least 1 with a starting price)
+        </span>
+      </p>
       <div className="flex flex-wrap gap-2">
         {availableSpecialities.map((speciality) => {
           const isSelected = speciality.id in selections;

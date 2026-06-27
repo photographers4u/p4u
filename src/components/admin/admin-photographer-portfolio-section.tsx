@@ -120,6 +120,12 @@ export function AdminPhotographerPortfolioSection({
 
   return (
     <div className="space-y-4">
+      <p className="text-sm font-medium text-foreground">
+        Portfolio images <span className="text-destructive">*</span>
+        <span className="ml-1 font-normal text-muted-foreground">
+          (at least 1 image)
+        </span>
+      </p>
       {isEditing ? (
         <div>
           <input
