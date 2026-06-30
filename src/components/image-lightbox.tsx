@@ -8,6 +8,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 export type LightboxImage = {
   id: string;
@@ -28,6 +29,13 @@ export function ImageLightbox({
 }) {
   const isOpen = index !== null;
   const touchStartXRef = useRef<number | null>(null);
+  const activeThumbRef = useCallback((node: HTMLButtonElement | null) => {
+    node?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  }, []);
 
   const goTo = useCallback(
     (nextIndex: number) => {
@@ -80,7 +88,7 @@ export function ImageLightbox({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="inset-0! top-0! left-0! flex! h-dvh! w-screen! max-w-none! translate-x-0! translate-y-0! items-center justify-center rounded-none! border-none! bg-black/95! p-0! ring-0!"
+        className="inset-0! top-0! left-0! flex! h-dvh! w-screen! max-w-none! translate-x-0! translate-y-0! flex-col! items-center justify-center overflow-hidden rounded-none! border-none! bg-transparent! p-0! ring-0!"
         onTouchStart={(event) => {
           touchStartXRef.current = event.touches[0]?.clientX ?? null;
         }}
@@ -107,6 +115,21 @@ export function ImageLightbox({
         <DialogDescription className="sr-only">
           Image {index + 1} of {images.length}
         </DialogDescription>
+
+        {/* Glassmorphic backdrop: a blurred, dimmed copy of the current
+            photo behind frosted glass, instead of a flat black scrim. */}
+        <div className="absolute inset-0 -z-10 overflow-hidden bg-stone-900">
+          {/* biome-ignore lint/performance/noImgElement: decorative blurred backdrop reusing the externally hosted upload */}
+          <img
+            key={current.id}
+            src={current.imageUrl}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className="h-full w-full scale-110 object-cover opacity-70 blur-3xl"
+          />
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-3xl" />
+        </div>
 
         <button
           type="button"
@@ -144,16 +167,45 @@ export function ImageLightbox({
           </>
         ) : null}
 
-        <div className="flex h-full w-full items-center justify-center p-4 sm:p-10">
+        <div className="flex min-h-0 w-full flex-1 items-center justify-center p-4 sm:p-10">
           {/* biome-ignore lint/performance/noImgElement: full-screen viewer for externally hosted uploads */}
           <img
             key={current.id}
             src={current.imageUrl}
             alt={current.alt ?? "Photo"}
-            className="max-h-full max-w-full object-contain select-none"
+            className="max-h-full max-w-full rounded-lg object-contain shadow-2xl select-none"
             draggable={false}
           />
         </div>
+
+        {images.length > 1 ? (
+          <div className="z-10 flex w-full shrink-0 justify-center gap-2 overflow-x-auto px-4 pb-4 sm:gap-3 sm:pb-6">
+            {images.map((image, i) => (
+              <button
+                key={image.id}
+                ref={i === index ? activeThumbRef : undefined}
+                type="button"
+                onClick={() => onIndexChange(i)}
+                aria-label={`Go to image ${i + 1}`}
+                aria-current={i === index}
+                className={cn(
+                  "size-14 shrink-0 overflow-hidden rounded-lg ring-2 transition sm:size-16",
+                  i === index
+                    ? "ring-white"
+                    : "opacity-50 ring-transparent hover:opacity-90",
+                )}
+              >
+                {/* biome-ignore lint/performance/noImgElement: filmstrip thumbnail for externally hosted upload */}
+                <img
+                  src={image.imageUrl}
+                  alt=""
+                  draggable={false}
+                  className="h-full w-full object-cover select-none"
+                />
+              </button>
+            ))}
+          </div>
+        ) : null}
       </DialogContent>
     </Dialog>
   );
