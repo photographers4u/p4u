@@ -6,7 +6,6 @@ complete onboarding, submit for review, and manage approved profile details.
 Admins can review photographer submissions and publish approved profiles into
 the live directory.
 
-
 ## Stack
 
 - Next.js 16 App Router with React 19 and TypeScript
