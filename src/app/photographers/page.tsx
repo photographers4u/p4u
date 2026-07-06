@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Footer } from "@/components/footer";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import Navbar from "@/components/navbar";
 import { siteConfig } from "@/config/site";
 import { sanitizeBookmarkStore } from "@/lib/bookmark-store";
@@ -69,8 +70,9 @@ export default async function PhotographersPage({
   return (
     <>
       <Navbar session={session} />
-      <main className="min-h-screen">
-        <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 lg:px-8">
+      <MobileBottomNav session={session} />
+      <main className="min-h-screen pb-16 max-md:bg-neutral-50 max-md:pb-32">
+        <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:py-10 sm:px-6 lg:px-8">
           <BookmarkProvider
             initialStore={initialBookmarkStore}
             session={session}

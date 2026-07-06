@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { Footer } from "@/components/footer";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import Navbar from "@/components/navbar";
 import { siteConfig } from "@/config/site";
 import { getAuthSession } from "@/server/auth/session";
@@ -19,8 +20,9 @@ export default async function TermsPage() {
   return (
     <>
       <Navbar session={session} />
+      <MobileBottomNav session={session} />
 
-      <main className="mx-auto max-w-2xl px-6 py-16">
+      <main className="mx-auto max-w-2xl px-6 py-16 max-md:pb-32">
         <div className="mb-10">
           <p className="mb-2 text-sm text-slate-400">
             Effective {effectiveDate}

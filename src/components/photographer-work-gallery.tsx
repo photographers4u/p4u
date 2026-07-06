@@ -28,6 +28,7 @@ export function PhotographerWorkGallery({
         getAlt={(_upload, index) =>
           `${photographerName} portfolio photo ${index + 1}`
         }
+        mobileColumnCount={3}
       />
 
       <ImageLightbox

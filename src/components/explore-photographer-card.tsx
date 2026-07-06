@@ -150,7 +150,7 @@ export function ExplorePhotographerCard({
   return (
     <article
       className={cn(
-        "relative flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white",
+        "relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:rounded-lg sm:shadow-none",
         className,
       )}
     >
@@ -207,49 +207,49 @@ export function ExplorePhotographerCard({
 
       <Link
         href={`/p/${photographer.slug}`}
-        className="group flex flex-1 flex-col gap-y-3 p-4"
+        className="group flex flex-1 flex-col gap-y-2 p-2.5 sm:gap-y-3 sm:p-4"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {photographer.avatar ? (
             // biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host
             <img
               src={photographer.avatar}
               alt={photographer.name ?? "Photographer"}
-              className="size-11 shrink-0 rounded-full object-cover ring-1 ring-black/5"
+              className="size-9 shrink-0 rounded-full object-cover ring-1 ring-black/5 sm:size-11"
             />
           ) : (
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-sm font-semibold text-white">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-xs font-semibold text-white sm:size-11 sm:text-sm">
               {getProfileInitials(photographer.name)}
             </div>
           )}
 
           <div className="min-w-0">
-            <h2 className="truncate text-base font-semibold text-slate-950">
+            <h2 className="truncate text-[13px] font-semibold text-slate-950 sm:text-base">
               {photographer.name ?? "Photographer"}
             </h2>
             <PhotographerVerificationBadge
               status={photographer.status}
-              className="mt-1"
+              className="mt-0.5 sm:mt-1"
             />
-            <div className="mt-0.5 flex flex-wrap items-center gap-x-0.5 text-[13px] text-slate-500">
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="size-3.5" />
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-0.5 text-[11px] text-slate-500 sm:text-[13px]">
+              <span className="inline-flex items-center gap-1 truncate">
+                <MapPin className="size-3 shrink-0 sm:size-3.5" />
                 {location}
               </span>
-              <Dot />
-              <span>
+              <Dot className="hidden sm:block" />
+              <span className="hidden sm:inline">
                 {formatPhotographerExperience(photographer.experienceYears)}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1 sm:gap-1.5">
           {photographer.specialities.map((speciality) => (
             <Badge
               key={speciality}
               variant="outline"
-              className="h-6 rounded-md border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-700"
+              className="h-5 rounded-md border-slate-200 bg-slate-50 px-1.5 text-[10px] text-slate-700 sm:h-6 sm:px-2.5 sm:text-xs"
             >
               {speciality}
             </Badge>
@@ -257,7 +257,7 @@ export function ExplorePhotographerCard({
           {photographer.remainingSpecialitiesCount > 0 ? (
             <Badge
               variant="secondary"
-              className="h-6 rounded-md bg-slate-100 px-2.5 text-xs text-slate-700"
+              className="h-5 rounded-md bg-slate-100 px-1.5 text-[10px] text-slate-700 sm:h-6 sm:px-2.5 sm:text-xs"
             >
               +{photographer.remainingSpecialitiesCount} more
             </Badge>

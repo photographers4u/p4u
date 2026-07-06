@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, User } from "lucide-react";
+import { Bookmark, Menu, Search, User } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { siteConfig } from "@/config/site";
 import type { AuthClientSession } from "@/lib/auth-client";
+import { buildAuthRedirectPath } from "@/lib/auth-redirect";
 import { poppins } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 
@@ -199,13 +200,13 @@ function Navbar({ session }: { session: AuthClientSession | null }) {
     <header
       className={`sticky top-0 z-50 border-b border-zinc-200/60 bg-white/85 backdrop-blur-md ${poppins.className}`}
     >
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+      <nav className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:h-16 sm:px-6">
         <Link href="/" className="flex items-center gap-3">
-          <div className="size-10 border bg-blue-50/50 aspect-square overflow-hidden text-white flex relative items-center justify-center rounded-md text-sm font-semibold">
+          <div className="size-9 border bg-blue-50/50 aspect-square overflow-hidden text-white flex relative items-center justify-center rounded-md text-sm font-semibold sm:size-10">
             <img
               src="/logo-192.png"
               alt={siteConfig.name}
-              className="h-8! w-8! aspect-square absolute"
+              className="h-7! w-7! aspect-square absolute sm:h-8! sm:w-8!"
             />
           </div>
           <span className="text-sm font-semibold tracking-tight">
@@ -230,10 +231,46 @@ function Navbar({ session }: { session: AuthClientSession | null }) {
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <div className="hidden items-center gap-2 md:flex">
             <DesktopActions session={session} />
           </div>
+
+          <div className="flex items-center gap-1 md:hidden">
+            <Button
+              asChild
+              type="button"
+              size="icon-sm"
+              variant="ghost"
+              className="rounded-full text-zinc-600"
+              aria-label="Search photographers"
+            >
+              <Link href="/photographers">
+                <Search />
+              </Link>
+            </Button>
+            <Button
+              asChild
+              type="button"
+              size="icon-sm"
+              variant="ghost"
+              className="rounded-full text-zinc-600"
+              aria-label="Saved photographers"
+            >
+              <Link
+                href={
+                  (session?.user
+                    ? "/dashboard/bookmarks"
+                    : buildAuthRedirectPath("/login", {
+                        callbackUrl: "/dashboard/bookmarks",
+                      })) as Route
+                }
+              >
+                <Bookmark />
+              </Link>
+            </Button>
+          </div>
+
           <MobileMenu session={session} />
         </div>
       </nav>

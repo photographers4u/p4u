@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Footer } from "@/components/footer";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import Navbar from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
@@ -158,7 +159,8 @@ export default async function CityPhotographersPage({ params }: CityPageProps) {
   return (
     <>
       <Navbar session={session} />
-      <main className="min-h-screen">
+      <MobileBottomNav session={session} />
+      <main className="min-h-screen pb-16 max-md:bg-neutral-50 max-md:pb-32">
         <script
           type="application/ld+json"
           // biome-ignore lint/security/noDangerouslySetInnerHtml: static JSON-LD, no user input
@@ -170,12 +172,12 @@ export default async function CityPhotographersPage({ params }: CityPageProps) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
         />
 
-        <section className="border-b border-slate-200 bg-white">
-          <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+        <section className="border-b border-slate-200 bg-white max-md:mx-4 max-md:mt-4 max-md:rounded-3xl max-md:border max-md:shadow-sm">
+          <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">
               Hire Photographers in {displayName}
             </h1>
-            <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
               {cityName
                 ? `Browse verified wedding, portrait, and event photographers in ${displayName}. Compare portfolios and starting prices, then connect directly.`
                 : `We're onboarding photographers in ${displayName} right now. Want early access, or are you a photographer in ${displayName}? Join Photographers4U.`}
@@ -192,7 +194,7 @@ export default async function CityPhotographersPage({ params }: CityPageProps) {
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+        <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
           {cityName && initialPage ? (
             <BookmarkProvider
               initialStore={initialBookmarkStore}
@@ -216,8 +218,8 @@ export default async function CityPhotographersPage({ params }: CityPageProps) {
           )}
         </section>
 
-        <section className="border-t border-slate-200 bg-slate-50">
-          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        <section className="border-t border-slate-200 bg-slate-50 max-md:mx-4 max-md:mt-4 max-md:rounded-3xl max-md:border max-md:bg-white max-md:shadow-sm">
+          <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
             <h2 className="text-xl font-semibold text-slate-950">
               Frequently asked questions
             </h2>

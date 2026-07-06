@@ -390,6 +390,23 @@ export function PhotographersBrowser({
     void updateUrlState(DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS, 1, "push");
   }
 
+  function handleQuickSpecialityToggle(specialitySlug: string) {
+    const isSelected = appliedFilters.specialities.includes(specialitySlug);
+
+    void updateUrlState(
+      {
+        ...appliedFilters,
+        specialities: isSelected
+          ? appliedFilters.specialities.filter(
+              (slug) => slug !== specialitySlug,
+            )
+          : [...appliedFilters.specialities, specialitySlug],
+      },
+      1,
+      "push",
+    );
+  }
+
   function removeSpecialityFilter(specialitySlug: string) {
     void updateUrlState(
       {
@@ -439,6 +456,7 @@ export function PhotographersBrowser({
             onDialogApply={handleDialogApply}
             onDialogOpen={handleDialogOpen}
             onDialogOpenChange={setIsDialogOpen}
+            onQuickToggleSpeciality={handleQuickSpecialityToggle}
             onResetAllFilters={resetAllFilters}
             onSearchInputChange={setSearchInput}
             onSearchSubmit={handleSearchSubmit}

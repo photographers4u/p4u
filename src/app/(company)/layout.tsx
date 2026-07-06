@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { Footer } from "@/components/footer";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import Navbar from "@/components/navbar";
 import { getAuthSession } from "@/server/auth/session";
 
@@ -14,7 +15,8 @@ export default async function CompanyLayout({
   return (
     <>
       <Navbar session={session} />
-      {children}
+      <MobileBottomNav session={session} />
+      <div className="max-md:pb-16">{children}</div>
       <Footer />
     </>
   );

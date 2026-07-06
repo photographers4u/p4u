@@ -29,6 +29,10 @@ export type ResponsiveMasonryGridProps = {
   getAlt?: (upload: Upload, index: number) => string;
   onImageClick?: (upload: Upload, index: number) => void;
   fallbackAspectRatio?: number;
+  /** Column count to use below `mobileBreakpoint`, overriding `minColumnWidth`. */
+  mobileColumnCount?: number;
+  /** Container width (px) under which `mobileColumnCount` applies. Defaults to 640 (Tailwind `sm`). */
+  mobileBreakpoint?: number;
 };
 
 type RatioMap = Record<string, number>;
@@ -214,6 +218,8 @@ export function ResponsiveMasonryGrid({
   getAlt,
   onImageClick,
   fallbackAspectRatio = 4 / 5,
+  mobileColumnCount,
+  mobileBreakpoint = 640,
 }: ResponsiveMasonryGridProps) {
   const deferredUploads = useDeferredValue(uploads);
   const { ref, width: containerWidth } = useContainerWidth<HTMLDivElement>();
@@ -223,9 +229,18 @@ export function ResponsiveMasonryGrid({
     return sortUploads(deferredUploads);
   }, [deferredUploads]);
 
+  const isMobileWidth =
+    mobileColumnCount != null
+      ? containerWidth > 0 && containerWidth < mobileBreakpoint
+      : false;
+
   const columnCount = useMemo(() => {
+    if (isMobileWidth && mobileColumnCount) {
+      return mobileColumnCount;
+    }
+
     return getColumnCount(containerWidth, minColumnWidth, gap);
-  }, [containerWidth, minColumnWidth, gap]);
+  }, [containerWidth, minColumnWidth, gap, isMobileWidth, mobileColumnCount]);
 
   const handleImageLoad = useCallback(
     (uploadId: string, width: number, height: number) => {

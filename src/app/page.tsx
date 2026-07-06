@@ -4,6 +4,8 @@ import CircularGallery from "@/components/circular-gallery";
 import FAQSection from "@/components/faq-section";
 import FeaturedPhotographersCarousel from "@/components/featured-photographers";
 import { Footer } from "@/components/footer";
+import { MobileAppHome } from "@/components/mobile-app-home";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { MobileHero } from "@/components/mobile-hero";
 import Navbar from "@/components/navbar";
 import SectionContainer from "@/components/section-ui";
@@ -41,8 +43,10 @@ export default async function HomePage() {
   return (
     <>
       <Navbar session={session} />
-      <main className="min-h-screen relative text-slate-900">
+      <MobileBottomNav session={session} />
+      <main className="min-h-screen relative text-slate-900 max-md:bg-neutral-50">
         <MobileHero images={[images[4] ?? images[0], images[1], images[2]]} />
+        <MobileAppHome />
 
         <div className="hidden min-h-screen w-full absolute sm:flex items-center justify-center">
           <CircularGallery
@@ -99,7 +103,7 @@ export default async function HomePage() {
 
         <div
           className={cn(
-            "mx-auto md:px-10 lg:px-20 relative overflow-hidden border md:rounded-3xl bg-[#FBFBFB] px-0! max-w-7xl",
+            "mx-auto md:px-10 lg:px-20 relative overflow-hidden border md:rounded-3xl bg-[#FBFBFB] max-md:mx-4 max-md:rounded-3xl max-md:bg-white max-md:shadow-sm px-0! max-w-7xl",
           )}
         >
           <div className="flex flex-col gap-6 px-6 pt-8 sm:px-10 sm:pt-10 lg:flex-row lg:items-center lg:justify-between lg:px-14 lg:pt-14">
@@ -177,7 +181,7 @@ export default async function HomePage() {
           </div>
         </div>
       </main>
-      <div className="py-16" />
+      <div className="pt-16 pb-16 max-md:pb-32" />
       <Footer />
     </>
   );

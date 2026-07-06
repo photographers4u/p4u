@@ -74,7 +74,7 @@ const FAQSection = () => {
   const router = useRouter();
 
   return (
-    <section className="bg-white px-6 py-20 font-sans text-[#222222] antialiased">
+    <section className="bg-white px-6 py-20 font-sans text-[#222222] antialiased max-md:mx-4 max-md:mt-4 max-md:rounded-3xl max-md:border max-md:border-zinc-200/70 max-md:px-4 max-md:py-8 max-md:shadow-sm">
       <div className="mx-auto max-w-3xl">
         <div className="mb-12">
           <h2 className="mb-4 text-[32px] leading-tight font-semibold tracking-tight">

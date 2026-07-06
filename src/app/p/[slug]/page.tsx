@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { BookmarkButton } from "@/components/bookmark-button";
 import { CopyLinkButton } from "@/components/copy-link-button";
 import { Footer } from "@/components/footer";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import Navbar from "@/components/navbar";
 import { PhotographerVerificationBadge } from "@/components/photographer-verification-badge";
 import { PhotographerWorkGallery } from "@/components/photographer-work-gallery";
@@ -250,9 +251,33 @@ export default async function PublicPhotographerPage({
     return (
       <>
         <Navbar session={session} />
+        <MobileBottomNav session={session} />
 
         <BookmarkProvider initialStore={initialBookmarkStore} session={session}>
-          <main className="min-h-screen text-slate-900">
+          {photographer.contact?.phone ||
+          (!isAuthenticated && photographer.hasPublicContact) ? (
+            <div
+              className="fixed inset-x-0 z-40 mx-4 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-[0_8px_30px_-8px_rgba(15,23,42,0.25)] backdrop-blur md:hidden"
+              style={{
+                bottom: "calc(4rem + env(safe-area-inset-bottom) + 0.75rem)",
+              }}
+            >
+              <Button asChild className="h-11 flex-1 rounded-xl">
+                <Link href={isAuthenticated ? `tel:${phoneHref}` : loginHref}>
+                  <Phone className="size-4" />
+                  Call now
+                </Link>
+              </Button>
+              <BookmarkButton
+                identifier="photographer"
+                value={photographer.id}
+                size="icon-lg"
+                className="h-11 w-11 rounded-xl border-slate-200"
+              />
+            </div>
+          ) : null}
+
+          <main className="min-h-screen text-slate-900 pb-16 max-md:bg-neutral-50 max-md:pb-32">
             {!isPreview ? (
               <script
                 type="application/ld+json"
@@ -267,8 +292,8 @@ export default async function PublicPhotographerPage({
                 Preview only — this profile is not live on Photographers4U yet.
               </div>
             ) : null}
-            <section className="border-b border-slate-200 bg-white">
-              <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+            <section className="border-b border-slate-200 bg-white max-md:mx-4 max-md:mt-4 max-md:rounded-3xl max-md:border max-md:shadow-sm">
+              <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
                 <div className="flex flex-col items-center gap-6 text-center lg:flex-row lg:items-start lg:justify-between lg:text-left">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-col items-center gap-4 sm:gap-5 lg:flex-row lg:items-start">
@@ -340,7 +365,7 @@ export default async function PublicPhotographerPage({
                   <div className="flex flex-row items-center gap-3 lg:flex-wrap lg:justify-end">
                     {(photographer.contact?.phone ||
                       (!isAuthenticated && photographer.hasPublicContact)) && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 max-md:hidden">
                         <Button asChild className="rounded-full px-5">
                           <Link
                             href={

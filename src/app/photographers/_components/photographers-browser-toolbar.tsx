@@ -3,6 +3,7 @@ import { ArrowUpDown, LoaderCircle, RotateCcw, Search } from "lucide-react";
 import { BrowserFilterDialog } from "@/components/browser/filter-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -36,6 +37,7 @@ export function PhotographersBrowserToolbar({
   onDialogApply,
   onDialogOpen,
   onDialogOpenChange,
+  onQuickToggleSpeciality,
   onResetAllFilters,
   onSearchInputChange,
   onSearchSubmit,
@@ -59,6 +61,7 @@ export function PhotographersBrowserToolbar({
   onDialogApply: () => void;
   onDialogOpen: () => void;
   onDialogOpenChange: (open: boolean) => void;
+  onQuickToggleSpeciality: (specialitySlug: string) => void;
   onResetAllFilters: () => void;
   onSearchInputChange: (value: string) => void;
   onSearchSubmit: FormEventHandler<HTMLFormElement>;
@@ -79,14 +82,14 @@ export function PhotographersBrowserToolbar({
             value={searchInput}
             onChange={(event) => onSearchInputChange(event.target.value)}
             placeholder="Search by photographer name"
-            className="h-10 rounded-md border-slate-300 bg-white pl-10 text-sm shadow-none"
+            className="h-11 rounded-full border-none bg-slate-100 pl-10 text-sm shadow-none sm:h-10 sm:rounded-md sm:border sm:border-slate-300 sm:bg-white"
             disabled={isInteractionDisabled}
           />
         </div>
 
         <Button
           type="submit"
-          className="h-10 rounded-md px-4 sm:self-start"
+          className="h-11 rounded-full px-4 sm:h-10 sm:self-start sm:rounded-md"
           disabled={isInteractionDisabled}
         >
           {isRefreshing ? (
@@ -100,6 +103,33 @@ export function PhotographersBrowserToolbar({
         </Button>
       </div>
 
+      {availableSpecialities.length > 0 ? (
+        <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 scrollbar-none sm:hidden">
+          {availableSpecialities.map((speciality) => {
+            const isActive = appliedFilters.specialities.includes(
+              speciality.slug,
+            );
+
+            return (
+              <button
+                key={speciality.slug}
+                type="button"
+                onClick={() => onQuickToggleSpeciality(speciality.slug)}
+                disabled={isInteractionDisabled}
+                className={cn(
+                  "shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
+                  isActive
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-slate-200 bg-white text-slate-600",
+                )}
+              >
+                {speciality.name}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <Select
           value={appliedFilters.sort}
@@ -108,7 +138,7 @@ export function PhotographersBrowserToolbar({
           }
           disabled={isInteractionDisabled}
         >
-          <SelectTrigger className="h-10 w-full rounded-md border-slate-300 bg-white px-3 shadow-none sm:w-[190px]">
+          <SelectTrigger className="h-10 w-full rounded-full border-slate-300 bg-white px-3 shadow-none sm:w-[190px] sm:rounded-md">
             <ArrowUpDown className="size-4 text-slate-500" />
             <SelectValue />
           </SelectTrigger>
