@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import Link from "next/link";
+import BrowsePhotographers from "@/components/browse-photographers";
 import CircularGallery from "@/components/circular-gallery";
 import FAQSection from "@/components/faq-section";
 import FeaturedPhotographersCarousel from "@/components/featured-photographers";
@@ -13,9 +14,13 @@ import { Button } from "@/components/ui/button";
 import { Marquee } from "@/components/ui/marquee";
 import { photographers } from "@/data/feature-photographers";
 import { playfairDisplay } from "@/lib/fonts";
+import { DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS } from "@/lib/public-photographer-explore";
 import { cn } from "@/lib/utils";
 import { getAuthSession } from "@/server/auth/session";
-import { getPublicFeaturedPhotographers } from "@/server/services/photographer";
+import {
+  getPublicFeaturedPhotographers,
+  getPublicPhotographerExplorePage,
+} from "@/server/services/photographer";
 
 const images = [
   "/hero-images/10002.jpeg",
@@ -35,10 +40,15 @@ const images = [
 
 export default async function HomePage() {
   const requestHeaders = await headers();
-  const [session, featuredPhotographers] = await Promise.all([
-    getAuthSession({ headers: requestHeaders }),
-    getPublicFeaturedPhotographers(),
-  ]);
+  const [session, featuredPhotographers, browsePhotographersPage] =
+    await Promise.all([
+      getAuthSession({ headers: requestHeaders }),
+      getPublicFeaturedPhotographers(),
+      getPublicPhotographerExplorePage(
+        DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS,
+        { page: 1, pageSize: 6 },
+      ),
+    ]);
 
   return (
     <>
@@ -96,6 +106,15 @@ export default async function HomePage() {
         >
           <FeaturedPhotographersCarousel
             photographers={featuredPhotographers}
+          />
+        </SectionContainer>
+
+        <SectionContainer
+          title="Browse Photographers"
+          subtitle="Discover talented photographers ready to capture your moments."
+        >
+          <BrowsePhotographers
+            photographers={browsePhotographersPage.photographers}
           />
         </SectionContainer>
 
