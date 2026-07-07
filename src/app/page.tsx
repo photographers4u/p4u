@@ -12,7 +12,6 @@ import Navbar from "@/components/navbar";
 import SectionContainer from "@/components/section-ui";
 import { Button } from "@/components/ui/button";
 import { Marquee } from "@/components/ui/marquee";
-import { photographers } from "@/data/feature-photographers";
 import { playfairDisplay } from "@/lib/fonts";
 import { DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS } from "@/lib/public-photographer-explore";
 import { cn } from "@/lib/utils";
@@ -46,9 +45,14 @@ export default async function HomePage() {
       getPublicFeaturedPhotographers(),
       getPublicPhotographerExplorePage(
         DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS,
-        { page: 1, pageSize: 6 },
+        { page: 1, pageSize: 12 },
       ),
     ]);
+
+  const communityPhotographers = browsePhotographersPage.photographers.filter(
+    (photographer): photographer is typeof photographer & { avatar: string } =>
+      Boolean(photographer.avatar),
+  );
 
   return (
     <>
@@ -103,6 +107,7 @@ export default async function HomePage() {
           className="sm:mt-[110vh]"
           title="Featured Photographers"
           subtitle="A selection of photographers we currently recommend."
+          viewAllHref="/photographers"
         >
           <FeaturedPhotographersCarousel
             photographers={featuredPhotographers}
@@ -112,6 +117,7 @@ export default async function HomePage() {
         <SectionContainer
           title="Browse Photographers"
           subtitle="Discover talented photographers ready to capture your moments."
+          viewAllHref="/photographers"
         >
           <BrowsePhotographers
             photographers={browsePhotographersPage.photographers}
@@ -122,7 +128,7 @@ export default async function HomePage() {
 
         <div
           className={cn(
-            "mx-auto md:px-10 lg:px-20 relative overflow-hidden border md:rounded-3xl bg-[#FBFBFB] max-md:mx-4 max-md:rounded-3xl max-md:bg-white max-md:shadow-sm px-0! max-w-7xl",
+            "mx-auto md:px-10 lg:px-20 relative overflow-hidden border md:rounded-3xl bg-[#FBFBFB] max-md:border-0 max-md:bg-transparent px-0! max-w-7xl",
           )}
         >
           <div className="flex flex-col gap-6 px-6 pt-8 sm:px-10 sm:pt-10 lg:flex-row lg:items-center lg:justify-between lg:px-14 lg:pt-14">
@@ -156,18 +162,20 @@ export default async function HomePage() {
 
             <div className="relative z-10 w-full">
               <Marquee>
-                {photographers.map((elem) => (
+                {communityPhotographers.map((elem) => (
                   <div
                     key={elem.id}
                     className="bg-black rounded-full overflow-hidden text-white flex items-center gap-x-3 p-1.5 pr-8 sm:pr-12 mx-2"
                   >
                     <img
-                      className="size-10 sm:size-12 rounded-full"
-                      alt={`${elem.name} profile`}
+                      className="size-10 sm:size-12 rounded-full object-cover"
+                      alt={`${elem.name ?? "Photographer"} profile`}
                       src={elem.avatar}
                     />
                     <div>
-                      <p className="text-xs sm:text-sm">{elem.name}</p>
+                      <p className="text-xs sm:text-sm">
+                        {elem.name ?? "Photographer"}
+                      </p>
                       <p className="text-[10px] sm:text-xs text-neutral-400">
                         Photographer
                       </p>
@@ -177,18 +185,20 @@ export default async function HomePage() {
               </Marquee>
 
               <Marquee reverse className="mt-2">
-                {photographers.map((elem) => (
+                {communityPhotographers.map((elem) => (
                   <div
                     key={elem.id}
                     className="bg-black rounded-full overflow-hidden text-white flex items-center gap-x-3 p-1.5 pr-6 sm:pr-10 mx-2"
                   >
                     <img
-                      className="size-10 sm:size-12 rounded-full"
-                      alt={`${elem.name} profile`}
+                      className="size-10 sm:size-12 rounded-full object-cover"
+                      alt={`${elem.name ?? "Photographer"} profile`}
                       src={elem.avatar}
                     />
                     <div>
-                      <p className="text-xs sm:text-sm">{elem.name}</p>
+                      <p className="text-xs sm:text-sm">
+                        {elem.name ?? "Photographer"}
+                      </p>
                       <p className="text-[10px] sm:text-xs text-neutral-400">
                         Photographer
                       </p>

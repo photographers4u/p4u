@@ -8,6 +8,7 @@ import { photographerReviewPhotoMinimum } from "@/lib/photographer-upload-config
 import type { PublicPhotographerExploreFilters } from "@/lib/public-photographer-explore";
 import { PUBLIC_PHOTOGRAPHER_EXPLORE_PAGE_SIZE } from "@/lib/public-photographer-explore";
 import db, { type DBExecutor, type DBTransaction } from "@/server/db";
+import { notificationController } from "@/server/db/controller/notification";
 import { photographerContactController } from "@/server/db/controller/photographer-contact";
 import {
   type AdminPhotographerListRow,
@@ -979,6 +980,37 @@ async function sendPhotographerReviewNotification(
   }
 }
 
+async function createPhotographerReviewInAppNotification(
+  notification: PhotographerReviewNotification,
+) {
+  try {
+    const title =
+      notification.status === "approved"
+        ? "Your profile is live"
+        : notification.status === "rejected"
+          ? "Your profile submission was rejected"
+          : "Your profile needs changes";
+    const body =
+      notification.status === "approved"
+        ? `${notification.submissionName} is now visible to clients.`
+        : (notification.rejectionReason ?? null);
+
+    await notificationController.create({
+      body,
+      link: "/dashboard/portfolio",
+      title,
+      type: `photographer_${notification.status}`,
+      userId: notification.userId,
+    });
+  } catch (error) {
+    console.error("Failed to create photographer review in-app notification", {
+      error,
+      status: notification.status,
+      userId: notification.userId,
+    });
+  }
+}
+
 export const photographerController = {
   async getPhotographerOnboardingByUserId(userId: string) {
     const photographer = await photographerDal.getByUserId(userId);
@@ -1520,6 +1552,7 @@ export const photographerController = {
     });
 
     await sendPhotographerReviewNotification(notification);
+    await createPhotographerReviewInAppNotification(notification);
 
     return entry;
   },

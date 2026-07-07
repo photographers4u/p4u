@@ -29,6 +29,8 @@ export function PhotographerWorkGallery({
           `${photographerName} portfolio photo ${index + 1}`
         }
         mobileColumnCount={3}
+        borderRadius={4}
+        gap={4}
       />
 
       <ImageLightbox

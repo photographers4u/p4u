@@ -21,7 +21,7 @@ const BrowsePhotographers = ({
 
   return (
     <BookmarkProvider>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
           {photographers.map((elem) => (
             <ExplorePhotographerCard
@@ -32,7 +32,7 @@ const BrowsePhotographers = ({
           ))}
         </div>
 
-        <div className="mt-10 flex justify-center max-md:mt-6">
+        <div className="mt-10 flex justify-center max-md:hidden">
           <Button
             asChild
             variant="outline"

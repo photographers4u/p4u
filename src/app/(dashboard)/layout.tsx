@@ -1,11 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { UserSidebar } from "@/components/sidebar/user-sidebar";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { getAuthSession } from "@/server/auth/session";
 import { getCurrentPhotographer } from "@/server/services/photographer";
 
@@ -39,13 +36,8 @@ export default async function layout({
         photographer={photographer}
       />
       <SidebarInset>
-        <header className="flex h-12 items-center gap-2 border-b px-4 md:hidden">
-          <SidebarTrigger />
-          <span className="text-sm font-medium text-muted-foreground">
-            Menu
-          </span>
-        </header>
-        <div className="flex flex-1 flex-col max-w-6xl mx-auto w-full py-6 px-4 sm:py-10 sm:px-6 lg:py-16 lg:px-8">
+        <MobileBottomNav session={session} />
+        <div className="flex flex-1 flex-col max-w-6xl mx-auto w-full py-6 px-4 sm:py-10 sm:px-6 lg:py-16 lg:px-8 max-md:pb-28">
           {children}
         </div>
       </SidebarInset>

@@ -44,7 +44,7 @@ export function MobileAppHome() {
         ))}
       </div>
 
-      <div className="relative mt-4 overflow-hidden rounded-3xl bg-linear-to-br from-primary via-primary to-indigo-800 px-5 py-6 text-primary-foreground">
+      <div className="relative mt-4 overflow-hidden rounded-[4px] bg-linear-to-br from-primary via-primary to-indigo-800 px-5 py-6 text-primary-foreground">
         <p className="text-xs font-medium text-white/75">India-wide network</p>
         <h2 className="mt-1 text-xl font-semibold leading-snug text-balance">
           Find your photographer in minutes

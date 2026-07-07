@@ -150,7 +150,7 @@ export function ExplorePhotographerCard({
   return (
     <article
       className={cn(
-        "relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:rounded-lg sm:shadow-none",
+        "relative flex h-full flex-col overflow-hidden rounded-[4px] border border-slate-200 bg-white shadow-sm sm:shadow-none",
         className,
       )}
     >

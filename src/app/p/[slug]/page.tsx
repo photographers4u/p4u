@@ -1,4 +1,4 @@
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Mail, MapPin, Pencil, Phone, Plus } from "lucide-react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Image from "next/image";
@@ -28,6 +28,7 @@ import { getAuthSession } from "@/server/auth/session";
 import { NotFoundError } from "@/server/db/helpers/errors";
 import { hasBookmarkByUserId } from "@/server/services/bookmark";
 import {
+  getCurrentPhotographer,
   getPreviewPhotographerBySlug,
   getPublicPhotographerBySlug,
 } from "@/server/services/photographer";
@@ -147,7 +148,10 @@ export default async function PublicPhotographerPage({
   const forwardedProto = requestHeaders.get("x-forwarded-proto") ?? "https";
   const forwardedHost =
     requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
-  const session = await getAuthSession({ headers: requestHeaders });
+  const [session, currentPhotographer] = await Promise.all([
+    getAuthSession({ headers: requestHeaders }),
+    getCurrentPhotographer(requestHeaders),
+  ]);
 
   try {
     const isAuthenticated = Boolean(session?.user) || isPreview;
@@ -157,6 +161,8 @@ export default async function PublicPhotographerPage({
       : await getPublicPhotographerBySlug(slug, {
           includeContactDetails: isAuthenticated,
         });
+
+    const isOwnProfile = currentPhotographer?.id === photographer.id;
 
     const isBookmarked = session?.user
       ? await hasBookmarkByUserId(
@@ -254,8 +260,9 @@ export default async function PublicPhotographerPage({
         <MobileBottomNav session={session} />
 
         <BookmarkProvider initialStore={initialBookmarkStore} session={session}>
-          {photographer.contact?.phone ||
-          (!isAuthenticated && photographer.hasPublicContact) ? (
+          {!isOwnProfile &&
+          (photographer.contact?.phone ||
+            (!isAuthenticated && photographer.hasPublicContact)) ? (
             <div
               className="fixed inset-x-0 z-40 mx-4 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-[0_8px_30px_-8px_rgba(15,23,42,0.25)] backdrop-blur md:hidden"
               style={{
@@ -292,13 +299,13 @@ export default async function PublicPhotographerPage({
                 Preview only — this profile is not live on Photographers4U yet.
               </div>
             ) : null}
-            <section className="border-b border-slate-200 bg-white max-md:mx-4 max-md:mt-4 max-md:rounded-3xl max-md:border max-md:shadow-sm">
-              <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
+            <section className="border-b border-slate-200/80 sm:bg-white">
+              <div className="mx-auto max-w-6xl px-4 pt-8 pb-6 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
                 <div className="flex flex-col items-center gap-6 text-center lg:flex-row lg:items-start lg:justify-between lg:text-left">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-col items-center gap-4 sm:gap-5 lg:flex-row lg:items-start">
                       {photographer.avatar ? (
-                        <div className="relative size-20 shrink-0 overflow-hidden rounded-full ring-1 ring-slate-200 sm:size-24 lg:size-32">
+                        <div className="relative size-20 shrink-0 overflow-hidden rounded-full shadow-sm ring-1 ring-slate-200 sm:size-24 lg:size-32">
                           {/* biome-ignore lint/performance/noImgElement: photographer avatars are stored on an external host */}
                           <img
                             src={photographer.avatar}
@@ -307,7 +314,7 @@ export default async function PublicPhotographerPage({
                           />
                         </div>
                       ) : (
-                        <div className="flex size-20 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xl font-semibold text-slate-700 ring-1 ring-slate-200 sm:size-24 sm:text-2xl">
+                        <div className="flex size-20 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xl font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 sm:size-24 sm:text-2xl">
                           {initials}
                         </div>
                       )}
@@ -315,7 +322,7 @@ export default async function PublicPhotographerPage({
                       <div className="min-w-0 flex-1 pt-0.5">
                         <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-start">
                           <h1
-                            className={`text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl ${poppins.className}`}
+                            className={`text-2xl font-semibold tracking-tight text-slate-950 sm:text-4xl ${poppins.className}`}
                           >
                             {photographer.name ?? "Photographer"}
                           </h1>
@@ -324,16 +331,33 @@ export default async function PublicPhotographerPage({
                           />
                         </div>
 
-                        <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[15px] text-slate-500 lg:justify-start">
+                        <div className="mt-3 flex items-center justify-center gap-6 lg:justify-start">
+                          <div className="text-center lg:text-left">
+                            <p className="text-base font-semibold text-slate-950">
+                              {photographer.uploads.length}
+                            </p>
+                            <p className="text-xs text-slate-500">Work</p>
+                          </div>
+                          <div className="text-center lg:text-left">
+                            <p className="text-base font-semibold text-slate-950">
+                              {photographer.specialities.length}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              Specialities
+                            </p>
+                          </div>
+                          <div className="text-center lg:text-left">
+                            <p className="text-base font-semibold text-slate-950">
+                              {photographer.experienceYears ?? "—"}
+                            </p>
+                            <p className="text-xs text-slate-500">Years exp.</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-slate-500 sm:text-[15px] lg:justify-start">
                           <span className="inline-flex items-center gap-1.5">
                             <MapPin className="size-3.5 text-slate-400" />
                             {location}
-                          </span>
-                          <span className="text-slate-300">&bull;</span>
-                          <span>
-                            {formatPhotographerExperience(
-                              photographer.experienceYears,
-                            )}
                           </span>
                           {averageStartingPrice !== null ? (
                             <>
@@ -351,7 +375,7 @@ export default async function PublicPhotographerPage({
                             {photographer.specialities.map((speciality) => (
                               <span
                                 key={speciality.id}
-                                className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700"
+                                className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700"
                               >
                                 {speciality.name}
                               </span>
@@ -362,47 +386,75 @@ export default async function PublicPhotographerPage({
                     </div>
                   </div>
 
-                  <div className="flex flex-row items-center gap-3 lg:flex-wrap lg:justify-end">
-                    {(photographer.contact?.phone ||
-                      (!isAuthenticated && photographer.hasPublicContact)) && (
-                      <div className="flex items-center gap-2 max-md:hidden">
+                  <div className="flex flex-row flex-wrap items-center justify-center gap-2.5 lg:justify-end">
+                    {isOwnProfile ? (
+                      <>
                         <Button asChild className="rounded-full px-5">
-                          <Link
-                            href={
-                              isAuthenticated ? `tel:${phoneHref}` : loginHref
-                            }
-                          >
-                            <Phone className="size-3.5" />
-                            Call
+                          <Link href="/dashboard/portfolio">
+                            <Pencil className="size-3.5" />
+                            Edit profile
                           </Link>
                         </Button>
 
-                        {isAuthenticated && photographer.contact?.phone ? (
-                          <span className="text-sm font-medium text-slate-700">
-                            {photographer.contact.phone}
-                          </span>
-                        ) : null}
-                      </div>
-                    )}
-
-                    {(photographer.contact?.email ||
-                      (!isAuthenticated && photographer.hasPublicContact)) && (
-                      <Button
-                        asChild
-                        variant="outline"
-                        className="rounded-full px-5"
-                      >
-                        <Link
-                          href={
-                            isAuthenticated
-                              ? `mailto:${photographer.contact?.email ?? ""}`
-                              : loginHref
-                          }
+                        <Button
+                          asChild
+                          variant="outline"
+                          className="rounded-full px-5"
                         >
-                          <Mail className="size-3.5" />
-                          Email
-                        </Link>
-                      </Button>
+                          <Link href="/dashboard/images">
+                            <Plus className="size-3.5" />
+                            Add work
+                          </Link>
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        {(photographer.contact?.phone ||
+                          (!isAuthenticated &&
+                            photographer.hasPublicContact)) && (
+                          <div className="flex items-center gap-2 max-md:hidden">
+                            <Button asChild className="rounded-full px-5">
+                              <Link
+                                href={
+                                  isAuthenticated
+                                    ? `tel:${phoneHref}`
+                                    : loginHref
+                                }
+                              >
+                                <Phone className="size-3.5" />
+                                Call
+                              </Link>
+                            </Button>
+
+                            {isAuthenticated && photographer.contact?.phone ? (
+                              <span className="text-sm font-medium text-slate-700">
+                                {photographer.contact.phone}
+                              </span>
+                            ) : null}
+                          </div>
+                        )}
+
+                        {(photographer.contact?.email ||
+                          (!isAuthenticated &&
+                            photographer.hasPublicContact)) && (
+                          <Button
+                            asChild
+                            variant="outline"
+                            className="rounded-full px-5"
+                          >
+                            <Link
+                              href={
+                                isAuthenticated
+                                  ? `mailto:${photographer.contact?.email ?? ""}`
+                                  : loginHref
+                              }
+                            >
+                              <Mail className="size-3.5" />
+                              Email
+                            </Link>
+                          </Button>
+                        )}
+                      </>
                     )}
 
                     <CopyLinkButton
@@ -411,11 +463,13 @@ export default async function PublicPhotographerPage({
                       className="px-5"
                     />
 
-                    <BookmarkButton
-                      identifier="photographer"
-                      value={photographer.id}
-                      size="icon-lg"
-                    />
+                    {!isOwnProfile ? (
+                      <BookmarkButton
+                        identifier="photographer"
+                        value={photographer.id}
+                        size="icon-lg"
+                      />
+                    ) : null}
                   </div>
                 </div>
               </div>

@@ -1,3 +1,4 @@
+import { notificationController } from "@/server/db/controller/notification";
 import { bookmarkDal } from "@/server/db/dal/bookmark";
 import { photographerDal } from "@/server/db/dal/photographer";
 import { BadRequestError, InternalError } from "@/server/db/helpers/errors";
@@ -10,7 +11,7 @@ function normalizeBookmarkValue(value: string) {
   return bookmarkDal.normalizeValue(value);
 }
 
-async function assertBookmarkTargetExists(
+async function getBookmarkTargetPhotographer(
   identifier: BookmarkIdentifier,
   value: string,
 ) {
@@ -22,6 +23,34 @@ async function assertBookmarkTargetExists(
 
   if (!photographer || !photographer.isPublished) {
     throw new BadRequestError("Photographer not found");
+  }
+
+  return photographer;
+}
+
+async function notifyPhotographerOfNewBookmark(
+  photographer: NonNullable<
+    Awaited<ReturnType<typeof photographerDal.getById>>
+  >,
+  bookmarkingUserId: string,
+) {
+  if (photographer.userId === bookmarkingUserId) {
+    return;
+  }
+
+  try {
+    await notificationController.create({
+      body: null,
+      link: photographer.slug ? `/p/${photographer.slug}` : null,
+      title: "Someone saved your profile",
+      type: "bookmark_received",
+      userId: photographer.userId,
+    });
+  } catch (error) {
+    console.error("Failed to create bookmark notification", {
+      error,
+      photographerId: photographer.id,
+    });
   }
 }
 
@@ -76,7 +105,10 @@ export const bookmarkController = {
       };
     }
 
-    await assertBookmarkTargetExists(input.identifier, value);
+    const photographer = await getBookmarkTargetPhotographer(
+      input.identifier,
+      value,
+    );
 
     const created = await bookmarkDal.createBookmark(
       userId,
@@ -87,6 +119,8 @@ export const bookmarkController = {
     if (!created) {
       throw new InternalError("Failed to create bookmark");
     }
+
+    await notifyPhotographerOfNewBookmark(photographer, userId);
 
     return {
       isBookmarked: true,

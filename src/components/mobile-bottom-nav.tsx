@@ -1,87 +1,29 @@
-"use client";
-
-import { Bookmark, Compass, Home, User } from "lucide-react";
-import type { Route } from "next";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { headers } from "next/headers";
 import type { AuthClientSession } from "@/lib/auth-client";
-import { buildAuthRedirectPath } from "@/lib/auth-redirect";
-import { cn } from "@/lib/utils";
+import { getOwnPhotographerProfileLink } from "@/lib/photographer-own-profile";
+import { getCurrentPhotographer } from "@/server/services/photographer";
+import { MobileBottomNavClient } from "./mobile-bottom-nav-client";
 
-function isActivePath(pathname: string, matchPath: string) {
-  if (matchPath === "/") {
-    return pathname === matchPath;
-  }
+async function MobileBottomNav({
+  session,
+}: {
+  session: AuthClientSession | null;
+}) {
+  const photographer = session?.user
+    ? await getCurrentPhotographer(await headers())
+    : null;
+  const profileLink = getOwnPhotographerProfileLink(photographer);
 
-  return pathname === matchPath || pathname.startsWith(`${matchPath}/`);
-}
+  const profile = profileLink
+    ? {
+        label: "Profile",
+        href: profileLink.href,
+        matchPath: profileLink.matchPath,
+        avatarUrl: profileLink.avatarUrl,
+      }
+    : null;
 
-function MobileBottomNav({ session }: { session: AuthClientSession | null }) {
-  const pathname = usePathname();
-  const isAuthenticated = Boolean(session?.user);
-
-  const tabs = [
-    { label: "Home", href: "/" as Route, matchPath: "/", icon: Home },
-    {
-      label: "Explore",
-      href: "/photographers" as Route,
-      matchPath: "/photographers",
-      icon: Compass,
-    },
-    {
-      label: "Saved",
-      href: (isAuthenticated
-        ? "/dashboard/bookmarks"
-        : buildAuthRedirectPath("/login", {
-            callbackUrl: "/dashboard/bookmarks",
-          })) as Route,
-      matchPath: "/dashboard/bookmarks",
-      icon: Bookmark,
-    },
-    {
-      label: "Account",
-      href: (isAuthenticated
-        ? "/account"
-        : buildAuthRedirectPath("/login", { callbackUrl: "/account" })) as Route,
-      matchPath: "/account",
-      icon: User,
-    },
-  ];
-
-  return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-200/70 bg-white/95 shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.08)] backdrop-blur-md md:hidden"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-    >
-      <div className="mx-auto flex h-16 max-w-md items-center justify-around px-2">
-        {tabs.map((tab) => {
-          const active = isActivePath(pathname, tab.matchPath);
-          const Icon = tab.icon;
-
-          return (
-            <Link
-              key={tab.label}
-              href={tab.href}
-              className="flex flex-1 flex-col items-center gap-0.5 py-1.5 text-[11px] font-medium text-zinc-500 transition-colors"
-              aria-current={active ? "page" : undefined}
-            >
-              <span
-                className={cn(
-                  "flex size-9 items-center justify-center rounded-full transition-colors",
-                  active ? "bg-primary/10 text-primary" : "text-zinc-500",
-                )}
-              >
-                <Icon className="size-5" strokeWidth={active ? 2.5 : 2} />
-              </span>
-              <span className={cn(active ? "text-primary" : "text-zinc-500")}>
-                {tab.label}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
-  );
+  return <MobileBottomNavClient session={session} profile={profile} />;
 }
 
 export { MobileBottomNav };

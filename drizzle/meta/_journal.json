@@ -78,6 +78,13 @@
       "when": 1782306178474,
       "tag": "0010_flashy_scalphunter",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1783428134674,
+      "tag": "0011_shallow_multiple_man",
+      "breakpoints": true
     }
   ]
 }
