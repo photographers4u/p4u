@@ -21,24 +21,26 @@ const BrowsePhotographers = ({
 
   return (
     <BookmarkProvider>
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {photographers.map((elem) => (
-          <ExplorePhotographerCard
-            key={elem.id}
-            photographer={elem}
-            imageMode="cover"
-          />
-        ))}
-      </div>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {photographers.map((elem) => (
+            <ExplorePhotographerCard
+              key={elem.id}
+              photographer={elem}
+              imageMode="cover"
+            />
+          ))}
+        </div>
 
-      <div className="mt-10 flex justify-center max-md:mt-6">
-        <Button
-          asChild
-          variant="outline"
-          className="h-10 rounded-md px-6 text-sm"
-        >
-          <Link href="/photographers">Browse all photographers</Link>
-        </Button>
+        <div className="mt-10 flex justify-center max-md:mt-6">
+          <Button
+            asChild
+            variant="outline"
+            className="h-10 rounded-md px-6 text-sm"
+          >
+            <Link href="/photographers">Browse all photographers</Link>
+          </Button>
+        </div>
       </div>
     </BookmarkProvider>
   );
