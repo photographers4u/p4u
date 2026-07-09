@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BookmarkButton } from "@/components/bookmark-button";
+import { ContactActionButton } from "@/components/contact-action-button";
 import { CopyLinkButton } from "@/components/copy-link-button";
 import { Footer } from "@/components/footer";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
@@ -27,6 +28,7 @@ import { getYouTubeVideoEmbedUrl } from "@/lib/video-embeds";
 import { getAuthSession } from "@/server/auth/session";
 import { NotFoundError } from "@/server/db/helpers/errors";
 import { hasBookmarkByUserId } from "@/server/services/bookmark";
+import { recordProfileView } from "@/server/services/photographer-event";
 import {
   getCurrentPhotographer,
   getPreviewPhotographerBySlug,
@@ -164,6 +166,13 @@ export default async function PublicPhotographerPage({
 
     const isOwnProfile = currentPhotographer?.id === photographer.id;
 
+    if (!isOwnProfile && !isPreview) {
+      void recordProfileView({
+        photographerId: photographer.id,
+        viewerUserId: session?.user?.id ?? null,
+      });
+    }
+
     const isBookmarked = session?.user
       ? await hasBookmarkByUserId(
           session.user.id,
@@ -270,10 +279,15 @@ export default async function PublicPhotographerPage({
               }}
             >
               <Button asChild className="h-11 flex-1 rounded-xl">
-                <Link href={isAuthenticated ? `tel:${phoneHref}` : loginHref}>
+                <ContactActionButton
+                  href={isAuthenticated ? `tel:${phoneHref}` : loginHref}
+                  method="call"
+                  photographerId={photographer.id}
+                  shouldTrack={isAuthenticated}
+                >
                   <Phone className="size-4" />
                   Call now
-                </Link>
+                </ContactActionButton>
               </Button>
               <BookmarkButton
                 identifier="photographer"
@@ -414,16 +428,19 @@ export default async function PublicPhotographerPage({
                             photographer.hasPublicContact)) && (
                           <div className="flex items-center gap-2 max-md:hidden">
                             <Button asChild className="rounded-full px-5">
-                              <Link
+                              <ContactActionButton
                                 href={
                                   isAuthenticated
                                     ? `tel:${phoneHref}`
                                     : loginHref
                                 }
+                                method="call"
+                                photographerId={photographer.id}
+                                shouldTrack={isAuthenticated}
                               >
                                 <Phone className="size-3.5" />
                                 Call
-                              </Link>
+                              </ContactActionButton>
                             </Button>
 
                             {isAuthenticated && photographer.contact?.phone ? (
@@ -442,16 +459,19 @@ export default async function PublicPhotographerPage({
                             variant="outline"
                             className="rounded-full px-5"
                           >
-                            <Link
+                            <ContactActionButton
                               href={
                                 isAuthenticated
                                   ? `mailto:${photographer.contact?.email ?? ""}`
                                   : loginHref
                               }
+                              method="email"
+                              photographerId={photographer.id}
+                              shouldTrack={isAuthenticated}
                             >
                               <Mail className="size-3.5" />
                               Email
-                            </Link>
+                            </ContactActionButton>
                           </Button>
                         )}
                       </>

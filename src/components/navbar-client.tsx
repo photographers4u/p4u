@@ -142,7 +142,7 @@ function DesktopActions({
     return (
       <>
         <Button asChild size="lg">
-          <Link href="/dashboard/bookmarks">Dashboard</Link>
+          <Link href="/dashboard">Dashboard</Link>
         </Button>
         <NotificationBell />
         <AccountMenu profile={profile} />

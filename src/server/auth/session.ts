@@ -2,6 +2,7 @@ import "server-only";
 
 import { notFound } from "next/navigation";
 import { cache } from "react";
+import { isAdminPanelRole } from "@/lib/admin-role";
 import type { AuthClientSession } from "@/lib/auth-client";
 import { auth } from "@/server/auth";
 
@@ -29,7 +30,7 @@ export async function getAuthSession({
 export async function getAdminAuthSession({ headers }: GetAuthSessionInput) {
   const session = await getAuthSession({ headers });
 
-  if (!session?.user || session.user.role !== "admin") {
+  if (!session?.user || !isAdminPanelRole(session.user.role)) {
     notFound();
   }
 

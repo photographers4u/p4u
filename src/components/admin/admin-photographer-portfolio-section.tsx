@@ -2,9 +2,21 @@
 
 import { ImagePlus, Loader2, Pin, PinOff, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useId, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { ImageLightbox } from "@/components/image-lightbox";
+import { ResponsiveMasonryGrid, sortUploads } from "@/components/masonary";
 import { apiClient } from "@/lib/api-client";
 import { readApiResponse } from "@/lib/api-response";
 import { imageUploadAccept } from "@/lib/imagekit";
@@ -14,14 +26,24 @@ type PortfolioUpload = {
   displayOrder: number;
   id: string;
   imageUrl: string;
-  pinnedAt?: string | null;
+  pinnedAt: string | null;
 };
+
+function EmptyPortfolioState() {
+  return (
+    <div className="rounded-[1.75rem] border border-dashed border-border/70 bg-muted/15 px-5 py-8 text-sm text-muted-foreground">
+      No portfolio images have been added yet.
+    </div>
+  );
+}
 
 export function AdminPhotographerPortfolioSection({
   photographerId,
+  photographerName,
   uploads,
 }: {
   photographerId: string;
+  photographerName: string;
   uploads: PortfolioUpload[];
 }) {
   const isEditing = useAdminPhotographerEditMode();
@@ -30,6 +52,13 @@ export function AdminPhotographerPortfolioSection({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [busyUploadIds, setBusyUploadIds] = useState<string[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<PortfolioUpload | null>(
+    null,
+  );
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const orderedUploads = useMemo(() => sortUploads(uploads), [uploads]);
+  const displayName = photographerName || "This photographer";
 
   async function handleFilesSelected(files: FileList | null) {
     if (!files || files.length === 0) {
@@ -87,7 +116,12 @@ export function AdminPhotographerPortfolioSection({
     }
   }
 
-  async function deleteUpload(uploadId: string) {
+  async function confirmDelete() {
+    if (!deleteTarget) {
+      return;
+    }
+
+    const uploadId = deleteTarget.id;
     setBusyUploadIds((current) => [...current, uploadId]);
 
     try {
@@ -104,6 +138,7 @@ export function AdminPhotographerPortfolioSection({
       }
 
       toast.success("Image deleted.");
+      setDeleteTarget(null);
       router.refresh();
     } finally {
       setBusyUploadIds((current) => current.filter((id) => id !== uploadId));
@@ -111,12 +146,10 @@ export function AdminPhotographerPortfolioSection({
   }
 
   if (uploads.length === 0 && !isEditing) {
-    return (
-      <div className="rounded-[1.75rem] border border-dashed border-border/70 bg-muted/15 px-5 py-8 text-sm text-muted-foreground">
-        No portfolio images have been added yet.
-      </div>
-    );
+    return <EmptyPortfolioState />;
   }
+
+  const isDeleting = deleteTarget ? busyUploadIds.includes(deleteTarget.id) : false;
 
   return (
     <div className="space-y-4">
@@ -126,6 +159,7 @@ export function AdminPhotographerPortfolioSection({
           (at least 1 image)
         </span>
       </p>
+
       {isEditing ? (
         <div>
           <input
@@ -158,60 +192,59 @@ export function AdminPhotographerPortfolioSection({
       ) : null}
 
       {uploads.length === 0 ? (
-        <div className="rounded-[1.75rem] border border-dashed border-border/70 bg-muted/15 px-5 py-8 text-sm text-muted-foreground">
-          No portfolio images have been added yet.
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {uploads.map((upload, index) => {
+        <EmptyPortfolioState />
+      ) : isEditing ? (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {orderedUploads.map((upload, index) => {
             const isPinned = Boolean(upload.pinnedAt);
             const isBusy = busyUploadIds.includes(upload.id);
 
             return (
               <div
                 key={upload.id}
-                className={`overflow-hidden rounded-[1.75rem] border border-border/70 bg-background shadow-sm ${
-                  index === 0 ? "md:col-span-2" : ""
-                }`}
+                className="overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm"
               >
-                <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
-                  <p className="text-sm font-medium text-foreground">
+                <div className="flex items-center justify-between border-b border-border/70 px-4 py-2.5">
+                  <p className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                     Image {index + 1}
-                    {isPinned ? " (Pinned)" : ""}
+                    {isPinned ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                        <Pin className="size-3" />
+                        Pinned
+                      </span>
+                    ) : null}
                   </p>
 
-                  {isEditing ? (
-                    <div className="flex items-center gap-1">
-                      <Button
-                        type="button"
-                        size="icon-sm"
-                        variant="ghost"
-                        disabled={isBusy}
-                        onClick={() => void togglePin(upload.id, isPinned)}
-                        aria-label={isPinned ? "Unpin image" : "Pin image"}
-                      >
-                        {isBusy ? (
-                          <Loader2 className="size-4 animate-spin" />
-                        ) : isPinned ? (
-                          <PinOff className="size-4" />
-                        ) : (
-                          <Pin className="size-4" />
-                        )}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="icon-sm"
-                        variant="ghost"
-                        disabled={isBusy}
-                        onClick={() => void deleteUpload(upload.id)}
-                        aria-label="Delete image"
-                      >
-                        <Trash2 className="size-4 text-destructive" />
-                      </Button>
-                    </div>
-                  ) : null}
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="ghost"
+                      disabled={isBusy}
+                      onClick={() => void togglePin(upload.id, isPinned)}
+                      aria-label={isPinned ? "Unpin image" : "Pin image"}
+                    >
+                      {isBusy ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : isPinned ? (
+                        <PinOff className="size-4" />
+                      ) : (
+                        <Pin className="size-4" />
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="ghost"
+                      disabled={isBusy}
+                      onClick={() => setDeleteTarget(upload)}
+                      aria-label="Delete image"
+                    >
+                      <Trash2 className="size-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="aspect-[4/3] overflow-hidden bg-muted/20">
+                <div className="aspect-4/3 overflow-hidden bg-muted/20">
                   {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
                   <img
                     src={upload.imageUrl}
@@ -223,7 +256,68 @@ export function AdminPhotographerPortfolioSection({
             );
           })}
         </div>
+      ) : (
+        <>
+          <p className="text-xs text-muted-foreground">
+            This is exactly how visitors see {displayName}&apos;s work on
+            their public profile.
+          </p>
+          <ResponsiveMasonryGrid
+            uploads={uploads}
+            onImageClick={(_upload, index) => setLightboxIndex(index)}
+            getAlt={(_upload, index) =>
+              `${displayName} portfolio photo ${index + 1}`
+            }
+            mobileColumnCount={2}
+            borderRadius={12}
+            gap={12}
+          />
+          <ImageLightbox
+            images={orderedUploads.map((upload, index) => ({
+              id: upload.id,
+              imageUrl: upload.imageUrl,
+              alt: `${displayName} portfolio photo ${index + 1}`,
+            }))}
+            index={lightboxIndex}
+            onClose={() => setLightboxIndex(null)}
+            onIndexChange={setLightboxIndex}
+          />
+        </>
       )}
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteTarget(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this image?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes it from the portfolio. This
+              can&apos;t be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="justify-start!">
+            <AlertDialogAction
+              variant="destructive"
+              disabled={isDeleting}
+              onClick={(event) => {
+                event.preventDefault();
+                void confirmDelete();
+              }}
+            >
+              {isDeleting ? "Deleting..." : "Delete image"}
+            </AlertDialogAction>
+            <AlertDialogCancel disabled={isDeleting}>
+              Cancel
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

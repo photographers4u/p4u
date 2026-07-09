@@ -13,9 +13,11 @@ import SectionContainer from "@/components/section-ui";
 import { Button } from "@/components/ui/button";
 import { Marquee } from "@/components/ui/marquee";
 import { playfairDisplay } from "@/lib/fonts";
+import { BookmarkProvider } from "@/lib/bookmarks-context";
 import { DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS } from "@/lib/public-photographer-explore";
 import { cn } from "@/lib/utils";
 import { getAuthSession } from "@/server/auth/session";
+import { getBookmarkStoreByUserId } from "@/server/services/bookmark";
 import {
   getPublicFeaturedPhotographers,
   getPublicPhotographerExplorePage,
@@ -48,6 +50,9 @@ export default async function HomePage() {
         { page: 1, pageSize: 12 },
       ),
     ]);
+  const initialBookmarkStore = session?.user
+    ? await getBookmarkStoreByUserId(session.user.id)
+    : undefined;
 
   const communityPhotographers = browsePhotographersPage.photographers.filter(
     (photographer): photographer is typeof photographer & { avatar: string } =>
@@ -103,26 +108,28 @@ export default async function HomePage() {
             </div>
           </section>
         </div>
-        <SectionContainer
-          className="sm:mt-[110vh]"
-          title="Featured Photographers"
-          subtitle="A selection of photographers we currently recommend."
-          viewAllHref="/photographers"
-        >
-          <FeaturedPhotographersCarousel
-            photographers={featuredPhotographers}
-          />
-        </SectionContainer>
+        <BookmarkProvider initialStore={initialBookmarkStore} session={session}>
+          <SectionContainer
+            className="sm:mt-[110vh]"
+            title="Featured Photographers"
+            subtitle="A selection of photographers we currently recommend."
+            viewAllHref="/photographers"
+          >
+            <FeaturedPhotographersCarousel
+              photographers={featuredPhotographers}
+            />
+          </SectionContainer>
 
-        <SectionContainer
-          title="Browse Photographers"
-          subtitle="Discover talented photographers ready to capture your moments."
-          viewAllHref="/photographers"
-        >
-          <BrowsePhotographers
-            photographers={browsePhotographersPage.photographers}
-          />
-        </SectionContainer>
+          <SectionContainer
+            title="Browse Photographers"
+            subtitle="Discover talented photographers ready to capture your moments."
+            viewAllHref="/photographers"
+          >
+            <BrowsePhotographers
+              photographers={browsePhotographersPage.photographers}
+            />
+          </SectionContainer>
+        </BookmarkProvider>
 
         <FAQSection />
 

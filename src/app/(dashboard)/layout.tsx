@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { UserSidebar } from "@/components/sidebar/user-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { isAdminPanelRole } from "@/lib/admin-role";
 import { getAuthSession } from "@/server/auth/session";
 import { getCurrentPhotographer } from "@/server/services/photographer";
 
@@ -21,6 +22,10 @@ export default async function layout({
     return redirect("/login");
   }
 
+  if (isAdminPanelRole(session.user.role)) {
+    return redirect("/admin");
+  }
+
   return (
     <SidebarProvider
       style={
@@ -30,11 +35,7 @@ export default async function layout({
         } as React.CSSProperties
       }
     >
-      <UserSidebar
-        variant="sidebar"
-        user={session.user}
-        photographer={photographer}
-      />
+      <UserSidebar variant="sidebar" photographer={photographer} />
       <SidebarInset>
         <MobileBottomNav session={session} />
         <div className="flex flex-1 flex-col max-w-6xl mx-auto w-full py-6 px-4 sm:py-10 sm:px-6 lg:py-16 lg:px-8 max-md:pb-28">

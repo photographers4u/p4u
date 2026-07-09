@@ -23,7 +23,7 @@ let db: PostgresJsDatabase<typeof schema>;
 
 const connectionOptions = {
   prepare: false,
-  max: getEnvVariable("NODE_ENV") === "production" ? 10 : 1,
+  max: getEnvVariable("NODE_ENV") === "production" ? 10 : 5,
 };
 
 if (!global.pgClient) {

@@ -1,23 +1,33 @@
 import {
   getSearchParamFirstValue,
   getTrimmedSearchParamValue,
+  matchesSearchParamFlag,
   parsePositiveIntSearchParam,
   type SearchParamsRecord,
   type SearchParamValue,
 } from "@/lib/search-params";
+import { ONBOARDING_STEPS } from "@/zod/helpers";
 import {
+  type AdminPhotographerListCityFilter,
   type AdminPhotographerListFilters,
+  type AdminPhotographerListOnboardingStepFilter,
   type AdminPhotographerListSort,
   type AdminPhotographerListStatusFilter,
+  adminPhotographerListCityFilterValues,
   adminPhotographerListFiltersSchema,
   adminPhotographerListSortValues,
   adminPhotographerListStatusFilterValues,
+  DEFAULT_ADMIN_PHOTOGRAPHER_LIST_CITY,
+  DEFAULT_ADMIN_PHOTOGRAPHER_LIST_ONBOARDING_STEP,
   DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT,
   DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS,
+  PHOTOGRAPHER_STALE_THRESHOLD_DAYS,
 } from "@/zod/schema/photographer";
 
 const sortSet = new Set<string>(adminPhotographerListSortValues);
 const statusSet = new Set<string>(adminPhotographerListStatusFilterValues);
+const citySet = new Set<string>(adminPhotographerListCityFilterValues);
+const onboardingStepSet = new Set<number>(ONBOARDING_STEPS);
 
 function isAdminPhotographerListSort(
   value: string | undefined,
@@ -31,11 +41,37 @@ function isAdminPhotographerListStatusFilter(
   return typeof value === "string" && statusSet.has(value);
 }
 
+function isAdminPhotographerListCityFilter(
+  value: string | undefined,
+): value is AdminPhotographerListCityFilter {
+  return typeof value === "string" && citySet.has(value);
+}
+
+function parseOnboardingStepFilter(
+  value: string | undefined,
+): AdminPhotographerListOnboardingStepFilter {
+  const parsed = Number.parseInt(value ?? "", 10);
+
+  return onboardingStepSet.has(parsed)
+    ? (parsed as AdminPhotographerListOnboardingStepFilter)
+    : DEFAULT_ADMIN_PHOTOGRAPHER_LIST_ONBOARDING_STEP;
+}
+
+function parseDateFilterValue(value: string | undefined) {
+  if (!value || Number.isNaN(Date.parse(value))) {
+    return undefined;
+  }
+
+  return value;
+}
+
 export function getAdminPhotographerListFilters(
   params: SearchParamsRecord,
 ): AdminPhotographerListFilters {
   const sort = getSearchParamFirstValue(params.sort);
   const status = getSearchParamFirstValue(params.status);
+  const city = getSearchParamFirstValue(params.city);
+  const stage = getSearchParamFirstValue(params.stage);
 
   return adminPhotographerListFiltersSchema.parse({
     page: parsePositiveIntSearchParam(params.page),
@@ -46,8 +82,24 @@ export function getAdminPhotographerListFilters(
     status: isAdminPhotographerListStatusFilter(status)
       ? status
       : DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS,
+    city: isAdminPhotographerListCityFilter(city)
+      ? city
+      : DEFAULT_ADMIN_PHOTOGRAPHER_LIST_CITY,
+    onboardingStep: parseOnboardingStepFilter(stage),
+    createdFrom: parseDateFilterValue(getSearchParamFirstValue(params.from)),
+    createdTo: parseDateFilterValue(getSearchParamFirstValue(params.to)),
+    stale: matchesSearchParamFlag(params.stale),
   });
 }
+
+export function getAdminPhotographerStageFilterLabel(
+  stage: AdminPhotographerListOnboardingStepFilter,
+) {
+  return stage === "all" ? "All stages" : `Step ${stage} of ${ONBOARDING_STEPS.length}`;
+}
+
+export const ADMIN_PHOTOGRAPHER_STALE_THRESHOLD_DAYS =
+  PHOTOGRAPHER_STALE_THRESHOLD_DAYS;
 
 export function getAdminPhotographerStatusFilterLabel(
   status: AdminPhotographerListStatusFilter,
@@ -109,6 +161,26 @@ export function buildAdminPhotographersHref(
 
   if (nextFilters.sort !== DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT) {
     searchParams.set("sort", nextFilters.sort);
+  }
+
+  if (nextFilters.city !== DEFAULT_ADMIN_PHOTOGRAPHER_LIST_CITY) {
+    searchParams.set("city", nextFilters.city);
+  }
+
+  if (nextFilters.onboardingStep !== DEFAULT_ADMIN_PHOTOGRAPHER_LIST_ONBOARDING_STEP) {
+    searchParams.set("stage", String(nextFilters.onboardingStep));
+  }
+
+  if (nextFilters.createdFrom) {
+    searchParams.set("from", nextFilters.createdFrom);
+  }
+
+  if (nextFilters.createdTo) {
+    searchParams.set("to", nextFilters.createdTo);
+  }
+
+  if (nextFilters.stale) {
+    searchParams.set("stale", "1");
   }
 
   if (nextFilters.page > 1) {

@@ -1,10 +1,23 @@
 "use client";
 
 import { Pencil, X } from "lucide-react";
-import { createContext, type ReactNode, useContext, useState } from "react";
+import {
+  createContext,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+  useContext,
+  useState,
+} from "react";
 import { Button } from "@/components/ui/button";
 
-const AdminPhotographerEditModeContext = createContext(false);
+type AdminPhotographerEditModeContextValue = {
+  isEditing: boolean;
+  setIsEditing: Dispatch<SetStateAction<boolean>>;
+};
+
+const AdminPhotographerEditModeContext =
+  createContext<AdminPhotographerEditModeContextValue | null>(null);
 
 export function AdminPhotographerEditModeProvider({
   children,
@@ -14,33 +27,51 @@ export function AdminPhotographerEditModeProvider({
   const [isEditing, setIsEditing] = useState(false);
 
   return (
-    <AdminPhotographerEditModeContext.Provider value={isEditing}>
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          type="button"
-          variant={isEditing ? "default" : "outline"}
-          size="sm"
-          onClick={() => setIsEditing((current) => !current)}
-        >
-          {isEditing ? (
-            <>
-              <X className="size-3.5" />
-              Done editing
-            </>
-          ) : (
-            <>
-              <Pencil className="size-3.5" />
-              Edit profile
-            </>
-          )}
-        </Button>
-      </div>
-
+    <AdminPhotographerEditModeContext.Provider
+      value={{ isEditing, setIsEditing }}
+    >
       {children}
     </AdminPhotographerEditModeContext.Provider>
   );
 }
 
+function useAdminPhotographerEditModeContext() {
+  const context = useContext(AdminPhotographerEditModeContext);
+
+  if (!context) {
+    throw new Error(
+      "useAdminPhotographerEditMode must be used within an AdminPhotographerEditModeProvider",
+    );
+  }
+
+  return context;
+}
+
 export function useAdminPhotographerEditMode() {
-  return useContext(AdminPhotographerEditModeContext);
+  return useAdminPhotographerEditModeContext().isEditing;
+}
+
+export function AdminPhotographerEditModeToggle() {
+  const { isEditing, setIsEditing } = useAdminPhotographerEditModeContext();
+
+  return (
+    <Button
+      type="button"
+      variant={isEditing ? "default" : "outline"}
+      size="sm"
+      onClick={() => setIsEditing((current) => !current)}
+    >
+      {isEditing ? (
+        <>
+          <X className="size-3.5" />
+          Done editing
+        </>
+      ) : (
+        <>
+          <Pencil className="size-3.5" />
+          Edit profile
+        </>
+      )}
+    </Button>
+  );
 }

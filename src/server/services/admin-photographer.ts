@@ -33,7 +33,10 @@ export async function createAdminPhotographer(
         email,
         password,
         name: input.name,
-        role: "user",
+        // better-auth's admin plugin types `role` as "user" | "admin" unless a
+        // custom access-control `roles` map is configured; our `role` column
+        // is plain text and accepts "photographer" fine at runtime.
+        role: "photographer" as "user",
         data: {
           emailVerified: true,
         },

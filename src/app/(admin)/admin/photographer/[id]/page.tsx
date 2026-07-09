@@ -1,18 +1,29 @@
 import {
+  Award,
+  CalendarCheck,
   CalendarDays,
+  CalendarPlus,
   CircleDashed,
+  Clock,
+  Fingerprint,
+  ListChecks,
   Mail,
   MapPin,
   Phone,
   ShieldCheck,
+  UserRound,
   Video,
+  type LucideIcon,
 } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminPhotographerAvatarSection } from "@/components/admin/admin-photographer-avatar-section";
 import { AdminPhotographerContactSection } from "@/components/admin/admin-photographer-contact-section";
-import { AdminPhotographerEditModeProvider } from "@/components/admin/admin-photographer-edit-mode";
+import {
+  AdminPhotographerEditModeProvider,
+  AdminPhotographerEditModeToggle,
+} from "@/components/admin/admin-photographer-edit-mode";
 import { AdminPhotographerPortfolioSection } from "@/components/admin/admin-photographer-portfolio-section";
 import { CopyLinkButton } from "@/components/copy-link-button";
 import { AdminPhotographerProfileSection } from "@/components/admin/admin-photographer-profile-section";
@@ -68,16 +79,19 @@ function DetailField({
   label,
   value,
   tone = "default",
+  icon: Icon,
 }: {
   label: string;
   value: string;
   tone?: "default" | "mono";
+  icon?: LucideIcon;
 }) {
   return (
     <div className="rounded-2xl border border-border/60 bg-muted/15 p-4">
-      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-        {label}
-      </p>
+      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+        {Icon ? <Icon className="size-3.5 shrink-0" /> : null}
+        <p>{label}</p>
+      </div>
       <p
         className={`mt-2 text-sm text-foreground ${
           tone === "mono" ? "font-mono break-all" : "leading-6"
@@ -137,14 +151,16 @@ export default async function AdminPhotographerDetailPage({
               <Badge variant={entry.isPublished ? "secondary" : "outline"}>
                 {entry.isPublished ? "Visible publicly" : "Hidden from public"}
               </Badge>
-              {!entry.isPublished && previewUrl ? (
-                <CopyLinkButton
-                  url={previewUrl}
-                  showLabel
-                  label="Copy preview link"
-                  className="ml-auto"
-                />
-              ) : null}
+              <div className="ml-auto flex items-center gap-2">
+                {!entry.isPublished && previewUrl ? (
+                  <CopyLinkButton
+                    url={previewUrl}
+                    showLabel
+                    label="Copy preview link"
+                  />
+                ) : null}
+                <AdminPhotographerEditModeToggle />
+              </div>
             </div>
 
             <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)] xl:items-end">
@@ -174,14 +190,17 @@ export default async function AdminPhotographerDetailPage({
 
               <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
                 <DetailField
+                  icon={ListChecks}
                   label="Onboarding"
                   value={`Step ${entry.onboardingStep} of ${ONBOARDING_STEPS.length}`}
                 />
                 <DetailField
+                  icon={Award}
                   label="Experience"
                   value={formatPhotographerExperience(entry.experienceYears)}
                 />
                 <DetailField
+                  icon={Clock}
                   label="Updated"
                   value={adminDateFormatter.format(entry.updatedAt)}
                 />
@@ -251,6 +270,7 @@ export default async function AdminPhotographerDetailPage({
               >
                 <AdminPhotographerPortfolioSection
                   photographerId={entry.id}
+                  photographerName={entry.name ?? ""}
                   uploads={entry.uploads}
                 />
               </SectionCard>
@@ -311,8 +331,9 @@ export default async function AdminPhotographerDetailPage({
                 description="Moderation metadata and quick-reference profile facts."
               >
                 <div className="grid gap-4">
-                  <DetailField label="Location" value={location} />
+                  <DetailField icon={MapPin} label="Location" value={location} />
                   <DetailField
+                    icon={CalendarCheck}
                     label="Last reviewed"
                     value={
                       entry.reviewedAt
@@ -321,19 +342,23 @@ export default async function AdminPhotographerDetailPage({
                     }
                   />
                   <DetailField
+                    icon={CalendarPlus}
                     label="Created"
                     value={adminDateFormatter.format(entry.createdAt)}
                   />
                   <DetailField
+                    icon={Clock}
                     label="Updated"
                     value={adminDateFormatter.format(entry.updatedAt)}
                   />
                   <DetailField
+                    icon={Fingerprint}
                     label="Profile ID"
                     value={entry.id}
                     tone="mono"
                   />
                   <DetailField
+                    icon={UserRound}
                     label="User ID"
                     value={entry.userId}
                     tone="mono"

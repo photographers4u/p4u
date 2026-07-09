@@ -129,6 +129,25 @@ export const DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS =
 export const DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT =
   adminPhotographerListSortValues[0];
 
+export const adminPhotographerListCityFilterValues = [
+  "all",
+  ...CITIES,
+] as const;
+export const adminPhotographerListCityFilterSchema = z.enum(
+  adminPhotographerListCityFilterValues,
+);
+export const DEFAULT_ADMIN_PHOTOGRAPHER_LIST_CITY =
+  adminPhotographerListCityFilterValues[0];
+
+export const adminPhotographerListOnboardingStepFilterSchema = z.union([
+  z.literal("all"),
+  z.union(ONBOARDING_STEPS.map((step) => z.literal(step))),
+]);
+export const DEFAULT_ADMIN_PHOTOGRAPHER_LIST_ONBOARDING_STEP = "all" as const;
+
+// Hardcoded, not user-configurable — see PHOTOGRAPHER_STALE_THRESHOLD_DAYS.
+export const PHOTOGRAPHER_STALE_THRESHOLD_DAYS = 7;
+
 export const adminPhotographerListFiltersSchema = z.object({
   page: z.number().int().min(1).default(1),
   query: z.string().default(""),
@@ -138,6 +157,15 @@ export const adminPhotographerListFiltersSchema = z.object({
   status: adminPhotographerListStatusFilterSchema.default(
     DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS,
   ),
+  city: adminPhotographerListCityFilterSchema.default(
+    DEFAULT_ADMIN_PHOTOGRAPHER_LIST_CITY,
+  ),
+  onboardingStep: adminPhotographerListOnboardingStepFilterSchema.default(
+    DEFAULT_ADMIN_PHOTOGRAPHER_LIST_ONBOARDING_STEP,
+  ),
+  createdFrom: z.string().optional(),
+  createdTo: z.string().optional(),
+  stale: z.boolean().default(false),
 });
 
 const photographerEntityShape = {
@@ -423,6 +451,12 @@ export type AdminPhotographerListStatusFilter = z.infer<
 >;
 export type AdminPhotographerListSort = z.infer<
   typeof adminPhotographerListSortSchema
+>;
+export type AdminPhotographerListCityFilter = z.infer<
+  typeof adminPhotographerListCityFilterSchema
+>;
+export type AdminPhotographerListOnboardingStepFilter = z.infer<
+  typeof adminPhotographerListOnboardingStepFilterSchema
 >;
 export type AdminPhotographerListFilters = z.infer<
   typeof adminPhotographerListFiltersSchema

@@ -6,12 +6,15 @@ import { API_CACHE_NAMESPACES } from "@/server/api/lib/response-cache";
 import { getAuthSession } from "@/server/auth/session";
 import { photographerController } from "@/server/db/controller/photographer";
 import { photographerContactController } from "@/server/db/controller/photographer-contact";
+import { photographerDal } from "@/server/db/dal/photographer";
 import { NotFoundError } from "@/server/db/helpers/errors";
 import type {
   PhotographerContact,
   SavePhotographerContactInput,
 } from "@/zod/schema";
 import type {
+  AdminPhotographerListCityFilter,
+  AdminPhotographerListOnboardingStepFilter,
   AdminPhotographerListSort,
   AdminPhotographerListStatusFilter,
   Photographer,
@@ -22,21 +25,34 @@ import type {
   UpdatePhotographerProfileInput,
 } from "@/zod/schema/photographer";
 import {
+  adminPhotographerListCityFilterValues as ADMIN_PHOTOGRAPHER_LIST_CITIES,
   adminPhotographerListSortValues as ADMIN_PHOTOGRAPHER_LIST_SORTS,
   adminPhotographerListStatusFilterValues as ADMIN_PHOTOGRAPHER_LIST_STATUS_FILTERS,
+  DEFAULT_ADMIN_PHOTOGRAPHER_LIST_CITY,
+  DEFAULT_ADMIN_PHOTOGRAPHER_LIST_ONBOARDING_STEP,
   DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT,
   DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS,
   photographerSchema,
+  PHOTOGRAPHER_STALE_THRESHOLD_DAYS,
 } from "@/zod/schema/photographer";
 export {
+  DEFAULT_ADMIN_PHOTOGRAPHER_LIST_CITY,
+  DEFAULT_ADMIN_PHOTOGRAPHER_LIST_ONBOARDING_STEP,
   DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT,
   DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS,
+  PHOTOGRAPHER_STALE_THRESHOLD_DAYS,
 };
 export {
+  ADMIN_PHOTOGRAPHER_LIST_CITIES,
   ADMIN_PHOTOGRAPHER_LIST_SORTS,
   ADMIN_PHOTOGRAPHER_LIST_STATUS_FILTERS,
 };
-export type { AdminPhotographerListSort, AdminPhotographerListStatusFilter };
+export type {
+  AdminPhotographerListCityFilter,
+  AdminPhotographerListOnboardingStepFilter,
+  AdminPhotographerListSort,
+  AdminPhotographerListStatusFilter,
+};
 
 export type AdminPhotographerEntriesPage = Awaited<
   ReturnType<typeof photographerController.getAdminPhotographerEntriesPage>
@@ -231,6 +247,11 @@ export async function getAdminPhotographerEntriesPage(filters?: {
   query?: string;
   sort?: AdminPhotographerListSort;
   status?: AdminPhotographerListStatusFilter;
+  city?: AdminPhotographerListCityFilter;
+  onboardingStep?: AdminPhotographerListOnboardingStepFilter;
+  createdFrom?: Date;
+  createdTo?: Date;
+  stale?: boolean;
 }): Promise<AdminPhotographerEntriesPage> {
   return photographerController.getAdminPhotographerEntriesPage(filters);
 }
@@ -239,6 +260,32 @@ export async function getAdminPhotographerEntryById(
   id: string,
 ): Promise<AdminPhotographerReviewEntry> {
   return photographerController.getAdminPhotographerEntryById(id);
+}
+
+export type AdminPhotographerQuickFilterCounts = {
+  total: number;
+  submitted: number;
+  pendingVerification: number;
+  onHold: number;
+  stale: number;
+};
+
+export async function getAdminPhotographerQuickFilterCounts(): Promise<AdminPhotographerQuickFilterCounts> {
+  const [statusCounts, staleCount] = await Promise.all([
+    photographerDal.getStatusCounts(),
+    photographerDal.countAdminList({ stale: true }),
+  ]);
+  const byStatus = new Map(
+    statusCounts.map((entry) => [entry.status, entry.count]),
+  );
+
+  return {
+    total: statusCounts.reduce((sum, entry) => sum + entry.count, 0),
+    submitted: byStatus.get("submitted") ?? 0,
+    pendingVerification: byStatus.get("pending_verification") ?? 0,
+    onHold: byStatus.get("on_hold") ?? 0,
+    stale: staleCount,
+  };
 }
 
 async function getCurrentUserId(headers: Headers) {

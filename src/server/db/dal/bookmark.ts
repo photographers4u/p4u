@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import db, { type DBExecutor, type DBTransaction } from "@/server/db";
 import { bookmarks } from "@/server/db/schema";
 import type { BookmarkIdentifier } from "@/zod/schema/bookmark";
@@ -101,5 +101,32 @@ export const bookmarkDal = {
         ),
       )
       .returning();
+  },
+
+  async getTotalCount(executor: DBClient = db): Promise<number> {
+    const [result] = await executor
+      .select({ count: sql<number>`count(*)`.mapWith(Number) })
+      .from(bookmarks);
+
+    return result?.count ?? 0;
+  },
+
+  async countByValue(
+    identifier: BookmarkIdentifier,
+    value: string,
+    executor: DBClient = db,
+  ): Promise<number> {
+    const normalizedValue = normalizeBookmarkValue(value);
+    const [result] = await executor
+      .select({ count: sql<number>`count(*)`.mapWith(Number) })
+      .from(bookmarks)
+      .where(
+        and(
+          eq(bookmarks.identifier, identifier),
+          eq(bookmarks.value, normalizedValue),
+        ),
+      );
+
+    return result?.count ?? 0;
   },
 };

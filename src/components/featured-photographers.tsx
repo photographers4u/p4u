@@ -1,6 +1,5 @@
 "use client";
 
-import { BookmarkProvider } from "@/lib/bookmarks-context";
 import type { PublicPhotographerExploreEntry } from "@/server/services/photographer";
 import { ExplorePhotographerCard } from "./explore-photographer-card";
 import { Marquee } from "./ui/marquee";
@@ -19,15 +18,13 @@ const FeaturedPhotographersCarousel = ({
   }
 
   return (
-    <BookmarkProvider>
-      <Marquee pauseOnHover repeat={2} speed={40}>
-        {photographers.map((elem) => (
-          <div className="w-[320px] shrink-0 px-3" key={elem.id}>
-            <ExplorePhotographerCard photographer={elem} imageMode="cover" />
-          </div>
-        ))}
-      </Marquee>
-    </BookmarkProvider>
+    <Marquee pauseOnHover repeat={2} speed={40}>
+      {photographers.map((elem) => (
+        <div className="w-[320px] shrink-0 px-3" key={elem.id}>
+          <ExplorePhotographerCard photographer={elem} imageMode="cover" />
+        </div>
+      ))}
+    </Marquee>
   );
 };
 

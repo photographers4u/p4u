@@ -1,7 +1,8 @@
 import type { Context } from "hono";
 import { z } from "zod";
+import { isAdminPanelRole } from "@/lib/admin-role";
 import { reviewStatusSchema } from "@/zod/helpers";
-import { getRequiredUser, type ApiAuthEnv } from "./require-auth-middleware";
+import { type ApiAuthEnv, getRequiredUser } from "./require-auth-middleware";
 
 export const reviewSortBySchema = z.enum(["createdAt", "reviewedAt"]);
 export const reviewSortOrderSchema = z.enum(["asc", "desc"]);
@@ -35,7 +36,7 @@ export function getAdminUserOrResponse(c: Context<ApiAuthEnv>) {
   const user = getRequiredUser(c);
   const role = user.role;
 
-  if (role !== "admin") {
+  if (!isAdminPanelRole(role)) {
     return {
       ok: false as const,
       response: c.json({ message: "Admin access required" }, 403),

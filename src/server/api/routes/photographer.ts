@@ -1,5 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
+import { isAdminPanelRole } from "@/lib/admin-role";
 import {
   type ApiAuthEnv,
   getRequiredUser,
@@ -66,6 +67,14 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
     async (c) => {
       try {
         const user = getRequiredUser(c);
+
+        if (isAdminPanelRole(user.role)) {
+          return c.json(
+            { message: "Staff accounts cannot create photographer profiles" },
+            403,
+          );
+        }
+
         const photographer = await savePhotographerAvatarByUserId(
           user.id,
           c.req.valid("json"),
@@ -114,6 +123,14 @@ export const photographerRouter = new Hono<ApiAuthEnv>()
     async (c) => {
       try {
         const user = getRequiredUser(c);
+
+        if (isAdminPanelRole(user.role)) {
+          return c.json(
+            { message: "Staff accounts cannot create photographer profiles" },
+            403,
+          );
+        }
+
         const photographer = await savePhotographerOnboardingStepByUserId(
           user.id,
           c.req.valid("json"),

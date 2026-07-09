@@ -8,6 +8,7 @@ import {
   House,
   Images,
   Layers3,
+  TrendingUp,
   User as UserIcon,
 } from "lucide-react";
 import type { Route } from "next";
@@ -23,7 +24,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { siteConfig } from "@/config/site";
-import type { AuthClientUser } from "@/lib/auth-client";
 import { getPhotographerStatusViewModel } from "@/lib/photographer-presentation";
 import type { Photographer } from "@/zod/schema/photographer";
 import { NavMain } from "./nav-main";
@@ -84,17 +84,6 @@ function getDashboardData(): SidebarGroupData {
   };
 }
 
-const adminGroup: SidebarGroupData = {
-  label: "Admin",
-  items: [
-    {
-      title: "Photographers",
-      url: "/admin/photographers" as Route,
-      icon: Camera,
-    },
-  ],
-};
-
 function getPhotographerGroup(
   photographer: Photographer | null,
 ): SidebarGroupData {
@@ -128,6 +117,14 @@ function getPhotographerGroup(
     },
   ];
 
+  if (photographerStatus.shouldRedirectOnboardingToPortfolio) {
+    items.unshift({
+      title: "Overview",
+      url: "/dashboard/overview" as Route,
+      icon: TrendingUp,
+    });
+  }
+
   if (photographerStatus.canManageOfferings) {
     items.push({
       title: "Offerings",
@@ -149,18 +146,15 @@ function getPhotographerGroup(
 
 export function UserSidebar({
   photographer,
-  user,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   photographer: Photographer | null;
-  user: AuthClientUser;
 }) {
   const { isMobile, setOpenMobile } = useSidebar();
   const groups: SidebarGroupData[] = [
     exploreGroup,
     getDashboardData(),
     getPhotographerGroup(photographer),
-    ...(user.role === "admin" ? [adminGroup] : []),
     accountGroup,
   ];
 

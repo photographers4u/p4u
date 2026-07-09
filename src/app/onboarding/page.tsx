@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { CreatePhotographerForm } from "@/components/forms/create-photographer-form";
 import PageHeader from "@/components/page-header";
+import { isAdminPanelRole } from "@/lib/admin-role";
 import { getPhotographerStatusViewModel } from "@/lib/photographer-presentation";
 import { getAccountOverview } from "@/server/services/account";
 import { getCurrentPhotographerOnboarding } from "@/server/services/photographer";
@@ -18,6 +19,10 @@ export default async function OnboardingPage() {
 
   if (!account?.user || !onboarding) {
     redirect("/login");
+  }
+
+  if (isAdminPanelRole(account.user.role)) {
+    redirect("/admin");
   }
 
   const photographerStatus = getPhotographerStatusViewModel(onboarding);

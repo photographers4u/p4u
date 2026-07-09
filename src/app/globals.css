@@ -90,6 +90,20 @@
   --chart-3: oklch(0.546 0.245 262.881);
   --chart-4: oklch(0.488 0.243 264.376);
   --chart-5: oklch(0.424 0.199 265.638);
+  /* Admin dashboard chart palette: validated against this theme's light
+   * surface (#ffffff) with scripts/validate_palette.js from the dataviz
+   * skill. Keep in sync with src/lib/admin-dashboard-colors.ts. */
+  --viz-blue: #2a78d6;
+  --viz-aqua: #1baf7a;
+  --viz-green: #008300;
+  --viz-red: #e34948;
+  --viz-orange: #eb6834;
+  --viz-magenta: #e87ba4;
+  --viz-funnel-1: #86b6ef;
+  --viz-funnel-2: #5598e7;
+  --viz-funnel-3: #2a78d6;
+  --viz-funnel-4: #1c5cab;
+  --viz-funnel-5: #104281;
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -127,6 +141,20 @@
   --chart-3: oklch(0.546 0.245 262.881);
   --chart-4: oklch(0.488 0.243 264.376);
   --chart-5: oklch(0.424 0.199 265.638);
+  /* Admin dashboard chart palette: validated against this theme's dark
+   * surface (#171717) with scripts/validate_palette.js from the dataviz
+   * skill. Keep in sync with src/lib/admin-dashboard-colors.ts. */
+  --viz-blue: #3987e5;
+  --viz-aqua: #199e70;
+  --viz-green: #008300;
+  --viz-red: #e66767;
+  --viz-orange: #d95926;
+  --viz-magenta: #d55181;
+  --viz-funnel-1: #b7d3f6;
+  --viz-funnel-2: #86b6ef;
+  --viz-funnel-3: #5598e7;
+  --viz-funnel-4: #2a78d6;
+  --viz-funnel-5: #1c5cab;
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.623 0.214 259.815);

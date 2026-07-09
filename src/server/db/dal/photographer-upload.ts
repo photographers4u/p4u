@@ -219,4 +219,24 @@ export const photographerUploadDal = {
 
     return record ?? null;
   },
+
+  async getCountByPhotographerId(
+    photographerId: string,
+    executor: DBClient = db,
+  ): Promise<number> {
+    const [result] = await executor
+      .select({ count: sql<number>`count(*)`.mapWith(Number) })
+      .from(photographerUpload)
+      .where(eq(photographerUpload.photographerId, photographerId));
+
+    return result?.count ?? 0;
+  },
+
+  async getTotalCount(executor: DBClient = db): Promise<number> {
+    const [result] = await executor
+      .select({ count: sql<number>`count(*)`.mapWith(Number) })
+      .from(photographerUpload);
+
+    return result?.count ?? 0;
+  },
 };

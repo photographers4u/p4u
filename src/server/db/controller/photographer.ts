@@ -19,6 +19,7 @@ import { photographerContactDal } from "@/server/db/dal/photographer-contact";
 import { photographerSpecialityDal } from "@/server/db/dal/photographer-speciality";
 import { photographerUploadDal } from "@/server/db/dal/photographer-upload";
 import { specialityDal } from "@/server/db/dal/speciality";
+import { userDal } from "@/server/db/dal/user";
 import {
   BadRequestError,
   ConflictError,
@@ -33,6 +34,8 @@ import {
   photographerSlugSuffix,
 } from "@/zod/helpers";
 import type {
+  AdminPhotographerListCityFilter,
+  AdminPhotographerListOnboardingStepFilter,
   AdminPhotographerListSort,
   AdminPhotographerListStatusFilter,
   CreateAdminPhotographerInput,
@@ -103,6 +106,7 @@ export type AdminPhotographerReviewEntry = {
     displayOrder: number;
     id: string;
     imageUrl: string;
+    pinnedAt: string | null;
   }>;
   uploadsCount: number;
   portfolioPreview: string | null;
@@ -115,6 +119,7 @@ export type AdminPhotographerListEntry = {
   userId: string;
   name: string | null;
   avatar: string | null;
+  locationCity: PhotographerRecord["locationCity"];
   onboardingStep: PhotographerOnboardingState["onboardingStep"];
   isPublished: boolean;
   isFeatured: boolean;
@@ -470,6 +475,8 @@ async function ensurePhotographerByUserId(
     throw new InternalError("Failed to create photographer onboarding draft");
   }
 
+  await userDal.setRole(userId, "photographer", executor);
+
   return photographer;
 }
 
@@ -741,6 +748,7 @@ function buildAdminPhotographerListEntry(
     userId: row.userId,
     name: row.name,
     avatar: row.avatar,
+    locationCity: row.locationCity,
     onboardingStep: normalizeOnboardingStep(row.onboardingStep),
     isPublished: row.isPublished,
     isFeatured: row.isFeatured,
@@ -908,6 +916,7 @@ async function buildAdminPhotographerReviewEntry(
       displayOrder: upload.displayOrder,
       id: upload.id,
       imageUrl: upload.imageUrl,
+      pinnedAt: upload.pinnedAt ? upload.pinnedAt.toISOString() : null,
     })),
     uploadsCount: uploads.length,
     portfolioPreview: uploads[0]?.imageUrl ?? null,
@@ -1428,16 +1437,31 @@ export const photographerController = {
     query,
     sort = DEFAULT_ADMIN_PHOTOGRAPHER_LIST_SORT,
     status = DEFAULT_ADMIN_PHOTOGRAPHER_LIST_STATUS,
+    city,
+    onboardingStep,
+    createdFrom,
+    createdTo,
+    stale,
   }: {
     page?: number;
     query?: string;
     sort?: AdminPhotographerListSort;
     status?: AdminPhotographerListStatusFilter;
+    city?: AdminPhotographerListCityFilter;
+    onboardingStep?: AdminPhotographerListOnboardingStepFilter;
+    createdFrom?: Date;
+    createdTo?: Date;
+    stale?: boolean;
   } = {}): Promise<AdminPhotographerEntriesPage> {
     const normalizedPage = Math.max(1, Math.trunc(page));
     const totalCount = await photographerDal.countAdminList({
       query,
       status,
+      city,
+      onboardingStep,
+      createdFrom,
+      createdTo,
+      stale,
     });
     const totalPages = Math.max(
       1,
@@ -1450,6 +1474,11 @@ export const photographerController = {
       query,
       sort,
       status,
+      city,
+      onboardingStep,
+      createdFrom,
+      createdTo,
+      stale,
     });
     const photographerIds = rows.map((row) => row.id);
     const [specialities, uploads] = await Promise.all([

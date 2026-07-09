@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import db, { type DBExecutor, type DBTransaction } from "@/server/db";
 import { photographerSpeciality, speciality } from "@/server/db/schema";
 
@@ -127,5 +127,25 @@ export const photographerSpecialityDal = {
       .orderBy(asc(photographerSpeciality.photographerId));
 
     return Array.from(new Set(rows.map((row) => row.photographerId)));
+  },
+
+  async getTopSpecialities(
+    limit: number,
+    executor: DBClient = db,
+  ): Promise<{ id: string; name: string; count: number }[]> {
+    return executor
+      .select({
+        id: photographerSpeciality.specialityId,
+        name: speciality.name,
+        count: sql<number>`count(*)`.mapWith(Number),
+      })
+      .from(photographerSpeciality)
+      .innerJoin(
+        speciality,
+        eq(photographerSpeciality.specialityId, speciality.id),
+      )
+      .groupBy(photographerSpeciality.specialityId, speciality.name)
+      .orderBy(desc(sql`count(*)`))
+      .limit(limit);
   },
 };

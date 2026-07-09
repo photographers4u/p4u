@@ -15,9 +15,11 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { isAdminPanelRole } from "@/lib/admin-role";
 import { authClient } from "@/lib/auth-client";
 import {
   buildAuthRedirectPath,
+  DEFAULT_AUTH_CALLBACK_URL,
   getSafeAuthCallbackUrl,
 } from "@/lib/auth-redirect";
 import { requestVerificationEmail } from "@/lib/request-verification-email";
@@ -65,7 +67,7 @@ export function LoginFields({
     const normalizedEmail = values.email.trim().toLowerCase();
     const safeCallbackUrl = getSafeAuthCallbackUrl(callbackUrl);
 
-    const { error } = await authClient.signIn.email({
+    const { data, error } = await authClient.signIn.email({
       email: normalizedEmail,
       password: values.password,
       callbackURL: safeCallbackUrl,
@@ -108,7 +110,13 @@ export function LoginFields({
     // success -> switch state
     setRedirectTarget("account");
 
-    router.replace(safeCallbackUrl);
+    const destination =
+      safeCallbackUrl === DEFAULT_AUTH_CALLBACK_URL &&
+      isAdminPanelRole(data?.user.role)
+        ? "/admin"
+        : safeCallbackUrl;
+
+    router.replace(destination);
   }
 
   const isBusy = isSubmitting || redirectTarget !== null;
