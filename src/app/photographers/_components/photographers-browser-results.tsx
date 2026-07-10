@@ -1,7 +1,7 @@
-import type { ComponentProps } from "react";
 import { LoaderCircle } from "lucide-react";
+import type { ComponentProps } from "react";
 import { ExplorePhotographerCard } from "@/components/explore-photographer-card";
-import { Button } from "@/components/ui/button";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 
 type PhotographerCardData = ComponentProps<
   typeof ExplorePhotographerCard
@@ -28,6 +28,12 @@ export function PhotographersBrowserResults({
   totalCount: number;
   visibleCount: number;
 }) {
+  const sentinelRef = useInfiniteScroll({
+    hasMore,
+    isLoading: isInteractionDisabled,
+    onLoadMore: () => onLoadMore(currentPage + 1),
+  });
+
   if (photographers.length === 0) {
     return (
       <div className="rounded-lg border border-slate-200 bg-white px-6 py-12 text-center">
@@ -48,35 +54,26 @@ export function PhotographersBrowserResults({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {photographers.map((photographer) => (
+        {photographers.map((photographer, index) => (
           <ExplorePhotographerCard
             key={photographer.id}
             photographer={photographer}
+            priority={currentPage === 1 && index < 4}
           />
         ))}
       </div>
 
       {hasMore ? (
-        <div className="flex flex-col items-center gap-3">
+        <div
+          ref={sentinelRef}
+          className="flex flex-col items-center gap-3 py-2"
+        >
           <p className="text-sm text-slate-500">
             Showing {visibleCount} of {totalCount} photographers
           </p>
-          <Button
-            type="button"
-            variant="outline"
-            className="h-10 rounded-md border-slate-300 px-5"
-            onClick={() => onLoadMore(currentPage + 1)}
-            disabled={isInteractionDisabled}
-          >
-            {isLoadingMore ? (
-              <>
-                <LoaderCircle className="size-4 animate-spin" />
-                Loading more...
-              </>
-            ) : (
-              "Load more photographers"
-            )}
-          </Button>
+          {isLoadingMore ? (
+            <LoaderCircle className="size-5 animate-spin text-slate-400" />
+          ) : null}
         </div>
       ) : totalCount > 12 ? (
         <p className="text-center text-sm text-slate-500">

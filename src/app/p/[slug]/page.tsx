@@ -324,6 +324,9 @@ export default async function PublicPhotographerPage({
                           <img
                             src={photographer.avatar}
                             alt={photographer.name ?? "Photographer"}
+                            loading="eager"
+                            fetchPriority="high"
+                            decoding="async"
                             className="h-full w-full object-cover"
                           />
                         </div>

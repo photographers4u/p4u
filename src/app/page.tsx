@@ -1,8 +1,7 @@
+import dynamic from "next/dynamic";
 import { headers } from "next/headers";
 import Link from "next/link";
 import BrowsePhotographers from "@/components/browse-photographers";
-import CircularGallery from "@/components/circular-gallery";
-import FAQSection from "@/components/faq-section";
 import FeaturedPhotographersCarousel from "@/components/featured-photographers";
 import { Footer } from "@/components/footer";
 import { MobileAppHome } from "@/components/mobile-app-home";
@@ -12,8 +11,8 @@ import Navbar from "@/components/navbar";
 import SectionContainer from "@/components/section-ui";
 import { Button } from "@/components/ui/button";
 import { Marquee } from "@/components/ui/marquee";
-import { playfairDisplay } from "@/lib/fonts";
 import { BookmarkProvider } from "@/lib/bookmarks-context";
+import { playfairDisplay } from "@/lib/fonts";
 import { DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS } from "@/lib/public-photographer-explore";
 import { cn } from "@/lib/utils";
 import { getAuthSession } from "@/server/auth/session";
@@ -22,6 +21,9 @@ import {
   getPublicFeaturedPhotographers,
   getPublicPhotographerExplorePage,
 } from "@/server/services/photographer";
+
+const CircularGallery = dynamic(() => import("@/components/circular-gallery"));
+const FAQSection = dynamic(() => import("@/components/faq-section"));
 
 const images = [
   "/hero-images/10002.jpeg",
@@ -125,9 +127,7 @@ export default async function HomePage() {
             subtitle="Discover talented photographers ready to capture your moments."
             viewAllHref="/photographers"
           >
-            <BrowsePhotographers
-              photographers={browsePhotographersPage.photographers}
-            />
+            <BrowsePhotographers initialPage={browsePhotographersPage} />
           </SectionContainer>
         </BookmarkProvider>
 
@@ -160,6 +160,8 @@ export default async function HomePage() {
             <img
               src="/camera-face-bottom-left.png"
               alt="Camera"
+              loading="lazy"
+              decoding="async"
               className="
           absolute bottom-0 right-0
           h-[70%] sm:h-[85%] lg:h-full
@@ -178,6 +180,8 @@ export default async function HomePage() {
                       className="size-10 sm:size-12 rounded-full object-cover"
                       alt={`${elem.name ?? "Photographer"} profile`}
                       src={elem.avatar}
+                      loading="lazy"
+                      decoding="async"
                     />
                     <div>
                       <p className="text-xs sm:text-sm">
@@ -201,6 +205,8 @@ export default async function HomePage() {
                       className="size-10 sm:size-12 rounded-full object-cover"
                       alt={`${elem.name ?? "Photographer"} profile`}
                       src={elem.avatar}
+                      loading="lazy"
+                      decoding="async"
                     />
                     <div>
                       <p className="text-xs sm:text-sm">

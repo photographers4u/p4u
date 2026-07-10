@@ -22,9 +22,11 @@ function getLocationLabel(photographer: PublicPhotographerExploreEntry) {
 function PhotographerPortfolioGallery({
   photographer,
   uploads,
+  priority,
 }: {
   photographer: PublicPhotographerExploreEntry;
   uploads: PublicPhotographerExploreEntry["uploads"];
+  priority: boolean;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const safeActiveIndex = Math.min(activeIndex, uploads.length - 1);
@@ -45,8 +47,9 @@ function PhotographerPortfolioGallery({
           key={upload.id}
           src={upload.imageUrl}
           alt={`${photographer.name ?? "Photographer"} portfolio work ${i + 1}`}
-          loading="lazy"
+          loading={priority && i === 0 ? "eager" : "lazy"}
           decoding="async"
+          fetchPriority={priority && i === 0 ? "high" : undefined}
           className={cn(
             "absolute inset-0 h-full w-full object-cover transition-opacity duration-500",
             i === safeActiveIndex ? "opacity-100" : "opacity-0",
@@ -111,9 +114,11 @@ function PhotographerPortfolioGallery({
 function PhotographerPortfolioCover({
   photographer,
   uploads,
+  priority,
 }: {
   photographer: PublicPhotographerExploreEntry;
   uploads: PublicPhotographerExploreEntry["uploads"];
+  priority: boolean;
 }) {
   return (
     <Link
@@ -125,8 +130,9 @@ function PhotographerPortfolioCover({
       <img
         src={uploads[0].imageUrl}
         alt={`${photographer.name ?? "Photographer"} portfolio cover`}
-        loading="lazy"
+        loading={priority ? "eager" : "lazy"}
         decoding="async"
+        fetchPriority={priority ? "high" : undefined}
         className="h-full w-full object-cover"
       />
     </Link>
@@ -137,10 +143,12 @@ export function ExplorePhotographerCard({
   photographer,
   className,
   imageMode = "gallery",
+  priority = false,
 }: {
   photographer: PublicPhotographerExploreEntry;
   className?: string;
   imageMode?: "cover" | "gallery";
+  priority?: boolean;
 }) {
   const uploads = photographer.uploads;
   const hasImages = uploads.length > 0;
@@ -161,11 +169,13 @@ export function ExplorePhotographerCard({
               <PhotographerPortfolioGallery
                 photographer={photographer}
                 uploads={uploads}
+                priority={priority}
               />
             ) : (
               <PhotographerPortfolioCover
                 photographer={photographer}
                 uploads={uploads}
+                priority={priority}
               />
             )
           ) : (

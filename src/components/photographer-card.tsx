@@ -55,6 +55,8 @@ export function PhotographerCard({
                 <img
                   src={photographer.avatar}
                   alt={photographer.name ?? "Photographer"}
+                  loading="lazy"
+                  decoding="async"
                   className="size-14 rounded-2xl object-cover"
                 />
               ) : (

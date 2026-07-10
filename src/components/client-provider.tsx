@@ -1,9 +1,13 @@
 "use client";
 
-import NextTopLoader from "nextjs-toploader";
+import dynamic from "next/dynamic";
 import type React from "react";
 import { NotificationsProvider } from "@/lib/notifications-context";
 import { Toaster } from "./ui/sonner";
+
+const NextTopLoader = dynamic(() => import("nextjs-toploader"), {
+  ssr: false,
+});
 
 const ClientProvider = ({ children }: { children: React.ReactNode }) => {
   return (

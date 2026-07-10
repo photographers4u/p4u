@@ -112,7 +112,9 @@ export function Footer() {
               <div className="size-10 border bg-blue-50/50 aspect-square overflow-hidden text-white flex relative items-center justify-center rounded-md text-sm font-semibold">
                 <img
                   src="/logo-192.png"
-                  alt={siteConfig.name} 
+                  alt={siteConfig.name}
+                  loading="lazy"
+                  decoding="async"
                   className="h-8! w-8! aspect-square absolute"
                 />
               </div>

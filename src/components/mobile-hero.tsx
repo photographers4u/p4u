@@ -10,7 +10,13 @@ export function MobileHero({ images }: { images: [string, string, string] }) {
         </div>
         <div className="z-10 h-32 w-24 shrink-0 overflow-hidden rounded-2xl shadow-xl ring-1 ring-black/5">
           {/* biome-ignore lint/performance/noImgElement: decorative hero photo */}
-          <img src={center} alt="" className="h-full w-full object-cover" />
+          <img
+            src={center}
+            alt=""
+            fetchPriority="high"
+            decoding="async"
+            className="h-full w-full object-cover"
+          />
         </div>
         <div className="z-0 h-24 w-20 shrink-0 rotate-10 translate-y-2 overflow-hidden rounded-2xl shadow-lg ring-1 ring-black/5">
           {/* biome-ignore lint/performance/noImgElement: decorative hero photo */}
