@@ -35,7 +35,7 @@ export function GrowthChart({
 
   if (data.length === 0) {
     return (
-      <div className="flex h-56 items-center justify-center text-sm text-muted-foreground">
+      <div className="flex h-56 items-center justify-center text-sm text-slate-500">
         No signups in this range yet
       </div>
     );

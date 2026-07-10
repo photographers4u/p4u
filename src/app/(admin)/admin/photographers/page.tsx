@@ -170,10 +170,10 @@ export default async function AdminPhotographersPage({
     <div className="space-y-6">
       <section className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
             Photographers
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-slate-500">
             {numberFormatter.format(quickCounts.total)} profiles across every
             stage of onboarding
           </p>
@@ -194,7 +194,7 @@ export default async function AdminPhotographersPage({
                   : "border-primary/30 bg-primary text-primary-foreground"
                 : preset.tone === "warning"
                   ? "border-destructive/20 text-destructive/80 hover:bg-destructive/5"
-                  : "border-border/70 text-muted-foreground hover:border-border hover:bg-muted/30 hover:text-foreground",
+                  : "border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950",
             )}
           >
             {preset.tone === "warning" ? (
@@ -206,7 +206,7 @@ export default async function AdminPhotographersPage({
                 "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs tabular-nums",
                 preset.isActive
                   ? "bg-background/20"
-                  : "bg-muted text-muted-foreground",
+                  : "bg-slate-100 text-slate-500",
               )}
             >
               {numberFormatter.format(preset.count)}
@@ -215,26 +215,23 @@ export default async function AdminPhotographersPage({
         ))}
       </section>
 
-      <section className="rounded-2xl border border-border/70 bg-muted/10 p-3">
-        <form
-          method="get"
-          className="flex flex-wrap items-center gap-2"
-        >
+      <section className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <form method="get" className="flex flex-wrap items-center gap-2">
           <input type="hidden" name="page" value="1" />
 
           <div className="relative order-1 w-full sm:w-64 md:flex-1 md:basis-64">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
             <Input
               name="q"
               defaultValue={filters.query}
               placeholder="Search by name or email"
-              className="h-10 rounded-full border-border/70 bg-background pl-9 shadow-none"
+              className="h-10 rounded-full border-slate-200 bg-white pl-9 shadow-none"
             />
           </div>
 
           <Select name="status" defaultValue={filters.status}>
             <SelectTrigger className="order-2 h-10 rounded-full">
-              <SlidersHorizontal className="size-4 text-muted-foreground" />
+              <SlidersHorizontal className="size-4 text-slate-400" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -252,7 +249,7 @@ export default async function AdminPhotographersPage({
 
           <Select name="city" defaultValue={filters.city}>
             <SelectTrigger className="order-3 h-10 rounded-full">
-              <MapPin className="size-4 text-muted-foreground" />
+              <MapPin className="size-4 text-slate-400" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -266,7 +263,7 @@ export default async function AdminPhotographersPage({
 
           <Select name="stage" defaultValue={String(filters.onboardingStep)}>
             <SelectTrigger className="order-4 h-10 rounded-full">
-              <ListChecks className="size-4 text-muted-foreground" />
+              <ListChecks className="size-4 text-slate-400" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -281,7 +278,7 @@ export default async function AdminPhotographersPage({
 
           <Select name="sort" defaultValue={filters.sort}>
             <SelectTrigger className="order-5 h-10 rounded-full">
-              <ArrowUpDown className="size-4 text-muted-foreground" />
+              <ArrowUpDown className="size-4 text-slate-400" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -293,26 +290,26 @@ export default async function AdminPhotographersPage({
             </SelectContent>
           </Select>
 
-          <div className="order-6 flex h-10 items-center gap-1.5 rounded-full border border-border/70 bg-background px-3 text-sm shadow-sm">
-            <CalendarRange className="size-4 shrink-0 text-muted-foreground" />
+          <div className="order-6 flex h-10 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 text-sm shadow-sm">
+            <CalendarRange className="size-4 shrink-0 text-slate-400" />
             <input
               type="date"
               name="from"
               defaultValue={filters.createdFrom ?? ""}
               aria-label="Created from"
-              className="w-26 bg-transparent text-sm text-foreground outline-none"
+              className="w-26 bg-transparent text-sm text-slate-950 outline-none"
             />
-            <span className="text-muted-foreground">–</span>
+            <span className="text-slate-400">–</span>
             <input
               type="date"
               name="to"
               defaultValue={filters.createdTo ?? ""}
               aria-label="Created to"
-              className="w-26 bg-transparent text-sm text-foreground outline-none"
+              className="w-26 bg-transparent text-sm text-slate-950 outline-none"
             />
           </div>
 
-          <label className="order-7 inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-full border border-border/70 bg-background px-3.5 text-sm text-foreground shadow-sm transition-colors has-checked:border-destructive/40 has-checked:bg-destructive/10 has-checked:text-destructive">
+          <label className="order-7 inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 text-sm text-slate-950 shadow-sm transition-colors has-checked:border-destructive/40 has-checked:bg-destructive/10 has-checked:text-destructive">
             <input
               type="checkbox"
               name="stale"
@@ -332,7 +329,7 @@ export default async function AdminPhotographersPage({
               <Button
                 asChild
                 variant="ghost"
-                className="h-10 rounded-full text-muted-foreground"
+                className="h-10 rounded-full text-slate-500"
               >
                 <Link href="/admin/photographers">
                   <X className="size-4" />
@@ -345,13 +342,13 @@ export default async function AdminPhotographersPage({
       </section>
 
       {entries.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border/70 px-6 py-16 text-center">
-          <h2 className="text-xl font-semibold text-foreground">
+        <div className="rounded-lg border border-dashed border-slate-200 px-6 py-16 text-center">
+          <h2 className="text-xl font-semibold text-slate-950">
             {hasActiveFilters
               ? "No photographer entries match these filters"
               : "No photographer entries yet"}
           </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-slate-500">
             {hasActiveFilters
               ? "Try widening the search, changing filters, or resetting them."
               : "Photographer submissions will appear here once onboarding starts."}
@@ -365,11 +362,11 @@ export default async function AdminPhotographersPage({
           ) : null}
         </div>
       ) : (
-        <section className="overflow-hidden rounded-2xl border border-border/70">
-          <div className="flex flex-col gap-2 border-b border-border/70 bg-muted/20 px-5 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <section className="overflow-hidden rounded-lg border border-slate-200">
+          <div className="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 px-5 py-3 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <p>
               Showing{" "}
-              <span className="font-medium text-foreground">
+              <span className="font-medium text-slate-950">
                 {rangeStart}-{rangeEnd}
               </span>{" "}
               of {totalCount} photographer
@@ -378,16 +375,16 @@ export default async function AdminPhotographersPage({
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+            <table className="w-full min-w-350 table-fixed text-sm">
               <thead>
-                <tr className="border-b border-border/70 bg-muted/10 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  <th className="px-5 py-3 sm:px-6">Photographer</th>
-                  <th className="px-5 py-3">City</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Contact</th>
-                  <th className="px-5 py-3">Updated</th>
-                  <th className="px-5 py-3">Visibility</th>
-                  <th className="px-5 py-3 text-right sm:px-6">Action</th>
+                <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="w-65 px-5 py-3 sm:px-6">Photographer</th>
+                  <th className="w-27 px-5 py-3">City</th>
+                  <th className="w-75 px-5 py-3">Status</th>
+                  <th className="w-56 px-5 py-3">Contact</th>
+                  <th className="w-33 px-5 py-3">Updated</th>
+                  <th className="w-52 px-5 py-3">Visibility</th>
+                  <th className="w-42 px-5 py-3 text-right sm:px-6">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -403,11 +400,11 @@ export default async function AdminPhotographersPage({
                     ? {
                         className: stuck.isStale
                           ? "text-xs font-medium text-destructive"
-                          : "text-xs text-muted-foreground",
+                          : "text-xs text-slate-500",
                         text: stuck.text,
                       }
                     : {
-                        className: "text-xs text-muted-foreground",
+                        className: "text-xs text-slate-500",
                         text: entry.reviewedAt
                           ? `Reviewed ${adminDateFormatter.format(entry.reviewedAt)}`
                           : "Not reviewed yet",
@@ -416,11 +413,11 @@ export default async function AdminPhotographersPage({
                   return (
                     <tr
                       key={entry.id}
-                      className="border-b border-border/60 transition-colors hover:bg-muted/10"
+                      className="border-b border-slate-100 transition-colors hover:bg-slate-50"
                     >
                       <td className="px-5 py-3.5 align-top sm:px-6">
                         <div className="flex items-start gap-3">
-                          <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted text-sm font-semibold text-foreground/80 ring-1 ring-border/60">
+                          <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100 text-sm font-semibold text-slate-700 ring-1 ring-black/5">
                             {entry.avatar ? (
                               <>
                                 {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
@@ -438,11 +435,11 @@ export default async function AdminPhotographersPage({
                           <div className="min-w-0">
                             <Link
                               href={href}
-                              className="block truncate font-semibold text-foreground transition hover:text-primary"
+                              className="block truncate font-semibold text-slate-950 transition hover:text-primary"
                             >
                               {entry.name ?? "Untitled photographer profile"}
                             </Link>
-                            <p className="mt-0.5 text-xs text-muted-foreground">
+                            <p className="mt-0.5 text-xs text-slate-500">
                               Step {entry.onboardingStep} of{" "}
                               {ONBOARDING_STEPS.length}
                             </p>
@@ -450,7 +447,7 @@ export default async function AdminPhotographersPage({
                         </div>
                       </td>
                       <td className="px-5 py-3.5 align-top">
-                        <span className="inline-flex items-center gap-1 text-muted-foreground">
+                        <span className="inline-flex items-center gap-1 text-slate-500">
                           {entry.locationCity ? (
                             <>
                               <MapPin className="size-3.5 shrink-0" />
@@ -463,7 +460,10 @@ export default async function AdminPhotographersPage({
                       </td>
                       <td className="px-5 py-3.5 align-top">
                         <div className="space-y-1.5">
-                          <Badge variant={status.badgeVariant}>
+                          <Badge
+                            variant={status.badgeVariant}
+                            className="h-auto max-w-full whitespace-normal text-center"
+                          >
                             {status.label}
                           </Badge>
                           <p className={secondaryStatusLine.className}>
@@ -473,17 +473,20 @@ export default async function AdminPhotographersPage({
                       </td>
                       <td className="px-5 py-3.5 align-top">
                         <div className="space-y-1">
-                          <p className="truncate text-foreground">
+                          <p
+                            className="truncate text-slate-950"
+                            title={entry.contact?.email ?? undefined}
+                          >
                             {entry.contact?.email ??
                               "No contact email added yet"}
                           </p>
-                          <p className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                          <p className="inline-flex items-center gap-1 text-xs text-slate-500">
                             <span
                               className={cn(
                                 "size-1.5 rounded-full",
                                 entry.contact?.emailVerified
                                   ? "bg-emerald-500"
-                                  : "bg-muted-foreground/40",
+                                  : "bg-slate-300",
                               )}
                             />
                             {entry.contact
@@ -495,7 +498,7 @@ export default async function AdminPhotographersPage({
                         </div>
                       </td>
                       <td className="px-5 py-3.5 align-top">
-                        <div className="space-y-0.5 text-muted-foreground">
+                        <div className="space-y-0.5 text-slate-500">
                           <p>{adminDateFormatter.format(entry.updatedAt)}</p>
                           <p className="text-xs">
                             Created {adminDateFormatter.format(entry.createdAt)}
@@ -503,7 +506,7 @@ export default async function AdminPhotographersPage({
                         </div>
                       </td>
                       <td className="px-5 py-3.5 align-top">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Badge
                             variant={
                               entry.isPublished ? "secondary" : "outline"
@@ -519,7 +522,7 @@ export default async function AdminPhotographersPage({
                         </div>
                       </td>
                       <td className="px-5 py-3.5 align-top sm:px-6">
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex flex-wrap items-center justify-end gap-1">
                           <Button asChild variant="ghost" size="sm">
                             <Link href={href}>Review</Link>
                           </Button>
@@ -537,8 +540,8 @@ export default async function AdminPhotographersPage({
             </table>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-border/70 bg-muted/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <p className="text-sm text-muted-foreground">
+          <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <p className="text-sm text-slate-500">
               Page {page} of {totalPages}
             </p>
 

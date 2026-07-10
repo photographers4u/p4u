@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { BookmarkButton } from "@/components/bookmark-button";
 import { PhotographerVerificationBadge } from "@/components/photographer-verification-badge";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useImageLoaded } from "@/hooks/use-image-loaded";
 import {
   formatPhotographerCountry,
   formatPhotographerExperience,
@@ -30,6 +32,9 @@ function PhotographerPortfolioGallery({
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const safeActiveIndex = Math.min(activeIndex, uploads.length - 1);
+  const [loadedIds, setLoadedIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
 
   useEffect(() => {
     setActiveIndex((index) => Math.min(index, uploads.length - 1));
@@ -39,8 +44,25 @@ function PhotographerPortfolioGallery({
     setActiveIndex((i) => (i - 1 + uploads.length) % uploads.length);
   const next = () => setActiveIndex((i) => (i + 1) % uploads.length);
 
+  const activeUploadId = uploads[safeActiveIndex]?.id;
+  const isActiveLoaded = activeUploadId ? loadedIds.has(activeUploadId) : false;
+
+  function markLoaded(uploadId: string) {
+    setLoadedIds((current) => {
+      if (current.has(uploadId)) {
+        return current;
+      }
+
+      return new Set(current).add(uploadId);
+    });
+  }
+
   return (
     <>
+      {isActiveLoaded ? null : (
+        <Skeleton className="absolute inset-0 rounded-none" />
+      )}
+
       {uploads.map((upload, i) => (
         // biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host
         <img
@@ -50,9 +72,13 @@ function PhotographerPortfolioGallery({
           loading={priority && i === 0 ? "eager" : "lazy"}
           decoding="async"
           fetchPriority={priority && i === 0 ? "high" : undefined}
+          onLoad={() => markLoaded(upload.id)}
+          onError={() => markLoaded(upload.id)}
           className={cn(
             "absolute inset-0 h-full w-full object-cover transition-opacity duration-500",
-            i === safeActiveIndex ? "opacity-100" : "opacity-0",
+            i === safeActiveIndex && isActiveLoaded
+              ? "opacity-100"
+              : "opacity-0",
           )}
         />
       ))}
@@ -120,12 +146,15 @@ function PhotographerPortfolioCover({
   uploads: PublicPhotographerExploreEntry["uploads"];
   priority: boolean;
 }) {
+  const { isLoaded, onLoad, onError } = useImageLoaded();
+
   return (
     <Link
       href={`/p/${photographer.slug}`}
       className="absolute inset-0"
       aria-label={`View ${photographer.name ?? "Photographer"}'s profile`}
     >
+      {isLoaded ? null : <Skeleton className="absolute inset-0 rounded-none" />}
       {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
       <img
         src={uploads[0].imageUrl}
@@ -133,7 +162,12 @@ function PhotographerPortfolioCover({
         loading={priority ? "eager" : "lazy"}
         decoding="async"
         fetchPriority={priority ? "high" : undefined}
-        className="h-full w-full object-cover"
+        onLoad={onLoad}
+        onError={onError}
+        className={cn(
+          "h-full w-full object-cover transition-opacity duration-500",
+          isLoaded ? "opacity-100" : "opacity-0",
+        )}
       />
     </Link>
   );
@@ -154,6 +188,8 @@ export function ExplorePhotographerCard({
   const hasImages = uploads.length > 0;
   const location = getLocationLabel(photographer);
   const showGallery = imageMode === "gallery" && hasImages;
+  const fallbackAvatar = useImageLoaded();
+  const profileAvatar = useImageLoaded();
 
   return (
     <article
@@ -185,12 +221,22 @@ export function ExplorePhotographerCard({
               aria-label={`View ${photographer.name ?? "Photographer"}'s profile`}
             >
               {photographer.avatar ? (
-                // biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host
-                <img
-                  src={photographer.avatar}
-                  alt={photographer.name ?? "Photographer"}
-                  className="size-16 rounded-xl object-cover ring-1 ring-black/5"
-                />
+                <div className="relative size-16 shrink-0 overflow-hidden rounded-xl">
+                  {fallbackAvatar.isLoaded ? null : (
+                    <Skeleton className="absolute inset-0 rounded-xl" />
+                  )}
+                  {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
+                  <img
+                    src={photographer.avatar}
+                    alt={photographer.name ?? "Photographer"}
+                    onLoad={fallbackAvatar.onLoad}
+                    onError={fallbackAvatar.onError}
+                    className={cn(
+                      "size-16 rounded-xl object-cover ring-1 ring-black/5 transition-opacity duration-300",
+                      fallbackAvatar.isLoaded ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                </div>
               ) : (
                 <div className="flex size-16 items-center justify-center rounded-xl bg-slate-900 text-base font-semibold text-white">
                   {getProfileInitials(photographer.name)}
@@ -221,12 +267,22 @@ export function ExplorePhotographerCard({
       >
         <div className="flex items-center gap-2 sm:gap-3">
           {photographer.avatar ? (
-            // biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host
-            <img
-              src={photographer.avatar}
-              alt={photographer.name ?? "Photographer"}
-              className="size-9 shrink-0 rounded-full object-cover ring-1 ring-black/5 sm:size-11"
-            />
+            <div className="relative size-9 shrink-0 overflow-hidden rounded-full sm:size-11">
+              {profileAvatar.isLoaded ? null : (
+                <Skeleton className="absolute inset-0 rounded-full" />
+              )}
+              {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
+              <img
+                src={photographer.avatar}
+                alt={photographer.name ?? "Photographer"}
+                onLoad={profileAvatar.onLoad}
+                onError={profileAvatar.onError}
+                className={cn(
+                  "size-9 rounded-full object-cover ring-1 ring-black/5 transition-opacity duration-300 sm:size-11",
+                  profileAvatar.isLoaded ? "opacity-100" : "opacity-0",
+                )}
+              />
+            </div>
           ) : (
             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-xs font-semibold text-white sm:size-11 sm:text-sm">
               {getProfileInitials(photographer.name)}

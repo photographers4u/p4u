@@ -21,19 +21,19 @@ export function StatTile({
   return (
     <div
       className={cn(
-        "rounded-2xl border p-5",
+        "rounded-lg border p-5",
         isHighlight
-          ? "border-foreground/10 bg-foreground text-background"
-          : "border-border/60 bg-muted/15 text-foreground",
+          ? "border-slate-950/10 bg-slate-950 text-white"
+          : "border-slate-200 bg-white text-slate-950",
       )}
     >
       <div className="flex items-center gap-2.5">
         <div
           className={cn(
-            "flex size-9 shrink-0 items-center justify-center rounded-xl",
+            "flex size-9 shrink-0 items-center justify-center rounded-lg",
             isHighlight
-              ? "bg-background/15 text-background"
-              : "bg-background text-foreground shadow-sm",
+              ? "bg-white/10 text-white"
+              : "bg-slate-50 text-slate-700 ring-1 ring-black/5",
           )}
         >
           <Icon className="size-4.5" />
@@ -41,7 +41,7 @@ export function StatTile({
         <p
           className={cn(
             "text-sm font-medium",
-            isHighlight ? "text-background/80" : "text-muted-foreground",
+            isHighlight ? "text-white/80" : "text-slate-500",
           )}
         >
           {label}
@@ -54,7 +54,7 @@ export function StatTile({
         <p
           className={cn(
             "mt-1 text-xs",
-            isHighlight ? "text-background/70" : "text-muted-foreground",
+            isHighlight ? "text-white/70" : "text-slate-500",
           )}
         >
           {subtext}

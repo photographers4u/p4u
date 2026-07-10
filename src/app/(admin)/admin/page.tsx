@@ -13,8 +13,8 @@ import {
 } from "@/components/admin/dashboard/donut-chart";
 import { GrowthChart } from "@/components/admin/dashboard/growth-chart";
 import {
-  PipelineBars,
   type PipelineBarRow,
+  PipelineBars,
 } from "@/components/admin/dashboard/pipeline-bars";
 import { RangeTabs } from "@/components/admin/dashboard/range-tabs";
 import { StatTile } from "@/components/admin/dashboard/stat-tile";
@@ -26,8 +26,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getAdminPhotographerStatusFilterLabel } from "@/lib/admin-photographer-list";
-import { getAdminDashboardRangeFilters } from "@/lib/admin-dashboard-range";
 import {
   CATEGORICAL_PALETTE,
   ONBOARDING_FUNNEL_COLORS,
@@ -38,6 +36,8 @@ import {
   SPECIALITY_BAR_COLOR,
   USER_SIGNUPS_COLOR,
 } from "@/lib/admin-dashboard-colors";
+import { getAdminDashboardRangeFilters } from "@/lib/admin-dashboard-range";
+import { getAdminPhotographerStatusFilterLabel } from "@/lib/admin-photographer-list";
 import {
   getPhotographerStatusViewModel,
   getProfileInitials,
@@ -133,12 +133,10 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     }),
   );
 
-  const photographerSignupData = overview.photographerSignups.map(
-    (point) => ({
-      date: point.bucket.toISOString(),
-      count: point.count,
-    }),
-  );
+  const photographerSignupData = overview.photographerSignups.map((point) => ({
+    date: point.bucket.toISOString(),
+    count: point.count,
+  }));
   const userSignupData = overview.userSignups.map((point) => ({
     date: point.bucket.toISOString(),
     count: point.count,
@@ -152,7 +150,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   return (
     <div className="space-y-8">
       <section className="flex flex-wrap items-center justify-between gap-4 pb-2">
-        <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
+        <h1 className="text-xl font-semibold text-slate-950">Dashboard</h1>
         <RangeTabs activeRange={range} />
       </section>
 
@@ -204,7 +202,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <Card className="border border-border/70 shadow-sm">
+        <Card className="rounded-lg border-slate-200 text-slate-950 shadow-sm">
           <CardHeader>
             <CardTitle>Photographer Signups</CardTitle>
             <CardDescription>New profiles created over time</CardDescription>
@@ -219,7 +217,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           </CardContent>
         </Card>
 
-        <Card className="border border-border/70 shadow-sm">
+        <Card className="rounded-lg border-slate-200 text-slate-950 shadow-sm">
           <CardHeader>
             <CardTitle>User Signups</CardTitle>
             <CardDescription>New accounts created over time</CardDescription>
@@ -236,7 +234,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-3">
-        <Card className="border border-border/70 shadow-sm">
+        <Card className="rounded-lg border-slate-200 text-slate-950 shadow-sm">
           <CardHeader>
             <CardTitle>Photographers by Status</CardTitle>
             <CardDescription>Where every profile sits</CardDescription>
@@ -246,7 +244,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           </CardContent>
         </Card>
 
-        <Card className="border border-border/70 shadow-sm">
+        <Card className="rounded-lg border-slate-200 text-slate-950 shadow-sm">
           <CardHeader>
             <CardTitle>Top Cities</CardTitle>
             <CardDescription>Where photographers are based</CardDescription>
@@ -256,7 +254,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           </CardContent>
         </Card>
 
-        <Card className="border border-border/70 shadow-sm">
+        <Card className="rounded-lg border-slate-200 text-slate-950 shadow-sm">
           <CardHeader>
             <CardTitle>Users by Role</CardTitle>
             <CardDescription>Regular users vs. staff logins</CardDescription>
@@ -268,7 +266,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <Card className="border border-border/70 shadow-sm">
+        <Card className="rounded-lg border-slate-200 text-slate-950 shadow-sm">
           <CardHeader>
             <CardTitle>Verification Pipeline</CardTitle>
             <CardDescription>{avgTurnaroundLabel}</CardDescription>
@@ -278,12 +276,10 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           </CardContent>
         </Card>
 
-        <Card className="border border-border/70 shadow-sm">
+        <Card className="rounded-lg border-slate-200 text-slate-950 shadow-sm">
           <CardHeader>
             <CardTitle>Onboarding Funnel</CardTitle>
-            <CardDescription>
-              Self-serve drafts by step reached
-            </CardDescription>
+            <CardDescription>Self-serve drafts by step reached</CardDescription>
           </CardHeader>
           <CardContent>
             <PipelineBars rows={onboardingRows} />
@@ -292,7 +288,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-        <Card className="border border-border/70 shadow-sm">
+        <Card className="rounded-lg border-slate-200 text-slate-950 shadow-sm">
           <CardHeader>
             <CardTitle>Top Specialities</CardTitle>
             <CardDescription>Most offered by photographers</CardDescription>
@@ -302,16 +298,14 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           </CardContent>
         </Card>
 
-        <Card className="border border-border/70 shadow-sm">
+        <Card className="rounded-lg border-slate-200 text-slate-950 shadow-sm">
           <CardHeader>
             <CardTitle>Recent Staff</CardTitle>
             <CardDescription>Latest admin & sales logins</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {overview.recentStaff.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No staff accounts yet
-              </p>
+              <p className="text-sm text-slate-500">No staff accounts yet</p>
             ) : (
               overview.recentStaff.map((member) => (
                 <div
@@ -319,10 +313,10 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   className="flex items-center justify-between gap-3 text-sm"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-foreground">
+                    <p className="truncate font-medium text-slate-950">
                       {member.name}
                     </p>
-                    <p className="truncate text-xs text-muted-foreground">
+                    <p className="truncate text-xs text-slate-500">
                       {member.email}
                     </p>
                   </div>
@@ -330,7 +324,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                     <Badge variant="outline">
                       {ROLE_LABELS[member.role ?? "user"] ?? member.role}
                     </Badge>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="mt-1 text-xs text-slate-500">
                       {adminDateFormatter.format(member.createdAt)}
                     </p>
                   </div>
@@ -348,14 +342,14 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <Card className="border border-border/70 shadow-sm">
+        <Card className="rounded-lg border-slate-200 text-slate-950 shadow-sm">
           <CardHeader>
             <CardTitle>Recently Created</CardTitle>
             <CardDescription>Newest photographer profiles</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {overview.recentlyCreated.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-500">
                 No photographer profiles yet
               </p>
             ) : (
@@ -366,17 +360,17 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   <Link
                     key={entry.id}
                     href={`/admin/photographer/${entry.id}`}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border/60 p-3 text-sm transition-colors hover:bg-muted/10"
+                    className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3 text-sm transition-colors hover:bg-slate-50"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-xs font-semibold text-foreground/80">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-semibold text-slate-700">
                         {getProfileInitials(entry.name)}
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate font-medium text-foreground">
+                        <p className="truncate font-medium text-slate-950">
                           {entry.name ?? "Untitled photographer profile"}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-slate-500">
                           Created {adminDateFormatter.format(entry.createdAt)}
                         </p>
                       </div>
@@ -391,14 +385,16 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           </CardContent>
         </Card>
 
-        <Card className="border border-border/70 shadow-sm">
+        <Card className="rounded-lg border-slate-200 text-slate-950 shadow-sm">
           <CardHeader>
             <CardTitle>Recently Reviewed</CardTitle>
-            <CardDescription>Latest approve / reject / hold actions</CardDescription>
+            <CardDescription>
+              Latest approve / reject / hold actions
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {overview.recentlyReviewed.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-500">
                 Nothing has been reviewed yet
               </p>
             ) : (
@@ -409,17 +405,17 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   <Link
                     key={entry.id}
                     href={`/admin/photographer/${entry.id}`}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border/60 p-3 text-sm transition-colors hover:bg-muted/10"
+                    className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3 text-sm transition-colors hover:bg-slate-50"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-xs font-semibold text-foreground/80">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-semibold text-slate-700">
                         {getProfileInitials(entry.name)}
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate font-medium text-foreground">
+                        <p className="truncate font-medium text-slate-950">
                           {entry.name ?? "Untitled photographer profile"}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-slate-500">
                           Reviewed{" "}
                           {entry.reviewedAt
                             ? adminDateFormatter.format(entry.reviewedAt)

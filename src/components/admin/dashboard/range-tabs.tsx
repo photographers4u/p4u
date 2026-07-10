@@ -13,7 +13,7 @@ export function RangeTabs({
   activeRange: AdminDashboardRange;
 }) {
   return (
-    <div className="inline-flex items-center gap-1 rounded-lg border border-border/70 bg-muted/20 p-1">
+    <div className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
       {ADMIN_DASHBOARD_RANGES.map((range) => {
         const isActive = range === activeRange;
 
@@ -24,8 +24,8 @@ export function RangeTabs({
             className={cn(
               "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
               isActive
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-white text-slate-950 shadow-sm"
+                : "text-slate-500 hover:text-slate-950",
             )}
           >
             {getAdminDashboardRangeLabel(range)}

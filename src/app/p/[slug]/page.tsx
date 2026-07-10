@@ -12,6 +12,7 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import Navbar from "@/components/navbar";
 import { PhotographerVerificationBadge } from "@/components/photographer-verification-badge";
 import { PhotographerWorkGallery } from "@/components/photographer-work-gallery";
+import { ProfileHeroAvatar } from "@/components/profile-hero-avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { siteConfig } from "@/config/site";
@@ -319,17 +320,10 @@ export default async function PublicPhotographerPage({
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-col items-center gap-4 sm:gap-5 lg:flex-row lg:items-start">
                       {photographer.avatar ? (
-                        <div className="relative size-20 shrink-0 overflow-hidden rounded-full shadow-sm ring-1 ring-slate-200 sm:size-24 lg:size-32">
-                          {/* biome-ignore lint/performance/noImgElement: photographer avatars are stored on an external host */}
-                          <img
-                            src={photographer.avatar}
-                            alt={photographer.name ?? "Photographer"}
-                            loading="eager"
-                            fetchPriority="high"
-                            decoding="async"
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
+                        <ProfileHeroAvatar
+                          src={photographer.avatar}
+                          alt={photographer.name ?? "Photographer"}
+                        />
                       ) : (
                         <div className="flex size-20 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xl font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 sm:size-24 sm:text-2xl">
                           {initials}

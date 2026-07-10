@@ -9,9 +9,7 @@ export function PipelineBars({ rows }: { rows: PipelineBarRow[] }) {
   const maxValue = Math.max(1, ...rows.map((row) => row.value));
 
   if (rows.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">No data yet</p>
-    );
+    return <p className="text-sm text-slate-500">No data yet</p>;
   }
 
   return (
@@ -19,12 +17,12 @@ export function PipelineBars({ rows }: { rows: PipelineBarRow[] }) {
       {rows.map((row) => (
         <div key={row.key} className="space-y-1.5">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-foreground">{row.label}</span>
-            <span className="font-mono tabular-nums text-muted-foreground">
+            <span className="text-slate-900">{row.label}</span>
+            <span className="font-mono tabular-nums text-slate-500">
               {row.value.toLocaleString()}
             </span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-muted/40">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
             <div
               className="h-full rounded-full"
               style={{
