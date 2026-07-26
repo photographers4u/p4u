@@ -8,6 +8,7 @@ import { MobileAppHome } from "@/components/mobile-app-home";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { MobileHero } from "@/components/mobile-hero";
 import Navbar from "@/components/navbar";
+import { PopularCities } from "@/components/popular-cities";
 import SectionContainer from "@/components/section-ui";
 import { Button } from "@/components/ui/button";
 import { Marquee } from "@/components/ui/marquee";
@@ -21,7 +22,6 @@ import {
   getPublicFeaturedPhotographers,
   getPublicPhotographerExplorePage,
 } from "@/server/services/photographer";
-import { getSpecialityFilterOptions } from "@/server/services/speciality";
 
 const CircularGallery = dynamic(() => import("@/components/circular-gallery"));
 const FAQSection = dynamic(() => import("@/components/faq-section"));
@@ -44,7 +44,7 @@ const images = [
 
 export default async function HomePage() {
   const requestHeaders = await headers();
-  const [session, featuredPhotographers, browsePhotographersPage, categories] =
+  const [session, featuredPhotographers, browsePhotographersPage] =
     await Promise.all([
       getAuthSession({ headers: requestHeaders }),
       getPublicFeaturedPhotographers(),
@@ -52,7 +52,6 @@ export default async function HomePage() {
         DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS,
         { page: 1, pageSize: 12 },
       ),
-      getSpecialityFilterOptions(),
     ]);
   const initialBookmarkStore = session?.user
     ? await getBookmarkStoreByUserId(session.user.id)
@@ -69,10 +68,7 @@ export default async function HomePage() {
       <MobileBottomNav session={session} />
       <main className="min-h-screen relative text-slate-900 max-md:bg-neutral-50">
         <MobileHero images={[images[4] ?? images[0], images[1], images[2]]} />
-        <MobileAppHome
-          categories={categories}
-          featuredPhotographers={featuredPhotographers}
-        />
+        <MobileAppHome featuredPhotographers={featuredPhotographers} />
 
         <div className="hidden min-h-screen w-full absolute sm:flex items-center justify-center">
           <CircularGallery
@@ -115,9 +111,17 @@ export default async function HomePage() {
             </div>
           </section>
         </div>
+
+        <SectionContainer
+          className="hidden sm:mt-[110vh] sm:block"
+          title="Explore Top Cities"
+          subtitle="Find talented photographers in India's most popular cities."
+        >
+          <PopularCities />
+        </SectionContainer>
+
         <BookmarkProvider initialStore={initialBookmarkStore} session={session}>
           <SectionContainer
-            className="hidden sm:mt-[110vh] sm:block"
             title="Featured Photographers"
             subtitle="A selection of photographers we currently recommend."
             viewAllHref="/photographers"
