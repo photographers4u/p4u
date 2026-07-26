@@ -18,7 +18,7 @@ const FeaturedPhotographersCarousel = ({
   }
 
   return (
-    <Marquee pauseOnHover repeat={2} speed={40}>
+    <Marquee pauseOnHover repeat={2} speed={90}>
       {photographers.map((elem) => (
         <div className="w-[320px] shrink-0 px-3" key={elem.id}>
           <ExplorePhotographerCard photographer={elem} imageMode="cover" />

@@ -49,6 +49,7 @@
 
   --animate-marquee: marquee var(--duration) infinite linear;
   --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
 
   @keyframes marquee {
     from {
@@ -64,6 +65,14 @@
     }
     to {
       transform: translateY(calc(-100% - var(--gap)));
+    }
+  }
+  @keyframes shimmer {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(100%);
     }
   }
 }

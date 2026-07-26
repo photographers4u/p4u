@@ -67,6 +67,9 @@ function PhotographerPortfolioGallery({
         // biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host
         <img
           key={upload.id}
+          ref={(img) => {
+            if (img?.complete) markLoaded(upload.id);
+          }}
           src={upload.imageUrl}
           alt={`${photographer.name ?? "Photographer"} portfolio work ${i + 1}`}
           loading={priority && i === 0 ? "eager" : "lazy"}
@@ -146,7 +149,7 @@ function PhotographerPortfolioCover({
   uploads: PublicPhotographerExploreEntry["uploads"];
   priority: boolean;
 }) {
-  const { isLoaded, onLoad, onError } = useImageLoaded();
+  const { isLoaded, ref, onLoad, onError } = useImageLoaded();
 
   return (
     <Link
@@ -157,6 +160,7 @@ function PhotographerPortfolioCover({
       {isLoaded ? null : <Skeleton className="absolute inset-0 rounded-none" />}
       {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
       <img
+        ref={ref}
         src={uploads[0].imageUrl}
         alt={`${photographer.name ?? "Photographer"} portfolio cover`}
         loading={priority ? "eager" : "lazy"}
@@ -227,6 +231,7 @@ export function ExplorePhotographerCard({
                   )}
                   {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
                   <img
+                    ref={fallbackAvatar.ref}
                     src={photographer.avatar}
                     alt={photographer.name ?? "Photographer"}
                     onLoad={fallbackAvatar.onLoad}
@@ -273,6 +278,7 @@ export function ExplorePhotographerCard({
               )}
               {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
               <img
+                ref={profileAvatar.ref}
                 src={photographer.avatar}
                 alt={photographer.name ?? "Photographer"}
                 onLoad={profileAvatar.onLoad}

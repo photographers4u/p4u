@@ -76,11 +76,13 @@ export async function generateMetadata({
       description,
       url: path,
       type: "website",
+      images: [siteConfig.ogImage],
     },
     twitter: {
       card: "summary_large_image",
       title: socialTitle,
       description,
+      images: [siteConfig.ogImage.url],
     },
   };
 }

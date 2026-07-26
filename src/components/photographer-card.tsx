@@ -62,6 +62,7 @@ export function PhotographerCard({
                   )}
                   {/* biome-ignore lint/performance/noImgElement: uploaded assets are stored on an external host */}
                   <img
+                    ref={avatar.ref}
                     src={photographer.avatar}
                     alt={photographer.name ?? "Photographer"}
                     loading="lazy"

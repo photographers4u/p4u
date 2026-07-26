@@ -31,6 +31,14 @@ export const metadata: Metadata = {
     description:
       "Browse verified wedding, portrait, and event photographers across India.",
     url: "/photographers",
+    images: [siteConfig.ogImage],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `Hire Photographers in India | ${siteConfig.name}`,
+    description:
+      "Browse verified wedding, portrait, and event photographers across India.",
+    images: [siteConfig.ogImage.url],
   },
 };
 

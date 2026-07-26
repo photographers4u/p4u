@@ -68,13 +68,13 @@ export async function generateMetadata({
         description,
         url: `/p/${slug}`,
         type: "profile",
-        images: image ? [{ url: image }] : undefined,
+        images: [image ? { url: image } : siteConfig.ogImage],
       },
       twitter: {
         card: "summary_large_image",
         title: socialTitle,
         description,
-        images: image ? [image] : undefined,
+        images: [image ?? siteConfig.ogImage.url],
       },
     };
   } catch {

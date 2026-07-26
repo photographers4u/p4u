@@ -21,6 +21,7 @@ import {
   getPublicFeaturedPhotographers,
   getPublicPhotographerExplorePage,
 } from "@/server/services/photographer";
+import { getSpecialityFilterOptions } from "@/server/services/speciality";
 
 const CircularGallery = dynamic(() => import("@/components/circular-gallery"));
 const FAQSection = dynamic(() => import("@/components/faq-section"));
@@ -43,7 +44,7 @@ const images = [
 
 export default async function HomePage() {
   const requestHeaders = await headers();
-  const [session, featuredPhotographers, browsePhotographersPage] =
+  const [session, featuredPhotographers, browsePhotographersPage, categories] =
     await Promise.all([
       getAuthSession({ headers: requestHeaders }),
       getPublicFeaturedPhotographers(),
@@ -51,6 +52,7 @@ export default async function HomePage() {
         DEFAULT_PUBLIC_PHOTOGRAPHER_EXPLORE_FILTERS,
         { page: 1, pageSize: 12 },
       ),
+      getSpecialityFilterOptions(),
     ]);
   const initialBookmarkStore = session?.user
     ? await getBookmarkStoreByUserId(session.user.id)
@@ -67,7 +69,10 @@ export default async function HomePage() {
       <MobileBottomNav session={session} />
       <main className="min-h-screen relative text-slate-900 max-md:bg-neutral-50">
         <MobileHero images={[images[4] ?? images[0], images[1], images[2]]} />
-        <MobileAppHome />
+        <MobileAppHome
+          categories={categories}
+          featuredPhotographers={featuredPhotographers}
+        />
 
         <div className="hidden min-h-screen w-full absolute sm:flex items-center justify-center">
           <CircularGallery
@@ -112,7 +117,7 @@ export default async function HomePage() {
         </div>
         <BookmarkProvider initialStore={initialBookmarkStore} session={session}>
           <SectionContainer
-            className="sm:mt-[110vh]"
+            className="hidden sm:mt-[110vh] sm:block"
             title="Featured Photographers"
             subtitle="A selection of photographers we currently recommend."
             viewAllHref="/photographers"

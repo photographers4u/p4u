@@ -26,6 +26,15 @@ export const siteConfig = {
     twitter: "https://x.com/photographers4u",
     linkedin: "https://www.linkedin.com/company/thephotographers4u/",
   },
+  // Pages that set their own `openGraph`/`twitter` metadata don't inherit
+  // the root `opengraph-image` route automatically, so they need to
+  // reference it explicitly to keep a banner in link previews.
+  ogImage: {
+    url: `${SITE_URL}/opengraph-image`,
+    width: 1200,
+    height: 630,
+    alt: "Photographers4U",
+  },
   metadata: {
     metadataBase: new URL(SITE_URL),
     title: {
